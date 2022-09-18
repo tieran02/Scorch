@@ -35,8 +35,9 @@ add_subdirectory(Sandbox)
 target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
 target_include_directories(Engine PRIVATE vendor/src/glfw/include)
 target_include_directories(Engine PRIVATE vendor/src/spdlog/include)
+target_include_directories(Engine PRIVATE vendor/src/vkbootstrap/src)
 
 set(VK_BOOTSTRAP_VULKAN_HEADER_DIR vendor/src/vulkan/include)
 
 set_property(TARGET glfw          PROPERTY FOLDER "ThirdPartyLibraries")
-#set_property(TARGET vkbootstrap   PROPERTY FOLDER "ThirdPartyLibraries")
+set_property(TARGET vk-bootstrap  PROPERTY FOLDER "ThirdPartyLibraries")

@@ -14,5 +14,7 @@ private:
 	int m_width, m_height;
 	struct GLFWwindow* m_window;
 
+	std::unique_ptr<class Renderer> m_renderer;
+
 	bool m_isRunning;
 };

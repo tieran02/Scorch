@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "core/app.h"
 #include "GLFW/glfw3.h"
+#include "core/Renderer.h"
 
 std::unique_ptr<App> App::Create(const std::string& title, int width, int height)
 {
@@ -15,7 +16,8 @@ App::App(int width, int height) :
 	m_window(nullptr),
 	m_width(width),
 	m_height(height),
-	m_isRunning(false)
+	m_isRunning(false),
+	m_renderer(Renderer::Create(GraphicsAPI::VULKAN))
 {
 
 }
