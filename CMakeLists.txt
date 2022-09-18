@@ -28,11 +28,13 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 
 add_subdirectory(vendor/src/glfw)
 add_subdirectory(vendor/src/vkbootstrap)
+add_subdirectory(vendor/src/volk)
 
 add_subdirectory(Engine)
 add_subdirectory(Sandbox)
 
 target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
+target_include_directories(Engine PRIVATE vendor/src/volk)
 target_include_directories(Engine PRIVATE vendor/src/glfw/include)
 target_include_directories(Engine PRIVATE vendor/src/spdlog/include)
 target_include_directories(Engine PRIVATE vendor/src/vkbootstrap/src)
@@ -41,3 +43,4 @@ set(VK_BOOTSTRAP_VULKAN_HEADER_DIR vendor/src/vulkan/include)
 
 set_property(TARGET glfw          PROPERTY FOLDER "ThirdPartyLibraries")
 set_property(TARGET vk-bootstrap  PROPERTY FOLDER "ThirdPartyLibraries")
+set_property(TARGET volk          PROPERTY FOLDER "ThirdPartyLibraries")
