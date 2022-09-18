@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "app.h"
+#include "core/app.h"
 #include "GLFW/glfw3.h"
 
 std::unique_ptr<App> App::Create(const std::string& title, int width, int height)

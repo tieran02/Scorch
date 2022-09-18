@@ -7,6 +7,7 @@ include(../cmake/commonmacros.txt)
 SETUP_SHARED_LIB(Engine "Scorch")
 
 target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
+target_include_directories(Engine PRIVATE include)
 
 target_precompile_headers(Engine PRIVATE src/pch.h)
 target_link_libraries(Engine PRIVATE glfw)

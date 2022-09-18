@@ -8,7 +8,7 @@ SETUP_APP(Sandbox "Scorch")
 set_target_properties(Sandbox PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/sandbox")
 
 target_link_libraries(Sandbox Engine)
-target_include_directories(Sandbox PRIVATE ../Engine/src)
+target_include_directories(Sandbox PRIVATE ../Engine/include)
 
 get_target_property(ENGINE_BINARY_DIR Engine BINARY_DIR)
 get_target_property(SANDBOX_BINARY_DIR Sandbox BINARY_DIR)
