@@ -12,6 +12,8 @@ namespace SC
 
 		void Init() override;
 		void Cleanup() override;
+
+		void Draw() override;
 	private:
 		void InitVulkan();
 		void InitSwapchain();
@@ -19,6 +21,8 @@ namespace SC
 
 		void InitDefaultRenderpass();
 		void InitFramebuffers();
+
+		void InitSyncStructures();
 	private:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
@@ -39,5 +43,8 @@ namespace SC
 
 		VkRenderPass m_renderPass;
 		std::vector<VkFramebuffer> m_framebuffers;
+
+		VkSemaphore m_presentSemaphore, m_renderSemaphore;
+		VkFence m_renderFence;
 	};
 }

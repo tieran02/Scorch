@@ -60,6 +60,9 @@ void App::Run()
 	{
 		glfwPollEvents();
 
+		if (m_renderer)
+			m_renderer->Draw();
+
 		m_isRunning = !glfwWindowShouldClose(m_window);
 	}
 }
@@ -95,4 +98,9 @@ void App::GetWindowExtent(int& width, int& height) const
 {
 	width = m_width;
 	height = m_height;
+}
+
+double App::GetWindowTime() const
+{
+	return glfwGetTime();
 }

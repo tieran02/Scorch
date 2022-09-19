@@ -14,6 +14,7 @@ namespace SC
 
 		GLFWwindow* GetWindowHandle() const;
 		void GetWindowExtent(int& width, int& height) const;
+		double GetWindowTime() const;
 	private:
 		App(int width, int height);
 		bool InitWindow(const std::string& title);
