@@ -13,6 +13,7 @@ namespace SC
 		void Run();
 
 		GLFWwindow* GetWindowHandle() const;
+		void GetWindowExtent(int& width, int height) const;
 	private:
 		App(int width, int height);
 		bool InitWindow(const std::string& title);

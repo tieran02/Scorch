@@ -35,6 +35,31 @@ void VulkanRenderer::Init()
 {
 	Log::PrintCore("Creating Vulkan Renderer");
 
+	InitVulkan();
+	InitSwapchain();
+	InitCommands();
+}
+
+void VulkanRenderer::Cleanup()
+{
+	Log::PrintCore("Cleaning up Vulkan Renderer");
+
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
+	//destroy swapchain resources
+	for (int i = 0; i < m_swapchainImageViews.size(); i++) {
+
+		vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
+	}
+
+	vkDestroyDevice(m_device, nullptr);
+	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+	vkb::destroy_debug_utils_messenger(m_instance, m_debug_messenger);
+	vkDestroyInstance(m_instance, nullptr);
+}
+
+void VulkanRenderer::InitVulkan()
+{
 	VK_CHECK(volkInitialize());
 
 	vkb::InstanceBuilder builder;
@@ -77,12 +102,36 @@ void VulkanRenderer::Init()
 	m_chosenGPU = physicalDevice.physical_device;
 }
 
-void VulkanRenderer::Cleanup()
+void VulkanRenderer::InitSwapchain()
 {
-	Log::PrintCore("Cleaning up Vulkan Renderer");
+	vkb::SwapchainBuilder swapchainBuilder{ m_chosenGPU,m_device,m_surface };
 
-	vkDestroyDevice(m_device, nullptr);
-	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-	vkb::destroy_debug_utils_messenger(m_instance, m_debug_messenger);
-	vkDestroyInstance(m_instance, nullptr);
+	int windowWidth{0}, windowHeight{0};
+	const App* app = App::Instance();
+	if (!app)
+	{
+		Log::PrintCore("Failed to get app instance", LogSeverity::LogFatel);
+		return;
+	}
+	app->GetWindowExtent(windowWidth, windowHeight);
+
+	vkb::Swapchain vkbSwapchain = swapchainBuilder
+		.use_default_format_selection()
+		//use vsync present mode
+		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		.set_desired_extent(windowWidth, windowHeight)
+		.build()
+		.value();
+
+	//store swapchain and its related images
+	m_swapchain = vkbSwapchain.swapchain;
+	m_swapchainImages = vkbSwapchain.get_images().value();
+	m_swapchainImageViews = vkbSwapchain.get_image_views().value();
+
+	m_swapchainImageFormat = vkbSwapchain.image_format;
+}
+
+void VulkanRenderer::InitCommands()
+{
+
 }

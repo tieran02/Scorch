@@ -4,7 +4,7 @@ project(Engine)
 
 include(../cmake/commonmacros.txt)
 
-SETUP_SHARED_LIB(Engine "Scorch")
+SETUP_LIB(Engine "Scorch")
 
 target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
 target_include_directories(Engine PRIVATE include)

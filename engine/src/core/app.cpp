@@ -90,3 +90,9 @@ GLFWwindow* App::GetWindowHandle() const
 {
 	return m_window;
 }
+
+void App::GetWindowExtent(int& width, int height) const
+{
+	width = m_width;
+	height = m_height;
+}

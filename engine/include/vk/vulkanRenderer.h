@@ -13,10 +13,25 @@ namespace SC
 		void Init() override;
 		void Cleanup() override;
 	private:
+		void InitVulkan();
+		void InitSwapchain();
+		void InitCommands();
+	private:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
 		VkPhysicalDevice m_chosenGPU; // GPU chosen as the default device
 		VkDevice m_device; // Vulkan device for commands
 		VkSurfaceKHR m_surface; // Vulkan window surface
+
+		VkSwapchainKHR m_swapchain; // from other articles
+		VkFormat m_swapchainImageFormat; // image format expected by the windowing system
+		std::vector<VkImage> m_swapchainImages; //array of images from the swapchain
+		std::vector<VkImageView> m_swapchainImageViews; //array of image-views from the swapchain
+
+		VkQueue m_graphicsQueue; //queue we will submit to
+		uint32_t m_graphicsQueueFamily; //family of that queue
+
+		VkCommandPool m_commandPool; //the command pool for our commands
+		VkCommandBuffer m_mainCommandBuffer; //the buffer we will record into
 	};
 }
