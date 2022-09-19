@@ -6,6 +6,7 @@
 #include "core/app.h"
 #include "core/log.h"
 #include "vk/vulkanInitialiser.h"
+#include "core/shader.h"
 
 using namespace SC;
 
@@ -34,6 +35,11 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::Init()
 {
+	ShaderBuilder shaderBuilder;
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/triangle.vert.spv")
+		.SetFragmentModulePath("shaders/triangle.frag.spv")
+		.Build(GraphicsAPI::VULKAN);
+
 	Log::PrintCore("Creating Vulkan Renderer");
 
 	InitVulkan();
