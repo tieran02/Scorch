@@ -16,6 +16,9 @@ namespace SC
 		void InitVulkan();
 		void InitSwapchain();
 		void InitCommands();
+
+		void InitDefaultRenderpass();
+		void InitFramebuffers();
 	private:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
@@ -33,5 +36,8 @@ namespace SC
 
 		VkCommandPool m_commandPool; //the command pool for our commands
 		VkCommandBuffer m_mainCommandBuffer; //the buffer we will record into
+
+		VkRenderPass m_renderPass;
+		std::vector<VkFramebuffer> m_framebuffers;
 	};
 }

@@ -5,6 +5,7 @@
 #include "GLFW/glfw3.h"
 #include "core/app.h"
 #include "core/log.h"
+#include "vk/vulkanInitialiser.h"
 
 using namespace SC;
 
@@ -38,17 +39,24 @@ void VulkanRenderer::Init()
 	InitVulkan();
 	InitSwapchain();
 	InitCommands();
+	InitDefaultRenderpass();
+	InitFramebuffers();
 }
 
 void VulkanRenderer::Cleanup()
 {
 	Log::PrintCore("Cleaning up Vulkan Renderer");
 
+	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
-	//destroy swapchain resources
-	for (int i = 0; i < m_swapchainImageViews.size(); i++) {
+	//destroy the main renderpass
+	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
+	//destroy swapchain resources
+	for (int i = 0; i < m_swapchainImageViews.size(); i++)
+	{
+		vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
 		vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
 	}
 
@@ -94,12 +102,15 @@ void VulkanRenderer::InitVulkan()
 
 	//create the final Vulkan device
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
-
 	vkb::Device vkbDevice = deviceBuilder.build().value();
 
 	// Get the VkDevice handle used in the rest of a Vulkan application
 	m_device = vkbDevice.device;
 	m_chosenGPU = physicalDevice.physical_device;
+
+	// use vkbootstrap to get a Graphics queue
+	m_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+	m_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 }
 
 void VulkanRenderer::InitSwapchain()
@@ -133,5 +144,93 @@ void VulkanRenderer::InitSwapchain()
 
 void VulkanRenderer::InitCommands()
 {
+	VkCommandPoolCreateInfo commandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	VK_CHECK(vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool));
 
+	//allocate the default command buffer that we will use for rendering
+	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_commandPool, 1);
+	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_mainCommandBuffer));
+}
+
+void VulkanRenderer::InitDefaultRenderpass()
+{
+	// the renderpass will use this color attachment.
+	VkAttachmentDescription color_attachment = {};
+	//the attachment will have the format needed by the swapchain
+	color_attachment.format = m_swapchainImageFormat;
+	//1 sample, we won't be doing MSAA
+	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	// we Clear when this attachment is loaded
+	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	// we keep the attachment stored when the renderpass ends
+	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	//we don't care about stencil
+	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	//we don't know or care about the starting layout of the attachment
+	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	//after the renderpass ends, the image has to be on a layout ready for display
+	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	//subpass
+	VkAttachmentReference color_attachment_ref = {};
+	//attachment number will index into the pAttachments array in the parent renderpass itself
+	color_attachment_ref.attachment = 0;
+	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	//we are going to create 1 subpass, which is the minimum you can do
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment_ref;
+
+	//now create the renderpass
+	VkRenderPassCreateInfo render_pass_info = {};
+	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+	//connect the color attachment to the info
+	render_pass_info.attachmentCount = 1;
+	render_pass_info.pAttachments = &color_attachment;
+	//connect the subpass to the info
+	render_pass_info.subpassCount = 1;
+	render_pass_info.pSubpasses = &subpass;
+
+
+	VK_CHECK(vkCreateRenderPass(m_device, &render_pass_info, nullptr, &m_renderPass));
+}
+
+void VulkanRenderer::InitFramebuffers()
+{
+	int windowWidth{ 0 }, windowHeight{ 0 };
+	const App* app = App::Instance();
+	if (!app)
+	{
+		Log::PrintCore("Failed to get app instance", LogSeverity::LogFatel);
+		return;
+	}
+	app->GetWindowExtent(windowWidth, windowHeight);
+
+	//create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
+	VkFramebufferCreateInfo fb_info = {};
+	fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	fb_info.pNext = nullptr;
+
+	fb_info.renderPass = m_renderPass;
+	fb_info.attachmentCount = 1;
+	fb_info.width = windowWidth;
+	fb_info.height = windowHeight;
+	fb_info.layers = 1;
+
+	//grab how many images we have in the swapchain
+	const uint32_t swapchain_imagecount = static_cast<uint32_t>(m_swapchainImages.size());
+	m_framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+
+	//create framebuffers for each of the swapchain image views
+	for (uint32_t i = 0; i < swapchain_imagecount; i++) {
+
+		fb_info.pAttachments = &m_swapchainImageViews[i];
+		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]));
+	}
 }
