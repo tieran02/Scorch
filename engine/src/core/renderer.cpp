@@ -2,6 +2,8 @@
 #include "core/renderer.h"
 #include "vk/vulkanRenderer.h"
 
+using namespace SC;
+
 std::unique_ptr<Renderer> Renderer::Create(GraphicsAPI api)
 {
 	switch (api)
@@ -11,4 +13,9 @@ std::unique_ptr<Renderer> Renderer::Create(GraphicsAPI api)
 	default:
 		return nullptr;
 	}
+}
+
+Renderer::~Renderer()
+{
+
 }

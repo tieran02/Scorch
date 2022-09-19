@@ -3,6 +3,8 @@
 #include "GLFW/glfw3.h"
 #include "core/Renderer.h"
 
+using namespace SC;
+
 namespace
 {
 	App* g_instance{nullptr};
@@ -15,7 +17,9 @@ const App* App::Instance()
 
 std::unique_ptr<App> App::Create(const std::string& title, int width, int height)
 {
-	assert(!g_instance); //Only one instance of app is currently supported
+	Log::PrintCore(string_format("Creating App (width %i, height %i)", width, height));
+
+	CORE_ASSERT(!g_instance, "Only one instance of app is currently supported");
 	if (g_instance)
 		return nullptr;
 
@@ -41,6 +45,9 @@ App::App(int width, int height) :
 
 App::~App()
 {
+	m_renderer.reset();
+
+	Log::PrintCore("Destroying window");
 	glfwTerminate();
 	glfwDestroyWindow(m_window);
 }
@@ -59,11 +66,14 @@ void App::Run()
 
 bool App::InitWindow(const std::string& title)
 {
+	Log::PrintCore("Creating GLFW Window");
+
 	if (!glfwInit())
 		return false;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	m_window = glfwCreateWindow(m_width, m_height, title.c_str(), NULL, NULL);
+	CORE_ASSERT(m_window, "Failed to create GLFW Window");
 	if (!m_window)
 		return false;
 

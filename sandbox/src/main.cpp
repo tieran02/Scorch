@@ -1,9 +1,11 @@
 #include <iostream>
 #include "core/app.h"
+#include "core/log.h"
 
 int main()
 {
-	if(auto app = App::Create("Hello Vulkan", 1280, 720))
+	SC::Log::Print("Hello game!");
+	if(auto app = SC::App::Create("Hello Vulkan", 1280, 720))
 		app->Run();
 
 	return 0;

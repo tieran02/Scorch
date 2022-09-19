@@ -10,4 +10,9 @@ target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
 target_include_directories(Engine PRIVATE include)
 
 target_precompile_headers(Engine PRIVATE src/pch.h)
+
+target_compile_definitions(Engine PRIVATE
+  $<$<CONFIG:Debug>:SCORCH_DEBUG=1>
+)
+
 target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap)

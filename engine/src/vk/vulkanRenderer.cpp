@@ -4,16 +4,17 @@
 #include "volk.h"
 #include "GLFW/glfw3.h"
 #include "core/app.h"
+#include "core/log.h"
 
-//we want to immediately abort when there is an error. In normal engines this would give an error message to the user, or perform a dump of state.
-using namespace std;
+using namespace SC;
+
 #define VK_CHECK(x)                                                 \
 	do                                                              \
 	{                                                               \
 		VkResult err = x;                                           \
 		if (err)                                                    \
 		{                                                           \
-			std::cout <<"Detected Vulkan error: " << err << std::endl; \
+			CORE_ASSERT(false, string_format("%s %i", "Detected Vulkan error:", err)); \
 			abort();                                                \
 		}                                                           \
 	} while (0)
@@ -32,6 +33,8 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::Init()
 {
+	Log::PrintCore("Creating Vulkan Renderer");
+
 	VK_CHECK(volkInitialize());
 
 	vkb::InstanceBuilder builder;
@@ -58,8 +61,9 @@ void VulkanRenderer::Init()
 	//We want a GPU that can write to the SDL surface and supports Vulkan 1.1
 	vkb::PhysicalDeviceSelector selector{ vkb_inst };
 	vkb::PhysicalDevice physicalDevice = selector
-		.set_minimum_version(1, 3)
+		.set_minimum_version(1, 1)
 		.set_surface(m_surface)
+		.require_present()
 		.select()
 		.value();
 
@@ -75,6 +79,8 @@ void VulkanRenderer::Init()
 
 void VulkanRenderer::Cleanup()
 {
+	Log::PrintCore("Cleaning up Vulkan Renderer");
+
 	vkDestroyDevice(m_device, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	vkb::destroy_debug_utils_messenger(m_instance, m_debug_messenger);
