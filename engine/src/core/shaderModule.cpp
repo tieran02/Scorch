@@ -1,47 +1,43 @@
 #include "pch.h"
-#include "core/shader.h"
+#include "core/shaderModule.h"
 #include "core/renderer.h"
 
 using namespace SC;
-ShaderBuilder& ShaderBuilder::SetVertexModulePath(const std::string& path)
+ShaderModuleBuilder& ShaderModuleBuilder::SetVertexModulePath(const std::string& path)
 {
 	m_vertexModulePath = path;
 	return *this;
 }
 
-ShaderBuilder& ShaderBuilder::SetFragmentModulePath(const std::string& path)
+ShaderModuleBuilder& ShaderModuleBuilder::SetFragmentModulePath(const std::string& path)
 {
 	m_fragmentModulePath = path;
 	return *this;
 }
 
-std::unique_ptr<Shader> ShaderBuilder::Build(GraphicsAPI api)
+std::unique_ptr<ShaderModule> ShaderModuleBuilder::Build()
 {
-	std::unique_ptr<Shader> shader = Shader::Create(api);
+	std::unique_ptr<ShaderModule> shader = std::unique_ptr<ShaderModule>(new ShaderModule());
 	
+	//TODO multithread reads
 	bool result = false;
 	if (!m_vertexModulePath.empty())
-		result = shader->LoadModule(Shader::Stage::VERTEX, m_vertexModulePath);
-	CORE_ASSERT(result, string_format("Failed to load vertex module: %s", m_vertexModulePath.c_str()))
+		result = shader->LoadModule(ShaderModule::Stage::VERTEX, m_vertexModulePath);
+	CORE_ASSERT(result, string_format("Failed to load vertex module: %s", m_vertexModulePath.c_str()));
 
 	if (!m_fragmentModulePath.empty())
-		result = shader->LoadModule(Shader::Stage::FRAGMENT, m_fragmentModulePath);
-	CORE_ASSERT(result, string_format("Failed to load fragment module: %s", m_fragmentModulePath.c_str()))
+		result = shader->LoadModule(ShaderModule::Stage::FRAGMENT, m_fragmentModulePath);
+	CORE_ASSERT(result, string_format("Failed to load fragment module: %s", m_fragmentModulePath.c_str()));
 
 	return std::move(shader);
 }
 
-std::unique_ptr<Shader> Shader::Create(GraphicsAPI api)
-{
-	return std::unique_ptr<Shader>(new Shader());
-}
-
-Shader::Shader()
+ShaderModule::ShaderModule()
 {
 
 }
 
-bool Shader::LoadModule(Stage stage, const std::string& modulePath)
+bool ShaderModule::LoadModule(Stage stage, const std::string& modulePath)
 {
 	//check if module not already loaded
 	CORE_ASSERT(m_modules.at(to_underlying(stage)).empty(), "Module already exists");
