@@ -41,7 +41,7 @@ namespace
 		return true;
 	}
 
-	bool LoadShaderModule(VkDevice device, ShaderModule& module, ShaderModuleArray<VkShaderModule>& outShaderModules)
+	bool LoadShaderModule(VkDevice device, const ShaderModule& module, ShaderModuleArray<VkShaderModule>& outShaderModules)
 	{
 		bool success = true;
 		for (uint8_t i = 0; i < to_underlying(ShaderStage::COUNT); ++i)
