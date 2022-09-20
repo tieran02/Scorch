@@ -21,6 +21,42 @@ using namespace SC;
 		}                                                           \
 	} while (0)
 
+namespace 
+{
+	bool LoadShaderModule(VkDevice device, const ShaderBufferType& buffer, VkShaderModule& outShaderModule)
+	{
+		//create a new shader module, using the buffer we loaded
+		VkShaderModuleCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.pNext = nullptr;
+
+		//codeSize has to be in bytes, so multiply the ints in the buffer by size of int to know the real size of the buffer
+		createInfo.codeSize = buffer.size() * sizeof(uint32_t);
+		createInfo.pCode = buffer.data();
+
+		//check that the creation goes well.
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &outShaderModule) != VK_SUCCESS)
+			return false;
+		
+		return true;
+	}
+
+	bool LoadShaderModule(VkDevice device, ShaderModule& module, ShaderModuleArray<VkShaderModule>& outShaderModules)
+	{
+		bool success = true;
+		for (uint8_t i = 0; i < to_underlying(ShaderStage::COUNT); ++i)
+		{
+			const ShaderBufferType buffer = module.GetModule(static_cast<ShaderStage>(i));
+			if(buffer.empty())
+				continue;
+
+			success = LoadShaderModule(device, buffer, outShaderModules[i]);
+		}
+		
+		return success;
+	}
+}
+
 
 VulkanRenderer::VulkanRenderer() : Renderer(),
 	m_instance(VK_NULL_HANDLE)
@@ -44,6 +80,14 @@ void VulkanRenderer::Init()
 	InitFramebuffers();
 
 	InitSyncStructures();
+
+	ShaderModuleBuilder shaderBuilder;
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/triangle.vert.spv")
+		.SetFragmentModulePath("shaders/triangle.frag.spv")
+		.Build();
+
+	ShaderModuleArray<VkShaderModule> modules;
+	LoadShaderModule(m_device, *shader, modules);
 }
 
 void VulkanRenderer::Cleanup()

@@ -2,21 +2,26 @@
 
 namespace SC
 {
+	enum class ShaderStage : uint8_t
+	{
+		VERTEX,
+		FRAGMENT,
+		COUNT
+	};
+
+	template <typename T>
+	using ShaderModuleArray = std::array<T, to_underlying(ShaderStage::COUNT)>;
+	using ShaderBufferType = std::vector<uint32_t>;
+
 	class ShaderModule
 	{
 		friend struct ShaderModuleBuilder;
 	public:
-		enum class Stage
-		{
-			VERTEX,
-			FRAGMENT,
-			COUNT
-		};
-
-		bool LoadModule(Stage stage, const std::string& modulePath);
+		bool LoadModule(ShaderStage stage, const std::string& modulePath);
+		const ShaderBufferType& GetModule(ShaderStage stage) const;
 	private:
 		ShaderModule();
-		std::array<std::vector<uint32_t>, to_underlying(Stage::COUNT)> m_modules;
+		ShaderModuleArray<ShaderBufferType> m_modules;
 	};
 
 	struct ShaderModuleBuilder

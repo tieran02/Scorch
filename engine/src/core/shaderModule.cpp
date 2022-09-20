@@ -22,11 +22,11 @@ std::unique_ptr<ShaderModule> ShaderModuleBuilder::Build()
 	//TODO multithread reads
 	bool result = false;
 	if (!m_vertexModulePath.empty())
-		result = shader->LoadModule(ShaderModule::Stage::VERTEX, m_vertexModulePath);
+		result = shader->LoadModule(ShaderStage::VERTEX, m_vertexModulePath);
 	CORE_ASSERT(result, string_format("Failed to load vertex module: %s", m_vertexModulePath.c_str()));
 
 	if (!m_fragmentModulePath.empty())
-		result = shader->LoadModule(ShaderModule::Stage::FRAGMENT, m_fragmentModulePath);
+		result = shader->LoadModule(ShaderStage::FRAGMENT, m_fragmentModulePath);
 	CORE_ASSERT(result, string_format("Failed to load fragment module: %s", m_fragmentModulePath.c_str()));
 
 	return std::move(shader);
@@ -37,7 +37,7 @@ ShaderModule::ShaderModule()
 
 }
 
-bool ShaderModule::LoadModule(Stage stage, const std::string& modulePath)
+bool ShaderModule::LoadModule(ShaderStage stage, const std::string& modulePath)
 {
 	//check if module not already loaded
 	CORE_ASSERT(m_modules.at(to_underlying(stage)).empty(), "Module already exists");
@@ -68,4 +68,9 @@ bool ShaderModule::LoadModule(Stage stage, const std::string& modulePath)
 
 	//now that the file is loaded into the buffer, we can close it
 	file.close();
+}
+
+const ShaderBufferType& ShaderModule::GetModule(ShaderStage stage) const
+{
+	return m_modules.at(to_underlying(stage));
 }
