@@ -23,7 +23,7 @@ using namespace SC;
 	} while (0)
 
 
-VulkanRenderer::VulkanRenderer() : Renderer(),
+VulkanRenderer::VulkanRenderer() : Renderer(GraphicsAPI::VULKAN),
 	m_instance(VK_NULL_HANDLE)
 {
 	Init();

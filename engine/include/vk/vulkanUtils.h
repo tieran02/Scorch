@@ -1,3 +1,4 @@
+#pragma once
 #include "volk.h"
 #include "core/shaderModule.h"
 

@@ -1,4 +1,7 @@
-namespace SC {
+#pragma once
+
+namespace SC
+{
 
 	enum class Format
 	{
@@ -77,7 +80,8 @@ namespace SC {
 	class ShaderModule;
 	struct Pipeline
 	{
-		Pipeline(const ShaderModule& module);
+	public:
+		static std::unique_ptr<Pipeline> Create(const ShaderModule& module);
 
 		const ShaderModule*		shaderModule;
 		VertexInputDescription	vertexInputDescription;
@@ -87,5 +91,7 @@ namespace SC {
 		Scissor					scissor;
 
 		//TODO multi sampling and blending
+	protected:
+		Pipeline(const ShaderModule& module);
 	};
 }

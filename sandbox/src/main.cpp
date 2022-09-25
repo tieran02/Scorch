@@ -10,7 +10,7 @@ int main()
 			.SetFragmentModulePath("shaders/coloured_triangle.frag.spv")
 			.Build();
 
-		SC::Pipeline pipeline(*shader);
+		auto pipeline =  SC::Pipeline::Create(*shader);
 
 		app->Run();
 	}

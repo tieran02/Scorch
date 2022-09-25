@@ -104,3 +104,8 @@ double App::GetWindowTime() const
 {
 	return glfwGetTime();
 }
+
+const Renderer* App::GetRenderer() const
+{
+	return m_renderer.get();
+}

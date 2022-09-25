@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "core/pipeline.h"
 #include "core/shaderModule.h"
+#include "core/app.h"
+#include "core/renderer.h"
+#include "vk/vulkanPipeline.h"
 
 using namespace SC;
 
@@ -39,6 +42,26 @@ Scissor::Scissor() :
 	extentY{ 0 }
 {
 
+}
+
+
+std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
+{
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	
+	const Renderer* renderer = app->GetRenderer();
+	CORE_ASSERT(renderer, "renderer is null");
+
+	std::unique_ptr<Pipeline> pipeline{nullptr};
+	switch (renderer->GetApi())
+	{
+	case GraphicsAPI::VULKAN:
+		pipeline = std::unique_ptr<VulkanPipeline>(new VulkanPipeline(module));
+	}
+
+	CORE_ASSERT(pipeline, "failed to create pipeline");
+	return std::move(pipeline);
 }
 
 Pipeline::Pipeline(const ShaderModule& module) :

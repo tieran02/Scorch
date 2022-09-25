@@ -1,3 +1,5 @@
+#pragma once
+
 #include "pch.h"
 #include "core/app.h"
 #include "core/log.h"
