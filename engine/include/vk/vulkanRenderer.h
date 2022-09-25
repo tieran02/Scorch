@@ -1,6 +1,7 @@
 #pragma once
 #include "core/renderer.h"
 #include "volk.h"
+#include "core/utils.h"
 
 namespace SC
 {
@@ -51,5 +52,7 @@ namespace SC
 
 		VkPipelineLayout m_trianglePipelineLayout;
 		VkPipeline m_trianglePipeline;
+
+		DeletionQueue m_mainDeletionQueue;
 	};
 }

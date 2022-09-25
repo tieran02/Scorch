@@ -6,6 +6,8 @@
 #include <vector>
 #include <assert.h>
 #include <array>
+#include <functional>
+#include <deque>
 #include "core/log.h"
 
 template <typename E>

@@ -56,25 +56,7 @@ void VulkanRenderer::Cleanup()
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
 
-	vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
-	vkDestroyPipelineLayout(m_device, m_trianglePipelineLayout, nullptr);
-
-	vkDestroyFence(m_device, m_renderFence, nullptr);
-	vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
-	vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
-
-	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-
-	//destroy the main renderpass
-	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-
-	//destroy swapchain resources
-	for (int i = 0; i < m_swapchainImageViews.size(); i++)
-	{
-		vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-		vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
-	}
+	m_mainDeletionQueue.flush();
 
 	vkDestroyDevice(m_device, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -248,6 +230,10 @@ void VulkanRenderer::InitSwapchain()
 	m_swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	m_swapchainImageFormat = vkbSwapchain.image_format;
+
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+	});
 }
 
 void VulkanRenderer::InitCommands()
@@ -258,6 +244,10 @@ void VulkanRenderer::InitCommands()
 	//allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_commandPool, 1);
 	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_mainCommandBuffer));
+
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		});
 }
 
 void VulkanRenderer::InitDefaultRenderpass()
@@ -305,8 +295,11 @@ void VulkanRenderer::InitDefaultRenderpass()
 	render_pass_info.subpassCount = 1;
 	render_pass_info.pSubpasses = &subpass;
 
-
 	VK_CHECK(vkCreateRenderPass(m_device, &render_pass_info, nullptr, &m_renderPass));
+
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+		});
 }
 
 void VulkanRenderer::InitFramebuffers()
@@ -332,6 +325,11 @@ void VulkanRenderer::InitFramebuffers()
 
 		fb_info.pAttachments = &m_swapchainImageViews[i];
 		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]));
+
+		m_mainDeletionQueue.push_function([=]() {
+			vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
+			vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
+			});
 	}
 }
 
@@ -342,11 +340,21 @@ void VulkanRenderer::InitSyncStructures()
 	VkFenceCreateInfo fenceCreateInfo = vkinit::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 	VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_renderFence));
 
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroyFence(m_device, m_renderFence, nullptr);
+		});
+
 	//for the semaphores we don't need any flags
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::SemaphoreCreateInfo();
 
 	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore));
 	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore));
+
+	m_mainDeletionQueue.push_function([=]() {
+
+		vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+		vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+		});
 }
 
 void VulkanRenderer::InitPipelines()
@@ -426,4 +434,12 @@ void VulkanRenderer::InitPipelines()
 		vkDestroyShaderModule(m_device, vertexModule, nullptr);
 	if (fragmentModule)
 		vkDestroyShaderModule(m_device, fragmentModule, nullptr);
+
+	m_mainDeletionQueue.push_function([=]() {
+		//destroy the 2 pipelines we have created
+		vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
+
+		//destroy the pipeline layout that they use
+		vkDestroyPipelineLayout(m_device, m_trianglePipelineLayout, nullptr);
+		});
 }
