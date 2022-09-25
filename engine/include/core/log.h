@@ -34,7 +34,7 @@ namespace SC
 	};
 
 #ifdef SCORCH_DEBUG
-#define CORE_ASSERT(x, msg) { if(!(x)) { Log::PrintCore(string_format("ASSERTION: %s",msg), LogSeverity::LogError); assert(x); } }	
+#define CORE_ASSERT(x, msg) { if(!(x)) { Log::PrintCore(msg, LogSeverity::LogError); assert(x); } }	
 #else
 #define CORE_ASSERT(x, ...)
 #endif
