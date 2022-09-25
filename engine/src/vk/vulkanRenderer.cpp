@@ -361,8 +361,8 @@ void VulkanRenderer::InitPipelines()
 	app->GetWindowExtent(windowWidth, windowHeight);
 
 	ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/triangle.vert.spv")
-		.SetFragmentModulePath("shaders/triangle.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/coloured_triangle.vert.spv")
+		.SetFragmentModulePath("shaders/coloured_triangle.frag.spv")
 		.Build();
 
 	ShaderModuleArray<VkShaderModule> modules;
