@@ -23,6 +23,8 @@ namespace SC
 		void InitFramebuffers();
 
 		void InitSyncStructures();
+
+		void InitPipelines();
 	private:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
@@ -46,5 +48,8 @@ namespace SC
 
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
 		VkFence m_renderFence;
+
+		VkPipelineLayout m_trianglePipelineLayout;
+		VkPipeline m_trianglePipeline;
 	};
 }

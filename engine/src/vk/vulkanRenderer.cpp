@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "vk/vulkanInitialiser.h"
 #include "core/shaderModule.h"
+#include "vk/vulkanUtils.h"
 
 using namespace SC;
 
@@ -20,42 +21,6 @@ using namespace SC;
 			abort();                                                \
 		}                                                           \
 	} while (0)
-
-namespace 
-{
-	bool LoadShaderModule(VkDevice device, const ShaderBufferType& buffer, VkShaderModule& outShaderModule)
-	{
-		//create a new shader module, using the buffer we loaded
-		VkShaderModuleCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.pNext = nullptr;
-
-		//codeSize has to be in bytes, so multiply the ints in the buffer by size of int to know the real size of the buffer
-		createInfo.codeSize = buffer.size() * sizeof(uint32_t);
-		createInfo.pCode = buffer.data();
-
-		//check that the creation goes well.
-		if (vkCreateShaderModule(device, &createInfo, nullptr, &outShaderModule) != VK_SUCCESS)
-			return false;
-		
-		return true;
-	}
-
-	bool LoadShaderModule(VkDevice device, const ShaderModule& module, ShaderModuleArray<VkShaderModule>& outShaderModules)
-	{
-		bool success = true;
-		for (uint8_t i = 0; i < to_underlying(ShaderStage::COUNT); ++i)
-		{
-			const ShaderBufferType buffer = module.GetModule(static_cast<ShaderStage>(i));
-			if(buffer.empty())
-				continue;
-
-			success = LoadShaderModule(device, buffer, outShaderModules[i]);
-		}
-		
-		return success;
-	}
-}
 
 
 VulkanRenderer::VulkanRenderer() : Renderer(),
@@ -81,13 +46,7 @@ void VulkanRenderer::Init()
 
 	InitSyncStructures();
 
-	ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/triangle.vert.spv")
-		.SetFragmentModulePath("shaders/triangle.frag.spv")
-		.Build();
-
-	ShaderModuleArray<VkShaderModule> modules;
-	LoadShaderModule(m_device, *shader, modules);
+	InitPipelines();
 }
 
 void VulkanRenderer::Cleanup()
@@ -96,6 +55,9 @@ void VulkanRenderer::Cleanup()
 
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
+
+	vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, m_trianglePipelineLayout, nullptr);
 
 	vkDestroyFence(m_device, m_renderFence, nullptr);
 	vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
@@ -167,6 +129,8 @@ void VulkanRenderer::Draw()
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	//do rendering here
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_trianglePipeline);
+	vkCmdDraw(cmd, 3, 1, 0, 0);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -383,4 +347,83 @@ void VulkanRenderer::InitSyncStructures()
 
 	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore));
 	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore));
+}
+
+void VulkanRenderer::InitPipelines()
+{
+	int windowWidth{ 0 }, windowHeight{ 0 };
+	const App* app = App::Instance();
+	if (!app)
+	{
+		Log::PrintCore("Failed to get app instance", LogSeverity::LogFatel);
+		return;
+	}
+	app->GetWindowExtent(windowWidth, windowHeight);
+
+	ShaderModuleBuilder shaderBuilder;
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/triangle.vert.spv")
+		.SetFragmentModulePath("shaders/triangle.frag.spv")
+		.Build();
+
+	ShaderModuleArray<VkShaderModule> modules;
+	LoadShaderModule(m_device, *shader, modules);
+
+	//build the pipeline layout that controls the inputs/outputs of the shader
+	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
+	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
+	VK_CHECK(vkCreatePipelineLayout(m_device, &pipeline_layout_info, nullptr, &m_trianglePipelineLayout));
+
+
+	//build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
+	PipelineBuilder pipelineBuilder;
+	VkShaderModule& vertexModule = modules.at(to_underlying(ShaderStage::VERTEX));
+	if (vertexModule != VK_NULL_HANDLE)
+	{
+		pipelineBuilder._shaderStages.push_back(vkinit::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule));
+	}
+	VkShaderModule& fragmentModule = modules.at(to_underlying(ShaderStage::FRAGMENT));
+	if (fragmentModule != VK_NULL_HANDLE)
+	{
+		pipelineBuilder._shaderStages.push_back(vkinit::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule));
+
+	}
+
+	//vertex input controls how to read vertices from vertex buffers. We aren't using it yet
+	pipelineBuilder._vertexInputInfo = vkinit::VertexInputStateCreateInfo();
+
+	//input assembly is the configuration for drawing triangle lists, strips, or individual points.
+	//we are just going to draw triangle list
+	pipelineBuilder._inputAssembly = vkinit::InputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+	//build viewport and scissor from the swapchain extents
+	pipelineBuilder._viewport.x = 0.0f;
+	pipelineBuilder._viewport.y = 0.0f;
+	pipelineBuilder._viewport.width = (float)windowWidth;
+	pipelineBuilder._viewport.height = (float)windowHeight;
+	pipelineBuilder._viewport.minDepth = 0.0f;
+	pipelineBuilder._viewport.maxDepth = 1.0f;
+
+	pipelineBuilder._scissor.offset = { 0, 0 };
+	pipelineBuilder._scissor.extent = VkExtent2D(windowWidth, windowHeight);
+
+	//configure the rasterizer to draw filled triangles
+	pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
+
+	//we don't use multisampling, so just run the default one
+	pipelineBuilder._multisampling = vkinit::MultisamplingStateCreateInfo();
+
+	//a single blend attachment with no blending and writing to RGBA
+	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
+
+	//use the triangle layout we created
+	pipelineBuilder._pipelineLayout = m_trianglePipelineLayout;
+
+	//finally build the pipeline
+	m_trianglePipeline = pipelineBuilder.BuildPipeline(m_device, m_renderPass);
+
+	//finally destroy shader modules
+	if (vertexModule)
+		vkDestroyShaderModule(m_device, vertexModule, nullptr);
+	if (fragmentModule)
+		vkDestroyShaderModule(m_device, fragmentModule, nullptr);
 }
