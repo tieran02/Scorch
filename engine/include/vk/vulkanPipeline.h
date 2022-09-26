@@ -1,5 +1,7 @@
 #pragma once
 #include "core/pipeline.h"
+#include "volk.h"
+#include "core/utils.h"
 
 namespace SC 
 {
@@ -7,5 +9,13 @@ namespace SC
 	{
 	public:
 		VulkanPipeline(const ShaderModule& module);
+		~VulkanPipeline() override;
+
+		bool Build() override;
+
+	private:
+		VkPipeline m_pipeline;
+
+		DeletionQueue m_deletionQueue;
 	};
 }

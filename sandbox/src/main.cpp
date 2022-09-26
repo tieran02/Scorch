@@ -11,6 +11,7 @@ int main()
 			.Build();
 
 		auto pipeline =  SC::Pipeline::Create(*shader);
+		pipeline->Build();
 
 		app->Run();
 	}

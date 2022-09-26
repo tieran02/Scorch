@@ -48,7 +48,7 @@ namespace SC
 	struct Scissor
 	{
 		Scissor();
-		float offsetX, offsetY;
+		int32_t offsetX, offsetY;
 		float extentX, extentY;
 	};
 
@@ -83,6 +83,7 @@ namespace SC
 	public:
 		static std::unique_ptr<Pipeline> Create(const ShaderModule& module);
 
+		const PipelineLayout*	pipelineLayout;
 		const ShaderModule*		shaderModule;
 		VertexInputDescription	vertexInputDescription;
 		PrimitiveTopolgy		primitiveTopolgy;
@@ -91,6 +92,10 @@ namespace SC
 		Scissor					scissor;
 
 		//TODO multi sampling and blending
+	public:
+		virtual bool Build() = 0;
+
+		virtual ~Pipeline();
 	protected:
 		Pipeline(const ShaderModule& module);
 	};

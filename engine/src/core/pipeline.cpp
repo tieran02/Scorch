@@ -49,9 +49,11 @@ std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
 {
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
+	if (!app) return nullptr;
 	
 	const Renderer* renderer = app->GetRenderer();
 	CORE_ASSERT(renderer, "renderer is null");
+	if (!renderer) return nullptr;
 
 	std::unique_ptr<Pipeline> pipeline{nullptr};
 	switch (renderer->GetApi())
@@ -68,6 +70,24 @@ Pipeline::Pipeline(const ShaderModule& module) :
 	shaderModule(&module),
 	primitiveTopolgy(PrimitiveTopolgy::TRIANGLE_LIST),
 	polygonMode(PolygonMode::FILL)
+{
+
+	//Attempt to construct the viewport given the app window as the default param
+	const App* app = App::Instance();
+	if (app)
+	{
+		int windowWidth{ 0 }, windowHeight{ 0 };
+		app->GetWindowExtent(windowWidth, windowHeight);
+
+		viewport.w = windowWidth;
+		viewport.h = windowWidth;
+		scissor.extentX = windowWidth;
+		scissor.extentY = windowHeight;
+	}
+	
+}
+
+Pipeline::~Pipeline()
 {
 
 }

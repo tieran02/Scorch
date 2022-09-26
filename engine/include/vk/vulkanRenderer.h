@@ -26,7 +26,7 @@ namespace SC
 		void InitSyncStructures();
 
 		void InitPipelines();
-	private:
+	public:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
 		VkPhysicalDevice m_chosenGPU; // GPU chosen as the default device
@@ -52,7 +52,7 @@ namespace SC
 
 		VkPipelineLayout m_trianglePipelineLayout;
 		VkPipeline m_trianglePipeline;
-
+	private:
 		DeletionQueue m_mainDeletionQueue;
 	};
 }
