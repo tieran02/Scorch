@@ -49,7 +49,7 @@ namespace SC
 	{
 		Scissor();
 		int32_t offsetX, offsetY;
-		float extentX, extentY;
+		uint32_t extentX, extentY;
 	};
 
 	enum class PrimitiveTopolgy

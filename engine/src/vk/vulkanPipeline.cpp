@@ -45,15 +45,15 @@ namespace
 	class VkPipelineBuilder
 	{
 	public:
-		std::vector<VkPipelineShaderStageCreateInfo> _shaderStages;
-		VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
-		VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
-		VkViewport _viewport;
-		VkRect2D _scissor;
-		VkPipelineRasterizationStateCreateInfo _rasterizer;
-		VkPipelineColorBlendAttachmentState _colorBlendAttachment;
-		VkPipelineMultisampleStateCreateInfo _multisampling;
-		VkPipelineLayout _pipelineLayout;
+		std::vector<VkPipelineShaderStageCreateInfo> _shaderStages{};
+		VkPipelineVertexInputStateCreateInfo _vertexInputInfo{};
+		VkPipelineInputAssemblyStateCreateInfo _inputAssembly{};
+		VkViewport _viewport{};
+		VkRect2D _scissor{};
+		VkPipelineRasterizationStateCreateInfo _rasterizer{};
+		VkPipelineColorBlendAttachmentState _colorBlendAttachment{};
+		VkPipelineMultisampleStateCreateInfo _multisampling{};
+		VkPipelineLayout _pipelineLayout{};
 
 		VkPipeline BuildPipeline(VkDevice device, VkRenderPass pass)
 		{
@@ -85,7 +85,7 @@ namespace
 			pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 			pipelineInfo.pNext = nullptr;
 
-			pipelineInfo.stageCount = _shaderStages.size();
+			pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages.size());
 			pipelineInfo.pStages = _shaderStages.data();
 			pipelineInfo.pVertexInputState = &_vertexInputInfo;
 			pipelineInfo.pInputAssemblyState = &_inputAssembly;
@@ -113,7 +113,8 @@ namespace
 
 }
 
-VulkanPipeline::VulkanPipeline(const ShaderModule& module) : Pipeline(module)
+VulkanPipeline::VulkanPipeline(const ShaderModule& module) : Pipeline(module),
+	m_pipeline(VK_NULL_HANDLE)
 {
 	
 }

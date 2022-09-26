@@ -68,6 +68,8 @@ bool ShaderModule::LoadModule(ShaderStage stage, const std::string& modulePath)
 
 	//now that the file is loaded into the buffer, we can close it
 	file.close();
+
+	return true;
 }
 
 const ShaderBufferType& ShaderModule::GetModule(ShaderStage stage) const

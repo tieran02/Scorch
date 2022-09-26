@@ -68,6 +68,7 @@ std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
 
 Pipeline::Pipeline(const ShaderModule& module) :
 	shaderModule(&module),
+	pipelineLayout(nullptr),
 	primitiveTopolgy(PrimitiveTopolgy::TRIANGLE_LIST),
 	polygonMode(PolygonMode::FILL)
 {
@@ -79,10 +80,10 @@ Pipeline::Pipeline(const ShaderModule& module) :
 		int windowWidth{ 0 }, windowHeight{ 0 };
 		app->GetWindowExtent(windowWidth, windowHeight);
 
-		viewport.w = windowWidth;
-		viewport.h = windowWidth;
-		scissor.extentX = windowWidth;
-		scissor.extentY = windowHeight;
+		viewport.w = static_cast<float>(windowWidth);
+		viewport.h = static_cast<float>(windowHeight);
+		scissor.extentX = static_cast<uint32_t>(windowWidth);
+		scissor.extentY = static_cast<uint32_t>(windowHeight);
 	}
 	
 }
