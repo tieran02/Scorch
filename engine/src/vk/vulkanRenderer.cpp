@@ -102,7 +102,7 @@ void VulkanRenderer::Draw()
 
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight), m_framebuffers[swapchainImageIndex]);
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[swapchainImageIndex]);
 
 	//connect clear values
 	rpInfo.clearValueCount = 1;
@@ -318,16 +318,16 @@ void VulkanRenderer::InitFramebuffers()
 
 	//grab how many images we have in the swapchain
 	const uint32_t swapchain_imagecount = static_cast<uint32_t>(m_swapchainImages.size());
-	m_framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+	m_swapChainFramebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
 
 	//create framebuffers for each of the swapchain image views
 	for (uint32_t i = 0; i < swapchain_imagecount; i++) {
 
 		fb_info.pAttachments = &m_swapchainImageViews[i];
-		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]));
+		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_swapChainFramebuffers[i]));
 
 		m_mainDeletionQueue.push_function([=]() {
-			vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
+			vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
 			vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
 			});
 	}

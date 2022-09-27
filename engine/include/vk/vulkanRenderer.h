@@ -45,7 +45,7 @@ namespace SC
 		VkCommandBuffer m_mainCommandBuffer; //the buffer we will record into
 
 		VkRenderPass m_renderPass;
-		std::vector<VkFramebuffer> m_framebuffers;
+		std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
 		VkFence m_renderFence;
