@@ -14,6 +14,11 @@ namespace SC
 		void Init() override;
 		void Cleanup() override;
 
+		void BeginFrame() override;
+		void EndFrame() override;
+
+		void BindPipeline(const Pipeline* pipeline) override;
+		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 		void Draw() override;
 	private:
 		void InitVulkan();
@@ -54,5 +59,7 @@ namespace SC
 		VkPipeline m_trianglePipeline;
 	private:
 		DeletionQueue m_mainDeletionQueue;
+
+		uint32_t m_swapchainImageIndex;
 	};
 }

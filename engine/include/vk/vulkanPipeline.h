@@ -13,6 +13,7 @@ namespace SC
 
 		bool Build() override;
 
+		VkPipeline GetPipeline() const;
 	private:
 		VkPipeline m_pipeline;
 

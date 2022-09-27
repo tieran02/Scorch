@@ -8,6 +8,7 @@
 #include "vk/vulkanInitialiser.h"
 #include "core/shaderModule.h"
 #include "vk/vulkanUtils.h"
+#include "vk/vulkanPipeline.h"
 
 using namespace SC;
 
@@ -64,7 +65,8 @@ void VulkanRenderer::Cleanup()
 	vkDestroyInstance(m_instance, nullptr);
 }
 
-void VulkanRenderer::Draw()
+
+void VulkanRenderer::BeginFrame()
 {
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	const App* app = App::Instance();
@@ -81,8 +83,7 @@ void VulkanRenderer::Draw()
 	VK_CHECK(vkResetFences(m_device, 1, &m_renderFence));
 
 	//request image from the swapchain, one second timeout
-	uint32_t swapchainImageIndex;
-	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, m_presentSemaphore, nullptr, &swapchainImageIndex));
+	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, m_presentSemaphore, nullptr, &m_swapchainImageIndex));
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
 	VK_CHECK(vkResetCommandBuffer(m_mainCommandBuffer, 0));
@@ -102,17 +103,20 @@ void VulkanRenderer::Draw()
 
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[swapchainImageIndex]);
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[m_swapchainImageIndex]);
 
 	//connect clear values
 	rpInfo.clearValueCount = 1;
 	rpInfo.pClearValues = &clearValue;
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
 
-	//do rendering here
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_trianglePipeline);
-	vkCmdDraw(cmd, 3, 1, 0, 0);
+
+void VulkanRenderer::EndFrame()
+{
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = m_mainCommandBuffer;
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -149,11 +153,39 @@ void VulkanRenderer::Draw()
 	presentInfo.pWaitSemaphores = &m_renderSemaphore;
 	presentInfo.waitSemaphoreCount = 1;
 
-	presentInfo.pImageIndices = &swapchainImageIndex;
+	presentInfo.pImageIndices = &m_swapchainImageIndex;
 
 	VK_CHECK(vkQueuePresentKHR(m_graphicsQueue, &presentInfo));
+}
 
 
+void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
+{
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const VulkanPipeline*>(pipeline)->GetPipeline());
+}
+
+
+void VulkanRenderer::Draw()
+{
+	//BeginFrame();
+
+	////naming it cmd for shorter writing
+	//VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	////do rendering here
+	//vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_trianglePipeline);
+	//vkCmdDraw(cmd, 3, 1, 0, 0);
+
+	//EndFrame();
+}
+
+void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+{
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+	vkCmdDraw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void VulkanRenderer::InitVulkan()

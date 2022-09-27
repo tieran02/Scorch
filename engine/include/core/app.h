@@ -28,7 +28,7 @@ namespace SC
 		void GetWindowExtent(int& width, int& height) const;
 		double GetWindowTime() const;
 
-		const Renderer* GetRenderer() const;
+		Renderer* GetRenderer() const;
 	private:
 		App(int width, int height);
 		bool InitWindow(const std::string& title);

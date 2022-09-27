@@ -1,5 +1,7 @@
 #pragma once
 #include "Engine.h"
+#include "core/pipeline.h"
+
 
 class TestLayer : public SC::Layer
 {
@@ -11,6 +13,6 @@ public:
 	void OnUpdate() override;
 	void OnEvent(SC::Event& event) override;
 private:
-
+	std::unique_ptr<SC::Pipeline> m_pipeline;
 };
 

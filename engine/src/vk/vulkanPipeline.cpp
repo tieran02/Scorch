@@ -237,3 +237,8 @@ VulkanPipeline::~VulkanPipeline()
 	m_deletionQueue.flush();
 }
 
+VkPipeline VulkanPipeline::GetPipeline() const
+{
+	return m_pipeline;
+}
+

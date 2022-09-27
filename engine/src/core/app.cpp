@@ -72,9 +72,6 @@ void App::Run()
 			layer->OnUpdate();
 			if (!m_isRunning) break;
 		}
-
-		if (m_renderer)
-			m_renderer->Draw();
 	}
 }
 
@@ -233,7 +230,7 @@ double App::GetWindowTime() const
 	return glfwGetTime();
 }
 
-const Renderer* App::GetRenderer() const
+Renderer* App::GetRenderer() const
 {
 	return m_renderer.get();
 }

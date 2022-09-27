@@ -1,5 +1,6 @@
 #include "TestLayer.h"
 #include "engine.h"
+#include "core/renderer.h"
 
 
 void TestLayer::OnAttach()
@@ -9,8 +10,8 @@ void TestLayer::OnAttach()
 		.SetFragmentModulePath("shaders/coloured_triangle.frag.spv")
 		.Build();
 
-	auto pipeline = SC::Pipeline::Create(*shader);
-	pipeline->Build();
+	m_pipeline = SC::Pipeline::Create(*shader);
+	m_pipeline->Build();
 }
 
 void TestLayer::OnDetach()
@@ -20,7 +21,11 @@ void TestLayer::OnDetach()
 
 void TestLayer::OnUpdate()
 {
-
+	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	renderer->BeginFrame();
+	renderer->BindPipeline(m_pipeline.get());
+	renderer->Draw(3, 1, 0, 0);
+	renderer->EndFrame();
 }
 
 void TestLayer::OnEvent(SC::Event& event)
