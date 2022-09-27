@@ -67,6 +67,12 @@ void App::Run()
 	{
 		glfwPollEvents();
 
+		for (auto& layer : m_layerStack)
+		{
+			layer->OnUpdate();
+			if (!m_isRunning) break;
+		}
+
 		if (m_renderer)
 			m_renderer->Draw();
 	}
@@ -75,6 +81,10 @@ void App::Run()
 void App::Close()
 {
 	m_isRunning = false;
+
+	for (auto& layer : m_layerStack)
+		layer->OnDetach();
+	m_layerStack.DeleteLayers();
 }
 
 void App::OnEvent(Event& e)
@@ -86,8 +96,27 @@ void App::OnEvent(Event& e)
 
 	if (e.GetEventType() == EventType::KeyReleased && static_cast<KeyReleaseEvent&>(e).GetKeyCode() == 256) //escape key
 		Close();
+
+	//handle layer events in reverse
+	for (auto it = m_layerStack.end(); it != m_layerStack.begin(); )
+	{
+		(*--it)->OnEvent(e);
+		if (e.Handled)
+			break;
+	}
 }
 
+void App::PushLayer(std::shared_ptr<Layer>& layer)
+{
+	m_layerStack.PushLayer(layer);
+	layer->OnAttach();
+}
+
+void App::PushOverlay(std::shared_ptr<Layer>& overlay)
+{
+	m_layerStack.PushOverlay(overlay);
+	overlay->OnAttach();
+}
 
 bool App::InitWindow(const std::string& title)
 {
@@ -211,7 +240,7 @@ const Renderer* App::GetRenderer() const
 
 bool App::OnWindowClose(WindowCloseEvent e)
 {
-	m_isRunning = false;
+	Close();
 	return true;
 }
 

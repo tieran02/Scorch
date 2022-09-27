@@ -1,4 +1,5 @@
 #pragma once
+#include "core/layer.h"
 struct GLFWwindow;
 
 namespace SC 
@@ -20,6 +21,8 @@ namespace SC
 		void Close();
 
 		void OnEvent(Event& e);
+		void PushLayer(std::shared_ptr<Layer>& layer);
+		void PushOverlay(std::shared_ptr<Layer>& overlay);
 
 		GLFWwindow* GetWindowHandle() const;
 		void GetWindowExtent(int& width, int& height) const;
@@ -39,6 +42,7 @@ namespace SC
 
 		std::unique_ptr<Renderer> m_renderer;
 
+		LayerStack m_layerStack;
 		bool m_isRunning;
 	};
 }
