@@ -1,7 +1,11 @@
 #pragma once
 struct GLFWwindow;
+
 namespace SC 
 {
+	class Event;
+	class WindowCloseEvent;
+	class WindowResizeEvent;
 	class Renderer;
 	enum class GraphicsAPI;
 	class App
@@ -13,6 +17,9 @@ namespace SC
 		~App();
 
 		void Run();
+		void Close();
+
+		void OnEvent(Event& e);
 
 		GLFWwindow* GetWindowHandle() const;
 		void GetWindowExtent(int& width, int& height) const;
@@ -23,6 +30,9 @@ namespace SC
 		App(int width, int height);
 		bool InitWindow(const std::string& title);
 		bool InitRenderer(GraphicsAPI api);
+
+		bool OnWindowClose(WindowCloseEvent e);
+		bool OnWindowResize(WindowResizeEvent e);
 	private:
 		int m_width, m_height;
 		GLFWwindow* m_window;

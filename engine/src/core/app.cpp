@@ -2,12 +2,19 @@
 #include "core/app.h"
 #include "GLFW/glfw3.h"
 #include "core/Renderer.h"
+#include "event/Event.h"
+#include "event/ApplicationEvent.h"
+#include "event/KeyEvent.h"
+#include "event/MouseEvent.h"
 
 using namespace SC;
 
 namespace
 {
 	App* g_instance{nullptr};
+
+	using EventCallbackFn = std::function<void(Event&)>;
+	EventCallbackFn EventCallback;
 }
 
 const App* App::Instance()
@@ -62,10 +69,25 @@ void App::Run()
 
 		if (m_renderer)
 			m_renderer->Draw();
-
-		m_isRunning = !glfwWindowShouldClose(m_window);
 	}
 }
+
+void App::Close()
+{
+	m_isRunning = false;
+}
+
+void App::OnEvent(Event& e)
+{
+	EventDispatcher dispatcher(e);
+	dispatcher.Dispatch<WindowCloseEvent>(std::bind(&App::OnWindowClose, this, std::placeholders::_1));
+
+	dispatcher.Dispatch<WindowResizeEvent>(std::bind(&App::OnWindowResize, this, std::placeholders::_1));
+
+	if (e.GetEventType() == EventType::KeyReleased && static_cast<KeyReleaseEvent&>(e).GetKeyCode() == 256) //escape key
+		Close();
+}
+
 
 bool App::InitWindow(const std::string& title)
 {
@@ -79,6 +101,83 @@ bool App::InitWindow(const std::string& title)
 	CORE_ASSERT(m_window, "Failed to create GLFW Window");
 	if (!m_window)
 		return false;
+
+	// Set GLFW callbacks
+	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
+		{
+			WindowResizeEvent event(width, height);
+			EventCallback(event);
+		});
+
+	glfwSetWindowCloseCallback(m_window, [](GLFWwindow* window)
+		{
+			WindowCloseEvent event;
+			EventCallback(event);
+		});
+
+	glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+		{
+			switch (action)
+			{
+			case GLFW_PRESS:
+			{
+				KeyPressedEvent event(key, 0);
+				EventCallback(event);
+				break;
+			}
+			case GLFW_RELEASE:
+			{
+				KeyReleaseEvent event(key);
+				EventCallback(event);
+				break;
+			}
+			case GLFW_REPEAT:
+			{
+				KeyPressedEvent event(key, 1);
+				EventCallback(event);
+				break;
+			}
+			}
+		});
+
+	glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int keycode)
+		{
+			KeyTypedEvent event(keycode);
+			EventCallback(event);
+		});
+
+	glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
+		{
+			switch (action)
+			{
+			case GLFW_PRESS:
+			{
+				MouseButtonPressedEvent event(button);
+				EventCallback(event);
+				break;
+			}
+			case GLFW_RELEASE:
+			{
+				MouseButtonReleasedEvent event(button);
+				EventCallback(event);
+				break;
+			}
+			}
+		});
+
+	glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xOffset, double yOffset)
+		{
+			MouseScrolledEvent event((float)xOffset, (float)yOffset);
+			EventCallback(event);
+		});
+
+	glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xPos, double yPos)
+		{
+			MouseMovedEvent event((float)xPos, (float)yPos);
+			EventCallback(event);
+		});
+
+	EventCallback = std::bind(&App::OnEvent, this, std::placeholders::_1);
 
 	return true;
 }
@@ -108,4 +207,15 @@ double App::GetWindowTime() const
 const Renderer* App::GetRenderer() const
 {
 	return m_renderer.get();
+}
+
+bool App::OnWindowClose(WindowCloseEvent e)
+{
+	m_isRunning = false;
+	return true;
+}
+
+bool App::OnWindowResize(WindowResizeEvent e)
+{
+	return true;
 }
