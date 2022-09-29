@@ -1,6 +1,6 @@
 #pragma once
 #include "volk.h"
-#include "core/shaderModule.h"
+#include "render/shaderModule.h"
 
 namespace SC 
 {

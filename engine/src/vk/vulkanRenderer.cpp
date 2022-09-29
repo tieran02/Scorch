@@ -6,7 +6,7 @@
 #include "core/app.h"
 #include "core/log.h"
 #include "vk/vulkanInitialiser.h"
-#include "core/shaderModule.h"
+#include "render/shaderModule.h"
 #include "vk/vulkanUtils.h"
 #include "vk/vulkanPipeline.h"
 

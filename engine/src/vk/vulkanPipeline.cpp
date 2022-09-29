@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "vk/vulkanPipeline.h"
-#include "core/shaderModule.h"
+#include "render/shaderModule.h"
 #include "core/app.h"
 #include "vk/vulkanRenderer.h"
 #include "vk/vulkanInitialiser.h"

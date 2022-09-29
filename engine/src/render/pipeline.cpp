@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "core/pipeline.h"
-#include "core/shaderModule.h"
+#include "render/pipeline.h"
+#include "render/shaderModule.h"
 #include "core/app.h"
-#include "core/renderer.h"
+#include "render/renderer.h"
 #include "vk/vulkanPipeline.h"
 
 using namespace SC;

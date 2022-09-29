@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "core/app.h"
 #include "GLFW/glfw3.h"
-#include "core/Renderer.h"
+#include "render/Renderer.h"
 #include "event/Event.h"
 #include "event/ApplicationEvent.h"
 #include "event/KeyEvent.h"

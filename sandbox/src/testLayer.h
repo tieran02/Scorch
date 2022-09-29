@@ -1,7 +1,5 @@
 #pragma once
-#include "Engine.h"
-#include "core/pipeline.h"
-
+#include "engine.h"
 
 class TestLayer : public SC::Layer
 {

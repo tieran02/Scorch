@@ -1,7 +1,4 @@
 #include "TestLayer.h"
-#include "engine.h"
-#include "core/renderer.h"
-
 
 void TestLayer::OnAttach()
 {

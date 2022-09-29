@@ -1,5 +1,5 @@
 #pragma once
-#include "core/pipeline.h"
+#include "render/pipeline.h"
 #include "volk.h"
 #include "core/utils.h"
 
