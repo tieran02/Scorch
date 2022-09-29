@@ -78,7 +78,7 @@ namespace SC
 	};
 
 	class ShaderModule;
-	struct Pipeline
+	class Pipeline
 	{
 	public:
 		static std::unique_ptr<Pipeline> Create(const ShaderModule& module);
