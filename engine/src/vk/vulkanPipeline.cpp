@@ -125,10 +125,10 @@ bool VulkanPipeline::Build()
 	CORE_ASSERT(app, "App instance is null");
 	if (!app) return false;
 
-	const VulkanRenderer* renderer = static_cast<const VulkanRenderer*>(app->GetRenderer());
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return false;
-	CORE_ASSERT(renderer->GetApi() == GraphicsAPI::VULKAN, "Not a vulkan instance");
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer)
+		return false;
+
 
 	ShaderModuleArray<VkShaderModule> modules;
 	LoadShaderModule(renderer->m_device, *shaderModule, modules);

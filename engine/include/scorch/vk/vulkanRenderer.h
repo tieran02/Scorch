@@ -2,6 +2,7 @@
 #include "render/renderer.h"
 #include "volk.h"
 #include "core/utils.h"
+#include "vk_mem_alloc.h"
 
 namespace SC
 {
@@ -57,6 +58,8 @@ namespace SC
 
 		VkPipelineLayout m_trianglePipelineLayout;
 		VkPipeline m_trianglePipeline;
+
+		VmaAllocator m_allocator; //vma lib allocator
 	private:
 		DeletionQueue m_mainDeletionQueue;
 

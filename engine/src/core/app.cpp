@@ -6,6 +6,7 @@
 #include "event/ApplicationEvent.h"
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
+#include "vk/vulkanRenderer.h"
 
 using namespace SC;
 
@@ -244,4 +245,16 @@ bool App::OnWindowClose(WindowCloseEvent e)
 bool App::OnWindowResize(WindowResizeEvent e)
 {
 	return true;
+}
+
+const VulkanRenderer* App::GetVulkanRenderer() const
+{
+	const VulkanRenderer* renderer = static_cast<const VulkanRenderer*>(GetRenderer());
+	CORE_ASSERT(renderer, "renderer is null");
+	if (!renderer) return nullptr;
+	CORE_ASSERT(renderer->GetApi() == GraphicsAPI::VULKAN, "Not a vulkan instance");
+	if (renderer->GetApi() == GraphicsAPI::VULKAN)
+		return renderer;
+
+	return nullptr;
 }

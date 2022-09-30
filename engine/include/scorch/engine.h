@@ -6,4 +6,5 @@
 #include "render/renderer.h"
 #include "render/shaderModule.h"
 #include "render/pipeline.h"
+#include "render/buffer.h"
 #include "event/event.h"

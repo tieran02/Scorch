@@ -38,5 +38,13 @@
 			"url": "https://github.com/gabime/spdlog",
 			"revision": "v1.10.0"
 		}
+	},
+	{
+		"name": "vma",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git",
+			"revision": "v3.0.1"
+		}
 	}
 ]

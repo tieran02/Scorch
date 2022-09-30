@@ -29,6 +29,9 @@ namespace SC
 		double GetWindowTime() const;
 
 		Renderer* GetRenderer() const;
+
+		//Helper methods to get renderers (simply does a static cast so make sure to ensure you're using the right renderer)
+		const class VulkanRenderer* GetVulkanRenderer() const;
 	private:
 		App(int width, int height);
 		bool InitWindow(const std::string& title);

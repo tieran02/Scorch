@@ -9,6 +9,14 @@ void TestLayer::OnAttach()
 
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->Build();
+
+	//test
+	auto buffer = SC::Buffer::Create(sizeof(int) * 4);
+	{
+		auto mappedData = buffer->Map();
+	}
+
+	int a = 0;
 }
 
 void TestLayer::OnDetach()

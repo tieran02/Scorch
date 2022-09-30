@@ -1,7 +1,13 @@
 #include "pch.h"
+
 #include "vk/vulkanRenderer.h"
 #include "VkBootstrap.h"
 #include "volk.h"
+
+#define VMA_IMPLEMENTATION
+#define VMA_STATIC_VULKAN_FUNCTIONS 1
+#include "vk_mem_alloc.h"
+
 #include "GLFW/glfw3.h"
 #include "core/app.h"
 #include "core/log.h"
@@ -233,6 +239,13 @@ void VulkanRenderer::InitVulkan()
 	// use vkbootstrap to get a Graphics queue
 	m_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 	m_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+
+	//initialize the memory allocator
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = m_chosenGPU;
+	allocatorInfo.device = m_device;
+	allocatorInfo.instance = m_instance;
+	vmaCreateAllocator(&allocatorInfo, &m_allocator);
 }
 
 void VulkanRenderer::InitSwapchain()
