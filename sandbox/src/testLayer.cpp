@@ -11,7 +11,11 @@ void TestLayer::OnAttach()
 	m_pipeline->Build();
 
 	//test
-	auto buffer = SC::Buffer::Create(sizeof(int) * 4);
+	SC::BufferUsageSet bufferUsage;
+	bufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
+	bufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+
+	auto buffer = SC::Buffer::Create(sizeof(int) * 4, bufferUsage, SC::AllocationUsage::HOST);
 	{
 		auto mappedData = buffer->Map();
 	}

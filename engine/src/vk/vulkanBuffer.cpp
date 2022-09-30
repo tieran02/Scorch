@@ -5,7 +5,7 @@
 
 using namespace SC;
 
-VulkanBuffer::VulkanBuffer(size_t size) : Buffer(size),
+VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) : Buffer(size, bufferUsage,allocationUsage),
 m_buffer(VK_NULL_HANDLE),
 m_allocation(VK_NULL_HANDLE)
 {
@@ -18,10 +18,28 @@ m_allocation(VK_NULL_HANDLE)
 
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = size;
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.usage = 0;
+	if (m_bufferUsage.test(to_underlying(BufferUsage::VERTEX_BUFFER)))
+		bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+	switch (m_allocationUsage)
+	{
+	case AllocationUsage::HOST:		
+		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+		break;
+	case AllocationUsage::DEVICE:
+		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		break;
+	default:
+		CORE_ASSERT(false, "Failed to find supported allocation usage (default to auto)")
+		allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		break;
+	}
+
+	//If we have the map usage make sure we set VMA to allow mapping to this buffer
+	if (m_bufferUsage.test(to_underlying(BufferUsage::MAP)))
+		allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
 	vmaCreateBuffer(renderer->m_allocator, &bufferInfo, &allocInfo, &m_buffer, &m_allocation, nullptr);
 }
@@ -46,6 +64,12 @@ void VulkanBuffer::Destroy()
 
 ScopedMapData VulkanBuffer::Map()
 {
+	if (!m_bufferUsage.test(to_underlying(BufferUsage::MAP))) 
+	{
+		CORE_ASSERT(false, "Buffer must have the MAP usage set in order to map data");
+		return ScopedMapData();
+	}
+
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
 	if (!app) return ScopedMapData();
@@ -54,12 +78,13 @@ ScopedMapData VulkanBuffer::Map()
 	if (const VulkanRenderer* renderer = app->GetVulkanRenderer())
 	{
 		vmaMapMemory(renderer->m_allocator, m_allocation, &mapped);
+		CORE_ASSERT(mapped, "Failed to map buffer data");
 
 		return ScopedMapData(mapped, [=]() 
 			{
 				vmaUnmapMemory(renderer->m_allocator, m_allocation);
 			});
 	}
-	CORE_ASSERT(mapped, "Failed to map buffer data");
+	CORE_ASSERT(false, "Failed to map buffer data");
 	return ScopedMapData();
 }

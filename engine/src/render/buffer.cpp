@@ -6,7 +6,7 @@
 
 using namespace SC;
 
-std::unique_ptr<Buffer> Buffer::Create(size_t size)
+std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage)
 {
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
@@ -20,15 +20,17 @@ std::unique_ptr<Buffer> Buffer::Create(size_t size)
 	switch (renderer->GetApi())
 	{
 	case GraphicsAPI::VULKAN:
-		buffer = std::unique_ptr<VulkanBuffer>(new VulkanBuffer(size));
+		buffer = std::unique_ptr<VulkanBuffer>(new VulkanBuffer(size, bufferUsage, allocationUsage));
 	}
 
 	CORE_ASSERT(buffer, "failed to create buffer");
 	return std::move(buffer);
 }
 
-Buffer::Buffer(size_t size) : 
-	m_size(size)
+Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) :
+	m_size(size),
+	m_bufferUsage(bufferUsage),
+	m_allocationUsage(allocationUsage)
 {
 
 }
@@ -38,7 +40,7 @@ Buffer::~Buffer()
 
 }
 
-ScopedMapData::ScopedMapData(MappedData mapData, std::function<void()>&& unmapFunc) : 
+ScopedMapData::ScopedMapData(void* mapData, std::function<void()>&& unmapFunc) : 
 	m_mapped(mapData),
 	m_unmapFunc(unmapFunc)
 {
@@ -56,7 +58,7 @@ ScopedMapData::~ScopedMapData()
 	m_mapped = nullptr;
 }
 
-const MappedData ScopedMapData::Data() const
+const void* ScopedMapData::Data() const
 {
 	return m_mapped;
 }

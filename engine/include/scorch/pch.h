@@ -8,6 +8,7 @@
 #include <array>
 #include <functional>
 #include <deque>
+#include <bitset>
 #include "core/log.h"
 
 template <typename E>

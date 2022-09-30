@@ -7,7 +7,7 @@ namespace SC
 	class VulkanBuffer : public Buffer
 	{
 	public:
-		VulkanBuffer(size_t size);
+		VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
 		~VulkanBuffer() override;
 		ScopedMapData Map() override;
 
