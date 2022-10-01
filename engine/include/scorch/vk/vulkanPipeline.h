@@ -16,6 +16,7 @@ namespace SC
 		VkPipeline GetPipeline() const;
 	private:
 		VkPipeline m_pipeline;
+		VkPipelineLayout m_tempPipelineLayout; //For now each pipeline has its own layout, in the future we need to cache and reuse layouts that are the same
 
 		DeletionQueue m_deletionQueue;
 	};

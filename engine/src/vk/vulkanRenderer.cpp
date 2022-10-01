@@ -15,20 +15,9 @@
 #include "render/shaderModule.h"
 #include "vk/vulkanUtils.h"
 #include "vk/vulkanPipeline.h"
+#include "vk/vulkanBuffer.h"
 
 using namespace SC;
-
-#define VK_CHECK(x)                                                 \
-	do                                                              \
-	{                                                               \
-		VkResult err = x;                                           \
-		if (err)                                                    \
-		{                                                           \
-			CORE_ASSERT(false, string_format("%s %i", "Detected Vulkan error:", err)); \
-			abort();                                                \
-		}                                                           \
-	} while (0)
-
 
 VulkanRenderer::VulkanRenderer() : Renderer(GraphicsAPI::VULKAN),
 	m_instance(VK_NULL_HANDLE)
@@ -52,8 +41,6 @@ void VulkanRenderer::Init()
 	InitFramebuffers();
 
 	InitSyncStructures();
-
-	InitPipelines();
 }
 
 void VulkanRenderer::Cleanup()
@@ -167,11 +154,30 @@ void VulkanRenderer::EndFrame()
 
 void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
 {
+	CORE_ASSERT(pipeline, "Pipline can't be null")
 	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = m_mainCommandBuffer;
 
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const VulkanPipeline*>(pipeline)->GetPipeline());
 }
+
+
+void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
+{
+	CORE_ASSERT(buffer, "Buffer can't be null");
+	if (!buffer->HasUsage(BufferUsage::VERTEX_BUFFER))
+	{
+		CORE_ASSERT(false, "Buffer must be a vertex buffer");
+		return;
+	}
+	
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), &offset);
+}
+
 
 
 void VulkanRenderer::Draw()
@@ -246,6 +252,10 @@ void VulkanRenderer::InitVulkan()
 	allocatorInfo.device = m_device;
 	allocatorInfo.instance = m_instance;
 	vmaCreateAllocator(&allocatorInfo, &m_allocator);
+
+	m_mainDeletionQueue.push_function([=]() {
+		vmaDestroyAllocator(m_allocator);
+		});
 }
 
 void VulkanRenderer::InitSwapchain()
@@ -399,92 +409,5 @@ void VulkanRenderer::InitSyncStructures()
 
 		vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
 		vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
-		});
-}
-
-void VulkanRenderer::InitPipelines()
-{
-	int windowWidth{ 0 }, windowHeight{ 0 };
-	const App* app = App::Instance();
-	if (!app)
-	{
-		Log::PrintCore("Failed to get app instance", LogSeverity::LogFatel);
-		return;
-	}
-	app->GetWindowExtent(windowWidth, windowHeight);
-
-	ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/coloured_triangle.vert.spv")
-		.SetFragmentModulePath("shaders/coloured_triangle.frag.spv")
-		.Build();
-
-	ShaderModuleArray<VkShaderModule> modules;
-	LoadShaderModule(m_device, *shader, modules);
-
-	//build the pipeline layout that controls the inputs/outputs of the shader
-	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
-	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
-	VK_CHECK(vkCreatePipelineLayout(m_device, &pipeline_layout_info, nullptr, &m_trianglePipelineLayout));
-
-
-	//build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
-	PipelineBuilder pipelineBuilder;
-	VkShaderModule& vertexModule = modules.at(to_underlying(ShaderStage::VERTEX));
-	if (vertexModule != VK_NULL_HANDLE)
-	{
-		pipelineBuilder._shaderStages.push_back(vkinit::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule));
-	}
-	VkShaderModule& fragmentModule = modules.at(to_underlying(ShaderStage::FRAGMENT));
-	if (fragmentModule != VK_NULL_HANDLE)
-	{
-		pipelineBuilder._shaderStages.push_back(vkinit::PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule));
-
-	}
-
-	//vertex input controls how to read vertices from vertex buffers. We aren't using it yet
-	pipelineBuilder._vertexInputInfo = vkinit::VertexInputStateCreateInfo();
-
-	//input assembly is the configuration for drawing triangle lists, strips, or individual points.
-	//we are just going to draw triangle list
-	pipelineBuilder._inputAssembly = vkinit::InputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-	//build viewport and scissor from the swapchain extents
-	pipelineBuilder._viewport.x = 0.0f;
-	pipelineBuilder._viewport.y = 0.0f;
-	pipelineBuilder._viewport.width = (float)windowWidth;
-	pipelineBuilder._viewport.height = (float)windowHeight;
-	pipelineBuilder._viewport.minDepth = 0.0f;
-	pipelineBuilder._viewport.maxDepth = 1.0f;
-
-	pipelineBuilder._scissor.offset = { 0, 0 };
-	pipelineBuilder._scissor.extent = VkExtent2D(windowWidth, windowHeight);
-
-	//configure the rasterizer to draw filled triangles
-	pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
-
-	//we don't use multisampling, so just run the default one
-	pipelineBuilder._multisampling = vkinit::MultisamplingStateCreateInfo();
-
-	//a single blend attachment with no blending and writing to RGBA
-	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
-
-	//use the triangle layout we created
-	pipelineBuilder._pipelineLayout = m_trianglePipelineLayout;
-
-	//finally build the pipeline
-	m_trianglePipeline = pipelineBuilder.BuildPipeline(m_device, m_renderPass);
-
-	//finally destroy shader modules
-	if (vertexModule)
-		vkDestroyShaderModule(m_device, vertexModule, nullptr);
-	if (fragmentModule)
-		vkDestroyShaderModule(m_device, fragmentModule, nullptr);
-
-	m_mainDeletionQueue.push_function([=]() {
-		//destroy the 2 pipelines we have created
-		vkDestroyPipeline(m_device, m_trianglePipeline, nullptr);
-
-		//destroy the pipeline layout that they use
-		vkDestroyPipelineLayout(m_device, m_trianglePipelineLayout, nullptr);
 		});
 }

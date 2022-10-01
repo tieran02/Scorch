@@ -7,6 +7,7 @@ namespace SC
 	};
 
 	class Pipeline;
+	class Buffer;
 	class Renderer
 	{
 	public:
@@ -22,6 +23,7 @@ namespace SC
 		virtual void EndFrame() = 0;
 
 		virtual void BindPipeline(const Pipeline* pipeline) = 0;
+		virtual void BindVertexBuffer(const Buffer* buffer) = 0;
 		virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
 
 		virtual void Draw() = 0;

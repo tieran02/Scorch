@@ -9,18 +9,6 @@ void TestLayer::OnAttach()
 
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->Build();
-
-	//test
-	SC::BufferUsageSet bufferUsage;
-	bufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
-	bufferUsage.set(to_underlying(SC::BufferUsage::MAP));
-
-	auto buffer = SC::Buffer::Create(sizeof(int) * 4, bufferUsage, SC::AllocationUsage::HOST);
-	{
-		auto mappedData = buffer->Map();
-	}
-
-	int a = 0;
 }
 
 void TestLayer::OnDetach()

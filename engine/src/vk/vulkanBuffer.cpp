@@ -41,7 +41,12 @@ m_allocation(VK_NULL_HANDLE)
 	if (m_bufferUsage.test(to_underlying(BufferUsage::MAP)))
 		allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
-	vmaCreateBuffer(renderer->m_allocator, &bufferInfo, &allocInfo, &m_buffer, &m_allocation, nullptr);
+	VK_CHECK(vmaCreateBuffer(renderer->m_allocator, &bufferInfo, &allocInfo, &m_buffer, &m_allocation, nullptr));
+
+	m_deletionQueue.push_function([=]() {
+		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		vmaDestroyBuffer(renderer->m_allocator, m_buffer, m_allocation);
+		});
 }
 
 VulkanBuffer::~VulkanBuffer()
@@ -52,19 +57,12 @@ VulkanBuffer::~VulkanBuffer()
 
 void VulkanBuffer::Destroy()
 {
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return;
-
-	const VulkanRenderer* renderer = app->GetVulkanRenderer();
-	if (!renderer) return;
-
-	vmaDestroyBuffer(renderer->m_allocator, m_buffer, m_allocation);
+	m_deletionQueue.flush();
 }
 
 ScopedMapData VulkanBuffer::Map()
 {
-	if (!m_bufferUsage.test(to_underlying(BufferUsage::MAP))) 
+	if (!HasUsage(BufferUsage::MAP))
 	{
 		CORE_ASSERT(false, "Buffer must have the MAP usage set in order to map data");
 		return ScopedMapData();
@@ -87,4 +85,9 @@ ScopedMapData VulkanBuffer::Map()
 	}
 	CORE_ASSERT(false, "Failed to map buffer data");
 	return ScopedMapData();
+}
+
+const VkBuffer* VulkanBuffer::GetBuffer() const
+{
+	return &m_buffer;
 }

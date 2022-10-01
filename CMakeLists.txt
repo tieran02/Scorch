@@ -40,6 +40,10 @@ target_include_directories(Engine PRIVATE vendor/src/glfw/include)
 target_include_directories(Engine PRIVATE vendor/src/spdlog/include)
 target_include_directories(Engine PRIVATE vendor/src/vkbootstrap/src)
 target_include_directories(Engine PRIVATE vendor/src/vma/include)
+target_include_directories(Engine PRIVATE vendor/src/glm)
+
+target_include_directories(Sandbox PRIVATE vendor/src/glm)
+
 
 set(VK_BOOTSTRAP_VULKAN_HEADER_DIR vendor/src/vulkan/include)
 

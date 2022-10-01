@@ -9,6 +9,26 @@ using namespace SC;
 
 namespace
 {
+	VkFormat convertFormat(Format format)
+	{
+		switch (format)
+		{
+		case SC::Format::UNDEFINED:
+			return VK_FORMAT_UNDEFINED;
+		case SC::Format::R32_SFLOAT:
+			return VK_FORMAT_R32_SFLOAT;
+		case SC::Format::R32G32_SFLOAT:
+			return VK_FORMAT_R32G32_SFLOAT;
+		case SC::Format::R32G32B32_SFLOAT:
+			return VK_FORMAT_R32G32B32_SFLOAT;
+		case SC::Format::R32G32B32A32_SFLOAT:
+			return VK_FORMAT_R32G32B32A32_SFLOAT;
+		default:
+			CORE_ASSERT(false, "format not valid")
+			return VK_FORMAT_UNDEFINED;
+		}
+	}
+
 	bool LoadShaderModuleVk(VkDevice device, const ShaderBufferType& buffer, VkShaderModule& outShaderModule)
 	{
 		//create a new shader module, using the buffer we loaded
@@ -40,6 +60,39 @@ namespace
 		}
 
 		return success;
+	}
+
+	void LoadVertexInputInfo(const VertexInputDescription& vertexInput, std::vector<VkVertexInputBindingDescription>& bindings, std::vector<VkVertexInputAttributeDescription>& attributes)
+	{
+		//only support one binding for now
+		VkVertexInputBindingDescription mainBinding = {};
+		mainBinding.binding = 0;
+		mainBinding.stride = vertexInput.GetStride();
+		switch (vertexInput.InputRate())
+		{
+		case VertexInputRate::VERTEX:
+			mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			break;
+		case VertexInputRate::INSTANCE:
+			mainBinding.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+			break;
+		default:
+			CORE_ASSERT(false, "Input rate not supported");
+			return;
+		}
+		bindings.push_back(mainBinding);
+
+		attributes.resize(vertexInput.Attributes().size());
+		uint32_t offset = 0;
+		for (int i = 0; i < vertexInput.Attributes().size(); ++i)
+		{
+			attributes[i].binding = 0;
+			attributes[i].format = convertFormat(vertexInput.Attributes()[i]);
+			attributes[i].location = i;
+			attributes[i].offset = offset;
+
+			offset += vertexInput.GetAttributeSize(i);
+		}
 	}
 
 	class VkPipelineBuilder
@@ -133,6 +186,15 @@ bool VulkanPipeline::Build()
 	ShaderModuleArray<VkShaderModule> modules;
 	LoadShaderModule(renderer->m_device, *shaderModule, modules);
 
+	//build the pipeline layout that controls the inputs/outputs of the shader
+	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
+	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
+	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipeline_layout_info, nullptr, &m_tempPipelineLayout));
+	m_deletionQueue.push_function([=]() {
+		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		vkDestroyPipelineLayout(renderer->m_device, m_tempPipelineLayout, nullptr);
+		});
+
 	//build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
 	VkPipelineBuilder pipelineBuilder;
 
@@ -212,11 +274,25 @@ bool VulkanPipeline::Build()
 	//a single blend attachment with no blending and writing to RGBA
 	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
 
-	//use the triangle layout we created
-	//pipelineBuilder._pipelineLayout = m_pipeline;
+	//use temp layout for nw
+	pipelineBuilder._pipelineLayout = m_tempPipelineLayout;
+
+	//load vertex input
+	std::vector<VkVertexInputBindingDescription> bindings;
+	std::vector<VkVertexInputAttributeDescription> attributes;
+	LoadVertexInputInfo(vertexInputDescription, bindings, attributes);
+	if (!bindings.empty())
+	{
+		pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+		pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+		pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
+		pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+	}
 
 	//finally build the pipeline
 	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, renderer->m_renderPass);
+
+
 
 	//finally destroy shader modules
 	if (vertexModule)
@@ -226,6 +302,7 @@ bool VulkanPipeline::Build()
 
 
 	m_deletionQueue.push_function([=]() {
+		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
 		vkDestroyPipeline(renderer->m_device, m_pipeline, nullptr);
 	});
 

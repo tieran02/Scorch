@@ -4,6 +4,19 @@
 #include "core/utils.h"
 #include "vk_mem_alloc.h"
 
+
+#define VK_CHECK(x)                                                 \
+	do                                                              \
+	{                                                               \
+		VkResult err = x;                                           \
+		if (err)                                                    \
+		{                                                           \
+			CORE_ASSERT(false, string_format("%s %i", "Detected Vulkan error:", err)); \
+			abort();                                                \
+		}                                                           \
+	} while (0)
+
+
 namespace SC
 {
 	class VulkanRenderer : public Renderer
@@ -19,6 +32,8 @@ namespace SC
 		void EndFrame() override;
 
 		void BindPipeline(const Pipeline* pipeline) override;
+		void BindVertexBuffer(const Buffer* buffer) override;
+
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 		void Draw() override;
 	private:
@@ -30,8 +45,6 @@ namespace SC
 		void InitFramebuffers();
 
 		void InitSyncStructures();
-
-		void InitPipelines();
 	public:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
@@ -55,10 +68,6 @@ namespace SC
 
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
 		VkFence m_renderFence;
-
-		VkPipelineLayout m_trianglePipelineLayout;
-		VkPipeline m_trianglePipeline;
-
 		VmaAllocator m_allocator; //vma lib allocator
 	private:
 		DeletionQueue m_mainDeletionQueue;

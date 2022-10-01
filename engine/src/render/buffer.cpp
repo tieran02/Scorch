@@ -40,6 +40,11 @@ Buffer::~Buffer()
 
 }
 
+bool Buffer::HasUsage(BufferUsage usage) const
+{
+	return m_bufferUsage.test(to_underlying(usage));
+}
+
 ScopedMapData::ScopedMapData(void* mapData, std::function<void()>&& unmapFunc) : 
 	m_mapped(mapData),
 	m_unmapFunc(unmapFunc)
@@ -58,7 +63,7 @@ ScopedMapData::~ScopedMapData()
 	m_mapped = nullptr;
 }
 
-const void* ScopedMapData::Data() const
+void* const ScopedMapData::Data() const
 {
 	return m_mapped;
 }

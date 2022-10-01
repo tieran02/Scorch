@@ -2,12 +2,15 @@
 
 namespace SC
 {
-
-	enum class Format
+	enum class Format : uint16_t
 	{
 		UNDEFINED,
+		R32_SFLOAT,
+		R32G32_SFLOAT,
 		R32G32B32_SFLOAT,
+		R32G32B32A32_SFLOAT,
 	};
+	uint32_t ConvertFormatSize(Format format);
 
 	enum class VertexInputRate
 	{
@@ -15,27 +18,18 @@ namespace SC
 		INSTANCE,
 	};
 
-	struct VertexInputBindingDescription
-	{
-		VertexInputBindingDescription();
-		uint32_t		binding;
-		uint32_t		stride;
-		VertexInputRate	inputRate;
-	};
-
-	struct VertexInputAttributeDescription
-	{
-		VertexInputAttributeDescription();
-		uint32_t	location;
-		uint32_t	binding;
-		Format		format;
-		uint32_t	offset;
-	};
-
 	struct VertexInputDescription
 	{
-		std::vector<VertexInputBindingDescription> bindings;
-		std::vector<VertexInputAttributeDescription> attributes;
+		VertexInputDescription(VertexInputRate inputRate = VertexInputRate::VERTEX);
+		void PushBackAttribute(Format&& format);
+		uint32_t GetStride() const;
+		uint32_t GetAttributeSize(int index) const;
+		uint32_t GetAttributeOffset(int index) const;
+		const std::vector<Format>& Attributes() const;
+		VertexInputRate InputRate() const;
+	private:
+		std::vector<Format> m_attributes;
+		VertexInputRate m_inputRate;
 	};
 
 	struct Viewport
@@ -68,6 +62,8 @@ namespace SC
 		LINE,
 		POINT
 	};
+
+
 
 	struct PipelineLayout
 	{

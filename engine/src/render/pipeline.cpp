@@ -7,21 +7,76 @@
 
 using namespace SC;
 
-VertexInputBindingDescription::VertexInputBindingDescription() :
-	binding{ 0 },
-	stride{ 0 },
-	inputRate{ VertexInputRate::VERTEX }
-{
 
+uint32_t SC::ConvertFormatSize(Format format)
+{
+	switch (format)
+	{
+
+	case Format::UNDEFINED:
+		return 0;
+	case Format::R32_SFLOAT:
+		return sizeof(float);
+	case Format::R32G32_SFLOAT:
+		return sizeof(float) * 2;
+	case Format::R32G32B32_SFLOAT:
+		return sizeof(float) * 3;
+	case Format::R32G32B32A32_SFLOAT:
+		return sizeof(float) * 4;
+	}
+	CORE_ASSERT(false, "Failed to find size for format")
+	return 0;
 }
 
-VertexInputAttributeDescription::VertexInputAttributeDescription() :
-	location { 0 },
-	binding{ 0 },
-	format{ Format::UNDEFINED },
-	offset{ 0 }
+VertexInputDescription::VertexInputDescription(VertexInputRate inputRate) :
+	m_inputRate(inputRate)
 {
 
+} 
+void VertexInputDescription::PushBackAttribute(Format&& format)
+{
+	m_attributes.emplace_back(format);
+}
+
+uint32_t VertexInputDescription::GetStride() const
+{
+	uint32_t totalSize = 0;
+	for (int i = 0; i < m_attributes.size(); ++i)
+	{
+		totalSize += GetAttributeSize(i);
+	}
+	return totalSize;
+}
+
+uint32_t VertexInputDescription::GetAttributeSize(int index) const
+{
+	CORE_ASSERT(index >= 0 && index < m_attributes.size(), "index is invalid size");
+	if (index >= 0 && index < m_attributes.size())
+	{
+		return ConvertFormatSize(m_attributes[index]);
+	}
+	return 0;
+}
+
+uint32_t VertexInputDescription::GetAttributeOffset(int index) const
+{
+	CORE_ASSERT(index >= 0 && index < m_attributes.size(), "index is invalid size");
+	uint32_t offset = 0;
+	for (int i = 0; i < index; ++i)
+	{
+		offset += GetAttributeSize(i);
+	}
+	return offset;
+}
+
+const std::vector<Format>& VertexInputDescription::Attributes() const
+{
+	return m_attributes;
+}
+
+VertexInputRate VertexInputDescription::InputRate() const
+{
+	return m_inputRate;
 }
 
 Viewport::Viewport() : 

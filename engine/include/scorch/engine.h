@@ -7,4 +7,5 @@
 #include "render/shaderModule.h"
 #include "render/pipeline.h"
 #include "render/buffer.h"
+#include "render/mesh.h"
 #include "event/event.h"

@@ -8,7 +8,7 @@ namespace SC
 		ScopedMapData();
 		ScopedMapData(void* mapData, std::function<void()>&& unmapFunc);
 		~ScopedMapData();
-		const void* Data() const;
+		void* const Data() const;
 	private:
 		void* m_mapped;
 		std::function<void()> m_unmapFunc;
@@ -38,6 +38,8 @@ namespace SC
 		virtual void Destroy() = 0;
 
 		virtual ScopedMapData Map() = 0;
+
+		bool HasUsage(BufferUsage usage) const;
 	protected:
 		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
 		size_t m_size;
