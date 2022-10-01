@@ -9,6 +9,6 @@ struct Vertex {
 };
 
 struct Mesh
-{
-	std::vector<Vertex> _vertices;
+ {
+	std::vector<Vertex> vertices;
 };
