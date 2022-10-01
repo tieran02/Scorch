@@ -1,4 +1,12 @@
 #include "vertexBufferLayer.h"
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+
+struct MeshPushConstants
+{
+	glm::vec4 data;
+	glm::mat4 render_matrix;
+};
 
 void VertexBufferLayer::OnAttach()
 {
@@ -7,10 +15,19 @@ void VertexBufferLayer::OnAttach()
 		.SetFragmentModulePath("shaders/tri_mesh.frag.spv")
 		.Build();
 
+
+	//create a pipeline layout with push constants
+	m_pipelineLayout = SC::PipelineLayout::Create();
+	SC::ShaderModuleFlags pushConstantStages;
+	pushConstantStages.set(to_underlying(SC::ShaderStage::VERTEX));
+	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
+	m_pipelineLayout->Build();
+
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
+	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
@@ -50,13 +67,34 @@ void VertexBufferLayer::OnDetach()
 
 void VertexBufferLayer::OnUpdate()
 {
+	glm::vec3 camPos = { 0.f,-0.25f,-2.f };
+
+	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+	//camera projection
+	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.0f);
+	projection[1][1] *= -1;
+	//model rotation
+	glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(m_frameNumber * 0.4f), glm::vec3(0, 1, 0));
+
+	//calculate final mesh matrix
+	glm::mat4 mesh_matrix = projection * view * model;
+
+	MeshPushConstants constants;
+	constants.render_matrix = mesh_matrix;
+
+
+
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();
 	renderer->BindPipeline(m_pipeline.get());
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
 
+	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
+
 	renderer->Draw(3, 1, 0, 0);
 	renderer->EndFrame();
+
+	m_frameNumber = m_frameNumber + 1 % 0xffff;
 }
 
 void VertexBufferLayer::OnEvent(SC::Event& event)

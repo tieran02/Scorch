@@ -1,4 +1,5 @@
 #pragma once
+#include "shaderModule.h"
 
 namespace SC
 {
@@ -63,14 +64,31 @@ namespace SC
 		POINT
 	};
 
+	struct PushConstant
+	{
+		ShaderModuleFlags shaderStages;
+		uint32_t size;
+	};
 
-
-	struct PipelineLayout
+	class PipelineLayout
 	{
 		//This will be used to hold information on push constants/uniforms and other set locations
 
 		//build the pipeline layout that controls the inputs/outputs of the shader
 		//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
+
+	public:
+		static std::unique_ptr<PipelineLayout> Create();
+		virtual ~PipelineLayout();
+
+		void AddPushConstant(ShaderModuleFlags stages, uint32_t size);
+		const std::vector<PushConstant>& PushConstants() const;
+
+		virtual bool Build() = 0;
+	protected:
+		PipelineLayout();
+
+		std::vector<PushConstant> m_pushConstants;
 	};
 
 	class ShaderModule;

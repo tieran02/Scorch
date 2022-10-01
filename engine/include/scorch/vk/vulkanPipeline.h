@@ -5,6 +5,20 @@
 
 namespace SC 
 {
+	class VulkanPipelineLayout : public PipelineLayout
+	{
+	public:
+		VulkanPipelineLayout();
+		~VulkanPipelineLayout() override;
+
+		bool Build() override;
+
+		VkPipelineLayout GetPipelineLayout() const;
+	private:
+		VkPipelineLayout m_pipelineLayout;
+		DeletionQueue m_deletionQueue;
+	};
+
 	class VulkanPipeline : public Pipeline
 	{
 	public:

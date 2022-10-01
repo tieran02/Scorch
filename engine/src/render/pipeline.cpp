@@ -99,6 +99,47 @@ Scissor::Scissor() :
 
 }
 
+std::unique_ptr<SC::PipelineLayout> PipelineLayout::Create()
+{
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return nullptr;
+
+	const Renderer* renderer = app->GetRenderer();
+	CORE_ASSERT(renderer, "renderer is null");
+	if (!renderer) return nullptr;
+
+	std::unique_ptr<VulkanPipelineLayout> pipelineLayout{ nullptr };
+	switch (renderer->GetApi())
+	{
+	case GraphicsAPI::VULKAN:
+		pipelineLayout = std::unique_ptr<VulkanPipelineLayout>(new VulkanPipelineLayout());
+	}
+
+	CORE_ASSERT(pipelineLayout, "failed to create pipeline layout");
+	return std::move(pipelineLayout);
+}
+
+PipelineLayout::PipelineLayout()
+{
+
+}
+
+PipelineLayout::~PipelineLayout()
+{
+
+}
+
+void PipelineLayout::AddPushConstant(ShaderModuleFlags stages, uint32_t size)
+{
+	m_pushConstants.emplace_back(stages, size);
+}
+
+const std::vector<SC::PushConstant>& PipelineLayout::PushConstants() const
+{
+	return m_pushConstants;
+}
+
 
 std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
 {

@@ -154,7 +154,7 @@ void VulkanRenderer::EndFrame()
 
 void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
 {
-	CORE_ASSERT(pipeline, "Pipline can't be null")
+	CORE_ASSERT(pipeline, "Pipline can't be null");
 	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = m_mainCommandBuffer;
 
@@ -178,7 +178,27 @@ void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
 	vkCmdBindVertexBuffers(cmd, 0, 1, static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), &offset);
 }
 
+void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
+{
+	CORE_ASSERT(pipelineLayout, "Pipline layout can't be null");
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = m_mainCommandBuffer;
 
+	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
+	if (rangeIndex < 0 && rangeIndex >= pipelineLayout->PushConstants().size())
+	{
+		CORE_ASSERT(false, "Range index out of range");
+		return;
+	}
+
+	uint32_t shaderStages = 0;
+	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+		shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
+	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+		shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	vkCmdPushConstants(cmd, layout, shaderStages, offset, pipelineLayout->PushConstants()[rangeIndex].size, data);
+}
 
 void VulkanRenderer::Draw()
 {

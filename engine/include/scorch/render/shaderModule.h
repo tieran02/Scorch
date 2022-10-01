@@ -9,6 +9,7 @@ namespace SC
 		COUNT
 	};
 
+	using ShaderModuleFlags = std::bitset<to_underlying(ShaderStage::COUNT)>;
 	template <typename T>
 	using ShaderModuleArray = std::array<T, to_underlying(ShaderStage::COUNT)>;
 	using ShaderBufferType = std::vector<uint32_t>;

@@ -166,8 +166,67 @@ namespace
 
 }
 
+
+VulkanPipelineLayout::VulkanPipelineLayout() : PipelineLayout()
+{
+
+}
+
+VulkanPipelineLayout::~VulkanPipelineLayout()
+{
+	m_deletionQueue.flush();
+}
+
+bool VulkanPipelineLayout::Build()
+{
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return false;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer)
+		return false;
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::PipelineLayoutCreateInfo();
+
+	std::vector<VkPushConstantRange> pushConstants(m_pushConstants.size());
+	uint32_t offset = 0;
+	for (int i = 0; i < m_pushConstants.size(); ++i)
+	{
+		//this push constant range starts at the beginning
+		pushConstants[i].offset = offset;
+		//this push constant range takes up the size of a MeshPushConstants struct
+		pushConstants[i].size = m_pushConstants[i].size;
+		//this push constant range is accessible only in the vertex shader
+		pushConstants[i].stageFlags = 0;
+		if(m_pushConstants[i].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+			pushConstants[i].stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+		if (m_pushConstants[i].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+			pushConstants[i].stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		offset += pushConstants[i].size;
+	}
+	pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
+	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+
+	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
+
+	m_deletionQueue.push_function([=]() {
+		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		vkDestroyPipelineLayout(renderer->m_device, m_pipelineLayout, nullptr);
+		});
+
+	return true;
+}
+
+VkPipelineLayout VulkanPipelineLayout::GetPipelineLayout() const
+{
+	return m_pipelineLayout;
+}
+
 VulkanPipeline::VulkanPipeline(const ShaderModule& module) : Pipeline(module),
-	m_pipeline(VK_NULL_HANDLE)
+	m_pipeline(VK_NULL_HANDLE),
+	m_tempPipelineLayout(VK_NULL_HANDLE)
 {
 	
 }
@@ -186,17 +245,27 @@ bool VulkanPipeline::Build()
 	ShaderModuleArray<VkShaderModule> modules;
 	LoadShaderModule(renderer->m_device, *shaderModule, modules);
 
-	//build the pipeline layout that controls the inputs/outputs of the shader
-	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
-	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
-	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipeline_layout_info, nullptr, &m_tempPipelineLayout));
-	m_deletionQueue.push_function([=]() {
-		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
-		vkDestroyPipelineLayout(renderer->m_device, m_tempPipelineLayout, nullptr);
-		});
-
 	//build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
 	VkPipelineBuilder pipelineBuilder;
+
+	//set the pipeline layout or create a empty layout if none is selected
+	if (!pipelineLayout)
+	{
+		//No pipeline set so create an empty layout
+		VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
+		VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipeline_layout_info, nullptr, &m_tempPipelineLayout));
+		m_deletionQueue.push_function([=]() {
+			vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+			vkDestroyPipelineLayout(renderer->m_device, m_tempPipelineLayout, nullptr);
+			});
+
+		//use temp layout for nw
+		pipelineBuilder._pipelineLayout = m_tempPipelineLayout;
+	}
+	else
+	{
+		pipelineBuilder._pipelineLayout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
+	}
 
 	VkShaderModule& vertexModule = modules.at(to_underlying(ShaderStage::VERTEX));
 	if (vertexModule != VK_NULL_HANDLE)
@@ -274,9 +343,6 @@ bool VulkanPipeline::Build()
 	//a single blend attachment with no blending and writing to RGBA
 	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
 
-	//use temp layout for nw
-	pipelineBuilder._pipelineLayout = m_tempPipelineLayout;
-
 	//load vertex input
 	std::vector<VkVertexInputBindingDescription> bindings;
 	std::vector<VkVertexInputAttributeDescription> attributes;
@@ -318,4 +384,3 @@ VkPipeline VulkanPipeline::GetPipeline() const
 {
 	return m_pipeline;
 }
-
