@@ -8,8 +8,15 @@ struct MeshPushConstants
 	glm::mat4 render_matrix;
 };
 
+VertexBufferLayer::VertexBufferLayer() : Layer("VertexBufferLayer"),
+	m_rotation(0)
+{
+
+}
+
 void VertexBufferLayer::OnAttach()
 {
+	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
 	auto shader = shaderBuilder.SetVertexModulePath("shaders/tri_mesh.vert.spv")
 		.SetFragmentModulePath("shaders/tri_mesh.frag.spv")
@@ -65,7 +72,7 @@ void VertexBufferLayer::OnDetach()
 
 }
 
-void VertexBufferLayer::OnUpdate()
+void VertexBufferLayer::OnUpdate(float deltaTime)
 {
 	glm::vec3 camPos = { 0.f,-0.25f,-2.f };
 
@@ -74,15 +81,14 @@ void VertexBufferLayer::OnUpdate()
 	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.0f);
 	projection[1][1] *= -1;
 	//model rotation
-	glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(m_frameNumber * 0.4f), glm::vec3(0, 1, 0));
+	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
+	m_rotation += deltaTime * 20.0f;
 
 	//calculate final mesh matrix
 	glm::mat4 mesh_matrix = projection * view * model;
 
 	MeshPushConstants constants;
 	constants.render_matrix = mesh_matrix;
-
-
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();
@@ -93,8 +99,6 @@ void VertexBufferLayer::OnUpdate()
 
 	renderer->Draw(3, 1, 0, 0);
 	renderer->EndFrame();
-
-	m_frameNumber = m_frameNumber + 1 % 0xffff;
 }
 
 void VertexBufferLayer::OnEvent(SC::Event& event)

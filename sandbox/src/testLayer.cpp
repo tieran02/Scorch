@@ -16,7 +16,7 @@ void TestLayer::OnDetach()
 
 }
 
-void TestLayer::OnUpdate()
+void TestLayer::OnUpdate(float deltaTime)
 {
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();

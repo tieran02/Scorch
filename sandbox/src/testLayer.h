@@ -8,7 +8,7 @@ public:
 
 	void OnAttach() override;
 	void OnDetach() override;
-	void OnUpdate() override;
+	void OnUpdate(float deltaTime) override;
 	void OnEvent(SC::Event& event) override;
 private:
 	std::unique_ptr<SC::Pipeline> m_pipeline;

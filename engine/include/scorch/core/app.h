@@ -2,6 +2,11 @@
 #include "core/layer.h"
 struct GLFWwindow;
 
+namespace Time
+{
+	float GetTime();
+}
+
 namespace SC 
 {
 	class Event;
@@ -42,6 +47,7 @@ namespace SC
 	private:
 		int m_width, m_height;
 		GLFWwindow* m_window;
+		float m_time;
 
 		std::unique_ptr<Renderer> m_renderer;
 

@@ -10,6 +10,13 @@
 
 using namespace SC;
 
+
+float Time::GetTime()
+{
+	return static_cast<float>(glfwGetTime());
+}
+
+
 namespace
 {
 	App* g_instance{nullptr};
@@ -46,7 +53,8 @@ App::App(int width, int height) :
 	m_width(width),
 	m_height(height),
 	m_isRunning(false),
-	m_renderer(nullptr)
+	m_renderer(nullptr),
+	m_time(0.0)
 {
 
 }
@@ -66,13 +74,18 @@ void App::Run()
 
 	while (m_isRunning)
 	{
+		float currentTime = Time::GetTime();
+		float deltaTime = currentTime - m_time;
+		m_time = currentTime;
+
 		glfwPollEvents();
 
 		for (auto& layer : m_layerStack)
 		{
-			layer->OnUpdate();
+			layer->OnUpdate(deltaTime);
 			if (!m_isRunning) break;
 		}
+
 	}
 }
 
