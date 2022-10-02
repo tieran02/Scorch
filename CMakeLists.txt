@@ -29,7 +29,14 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(vendor/src/glfw)
 add_subdirectory(vendor/src/vkbootstrap)
 add_subdirectory(vendor/src/volk)
-#add_subdirectory(vendor/src/vma)
+
+# assimp settings
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "")
+set(ASSIMP_INSTALL OFF CACHE BOOL "")
+set(ASSIMP_INSTALL_PDB OFF CACHE BOOL "")
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "")
+add_subdirectory(vendor/src/assimp)
 
 add_subdirectory(Engine)
 add_subdirectory(Sandbox)
@@ -41,6 +48,8 @@ target_include_directories(Engine PRIVATE vendor/src/spdlog/include)
 target_include_directories(Engine PRIVATE vendor/src/vkbootstrap/src)
 target_include_directories(Engine PRIVATE vendor/src/vma/include)
 target_include_directories(Engine PRIVATE vendor/src/glm)
+target_include_directories(Engine PRIVATE vendor/src/assimp/include)
+
 
 target_include_directories(Sandbox PRIVATE vendor/src/glm)
 
@@ -50,4 +59,6 @@ set(VK_BOOTSTRAP_VULKAN_HEADER_DIR vendor/src/vulkan/include)
 set_property(TARGET glfw          PROPERTY FOLDER "ThirdPartyLibraries")
 set_property(TARGET vk-bootstrap  PROPERTY FOLDER "ThirdPartyLibraries")
 set_property(TARGET volk          PROPERTY FOLDER "ThirdPartyLibraries")
-#set_property(TARGET VulkanMemoryAllocator PROPERTY FOLDER "ThirdPartyLibraries")
+set_property(TARGET zlibstatic PROPERTY FOLDER "ThirdPartyLibraries")
+set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "ThirdPartyLibraries")
+set_property(TARGET assimp PROPERTY FOLDER "ThirdPartyLibraries")

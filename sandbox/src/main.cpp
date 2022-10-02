@@ -1,6 +1,7 @@
 #include <scorch/engine.h>
 #include "testLayer.h"
 #include "vertexBufferLayer.h"
+#include "modelLayer.h"
 
 int main()
 {
@@ -8,8 +9,9 @@ int main()
 	if (auto app = SC::App::Create("Hello Vulkan", 1280, 720))
 	{
 		//std::shared_ptr<SC::Layer> testLayer = std::make_shared<TestLayer>();
-		std::shared_ptr<SC::Layer> vertexBufferLayer = std::make_shared<VertexBufferLayer>();
-		app->PushLayer(vertexBufferLayer);
+		//std::shared_ptr<SC::Layer> vertexBufferLayer = std::make_shared<VertexBufferLayer>();
+		std::shared_ptr<SC::Layer> modelLayer = std::make_shared<ModelLayer>();
+		app->PushLayer(modelLayer);
 		app->Run();
 	}
 

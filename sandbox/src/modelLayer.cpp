@@ -1,4 +1,4 @@
-#include "vertexBufferLayer.h"
+#include "modelLayer.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
@@ -8,18 +8,18 @@ struct MeshPushConstants
 	glm::mat4 render_matrix;
 };
 
-VertexBufferLayer::VertexBufferLayer() : Layer("VertexBufferLayer"),
-	m_rotation(0)
+ModelLayer::ModelLayer() : Layer("ModelLayer"),
+m_rotation(0)
 {
 
 }
 
-void VertexBufferLayer::OnAttach()
+void ModelLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/tri_mesh.vert.spv")
-		.SetFragmentModulePath("shaders/tri_mesh.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/normalMesh.vert.spv")
+		.SetFragmentModulePath("shaders/normalMesh.frag.spv")
 		.Build();
 
 
@@ -39,40 +39,30 @@ void VertexBufferLayer::OnAttach()
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
+	std::vector<SC::RenderObject> model;
+	bool success = SC::RenderObject::LoadFromFile("models/monkey_smooth.obj", model);
+	m_monkeyMesh = model[0].mesh;
+
 	//test
 	SC::BufferUsageSet bufferUsage;
 	bufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
 	bufferUsage.set(to_underlying(SC::BufferUsage::MAP));
 
-	m_vertexBuffer = SC::Buffer::Create(sizeof(int) * 4, bufferUsage, SC::AllocationUsage::DEVICE);
+	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.Size(), bufferUsage, SC::AllocationUsage::DEVICE);
 	{
-		//make the array 3 vertices long
-		SC::Mesh triangleMesh;
-		triangleMesh.vertices.resize(3);
-
-		//vertex positions
-		triangleMesh.vertices[0].position = { 1.f, 1.f, 0.0f };
-		triangleMesh.vertices[1].position = { -1.f, 1.f, 0.0f };
-		triangleMesh.vertices[2].position = { 0.f,-1.f, 0.0f };
-
-		//vertex colors, all green
-		triangleMesh.vertices[0].color = { 0.f, 1.f, 0.0f }; //pure green
-		triangleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-		triangleMesh.vertices[2].color = { 0.f, 1.f, 0.0f }; //pure green
-
 		auto mappedData = m_vertexBuffer->Map();
-		memcpy(mappedData.Data(), triangleMesh.vertices.data(), triangleMesh.vertices.size() * sizeof(SC::Vertex));
+		memcpy(mappedData.Data(), m_monkeyMesh.vertices.data(), m_monkeyMesh.Size());
 	}
 
 	int a = 0;
 }
 
-void VertexBufferLayer::OnDetach()
+void ModelLayer::OnDetach()
 {
 
 }
 
-void VertexBufferLayer::OnUpdate(float deltaTime)
+void ModelLayer::OnUpdate(float deltaTime)
 {
 	glm::vec3 camPos = { 0.f,-0.25f,-2.f };
 
@@ -97,11 +87,11 @@ void VertexBufferLayer::OnUpdate(float deltaTime)
 
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 
-	renderer->Draw(3, 1, 0, 0);
+	renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
 	renderer->EndFrame();
 }
 
-void VertexBufferLayer::OnEvent(SC::Event& event)
+void ModelLayer::OnEvent(SC::Event& event)
 {
 	SC::Log::Print(event.ToString());
 }
