@@ -3,6 +3,7 @@
 #include "volk.h"
 #include "core/utils.h"
 #include "vk_mem_alloc.h"
+#include "vulkanTexture.h"
 
 
 #define VK_CHECK(x)                                                 \
@@ -70,6 +71,8 @@ namespace SC
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
 		VkFence m_renderFence;
 		VmaAllocator m_allocator; //vma lib allocator
+
+		std::unique_ptr<VulkanTexture> m_depthTexture;
 	private:
 		DeletionQueue m_mainDeletionQueue;
 

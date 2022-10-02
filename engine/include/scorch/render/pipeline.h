@@ -6,6 +6,7 @@ namespace SC
 	enum class Format : uint16_t
 	{
 		UNDEFINED,
+		D32_SFLOAT,
 		R32_SFLOAT,
 		R32G32_SFLOAT,
 		R32G32B32_SFLOAT,

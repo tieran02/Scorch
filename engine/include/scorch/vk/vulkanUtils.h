@@ -1,24 +1,8 @@
 #pragma once
 #include "volk.h"
-#include "render/shaderModule.h"
+#include "render/pipeline.h"
 
-namespace SC 
+namespace vkutils 
 {
-	bool LoadShaderModule(VkDevice device, const ShaderModule& module, ShaderModuleArray<VkShaderModule>& outShaderModules);
-
-	class PipelineBuilder
-	{
-	public:
-		std::vector<VkPipelineShaderStageCreateInfo> _shaderStages {};
-		VkPipelineVertexInputStateCreateInfo _vertexInputInfo{};
-		VkPipelineInputAssemblyStateCreateInfo _inputAssembly{};
-		VkViewport _viewport{};
-		VkRect2D _scissor{};
-		VkPipelineRasterizationStateCreateInfo _rasterizer{};
-		VkPipelineColorBlendAttachmentState _colorBlendAttachment{};
-		VkPipelineMultisampleStateCreateInfo _multisampling{};
-		VkPipelineLayout _pipelineLayout{};
-
-		VkPipeline BuildPipeline(VkDevice device, VkRenderPass pass);
-	};
+	VkFormat ConvertFormat(SC::Format format);
 }

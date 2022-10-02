@@ -225,6 +225,7 @@ bool App::InitWindow(const std::string& title)
 bool App::InitRenderer(GraphicsAPI api)
 {
 	m_renderer = Renderer::Create(api);
+	m_renderer->Init();
 	return m_renderer.get();
 }
 

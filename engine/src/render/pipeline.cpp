@@ -15,6 +15,7 @@ uint32_t SC::ConvertFormatSize(Format format)
 
 	case Format::UNDEFINED:
 		return 0;
+	case Format::D32_SFLOAT:
 	case Format::R32_SFLOAT:
 		return sizeof(float);
 	case Format::R32G32_SFLOAT:

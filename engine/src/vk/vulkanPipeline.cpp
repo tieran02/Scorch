@@ -4,31 +4,12 @@
 #include "core/app.h"
 #include "vk/vulkanRenderer.h"
 #include "vk/vulkanInitialiser.h"
+#include "vk/vulkanUtils.h"
 
 using namespace SC;
 
 namespace
 {
-	VkFormat convertFormat(Format format)
-	{
-		switch (format)
-		{
-		case SC::Format::UNDEFINED:
-			return VK_FORMAT_UNDEFINED;
-		case SC::Format::R32_SFLOAT:
-			return VK_FORMAT_R32_SFLOAT;
-		case SC::Format::R32G32_SFLOAT:
-			return VK_FORMAT_R32G32_SFLOAT;
-		case SC::Format::R32G32B32_SFLOAT:
-			return VK_FORMAT_R32G32B32_SFLOAT;
-		case SC::Format::R32G32B32A32_SFLOAT:
-			return VK_FORMAT_R32G32B32A32_SFLOAT;
-		default:
-			CORE_ASSERT(false, "format not valid")
-			return VK_FORMAT_UNDEFINED;
-		}
-	}
-
 	bool LoadShaderModuleVk(VkDevice device, const ShaderBufferType& buffer, VkShaderModule& outShaderModule)
 	{
 		//create a new shader module, using the buffer we loaded
@@ -87,7 +68,7 @@ namespace
 		for (int i = 0; i < vertexInput.Attributes().size(); ++i)
 		{
 			attributes[i].binding = 0;
-			attributes[i].format = convertFormat(vertexInput.Attributes()[i]);
+			attributes[i].format = vkutils::ConvertFormat(vertexInput.Attributes()[i]);
 			attributes[i].location = i;
 			attributes[i].offset = offset;
 
@@ -107,6 +88,7 @@ namespace
 		VkPipelineColorBlendAttachmentState _colorBlendAttachment{};
 		VkPipelineMultisampleStateCreateInfo _multisampling{};
 		VkPipelineLayout _pipelineLayout{};
+		VkPipelineDepthStencilStateCreateInfo _depthStencil;
 
 		VkPipeline BuildPipeline(VkDevice device, VkRenderPass pass)
 		{
@@ -150,6 +132,8 @@ namespace
 			pipelineInfo.renderPass = pass;
 			pipelineInfo.subpass = 0;
 			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+			pipelineInfo.pDepthStencilState = &_depthStencil;
 
 			VkPipeline newPipeline;
 			if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
@@ -354,6 +338,9 @@ bool VulkanPipeline::Build()
 		pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
 		pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
 	}
+
+	//default depthtesting
+	pipelineBuilder._depthStencil = vkinit::DepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	//finally build the pipeline
 	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, renderer->m_renderPass);
