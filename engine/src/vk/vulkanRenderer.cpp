@@ -49,7 +49,7 @@ void VulkanRenderer::Cleanup()
 	Log::PrintCore("Cleaning up Vulkan Renderer");
 
 	//Wait for rendering to finish before cleaning up
-	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
+	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
 	m_depthTexture.reset();
 	m_swapChainDeletionQueue.flush();
@@ -66,7 +66,7 @@ void VulkanRenderer::CreateSwapchain()
 	Log::PrintCore("Creating swapchain");
 
 	//Wait for rendering to finish before cleaning up
-	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
+	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
 	m_depthTexture.reset();
 	m_swapChainDeletionQueue.flush();
@@ -88,17 +88,17 @@ void VulkanRenderer::BeginFrame()
 
 	constexpr uint32_t timeout = 1000000000;
 	//wait until the GPU has finished rendering the last frame. Timeout of 1 second
-	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, timeout));
-	VK_CHECK(vkResetFences(m_device, 1, &m_renderFence));
+	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, timeout));
+	VK_CHECK(vkResetFences(m_device, 1, &GetCurrentFrame().m_renderFence));
 
 	//request image from the swapchain, one second timeout
-	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, m_presentSemaphore, nullptr, &m_swapchainImageIndex));
+	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, GetCurrentFrame().m_presentSemaphore, nullptr, &m_swapchainImageIndex));
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	VK_CHECK(vkResetCommandBuffer(m_mainCommandBuffer, 0));
+	VK_CHECK(vkResetCommandBuffer(GetCurrentFrame().m_mainCommandBuffer, 0));
 
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -130,7 +130,7 @@ void VulkanRenderer::BeginFrame()
 void VulkanRenderer::EndFrame()
 {
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -146,14 +146,14 @@ void VulkanRenderer::EndFrame()
 	submit.pWaitDstStageMask = &waitStage;
 
 	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores = &m_presentSemaphore;
+	submit.pWaitSemaphores = &GetCurrentFrame().m_presentSemaphore;
 
 	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores = &m_renderSemaphore;
+	submit.pSignalSemaphores = &GetCurrentFrame().m_renderSemaphore;
 
 	//submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, m_renderFence));
+	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, GetCurrentFrame().m_renderFence));
 
 
 	// this will put the image we just rendered into the visible window.
@@ -164,17 +164,19 @@ void VulkanRenderer::EndFrame()
 	presentInfo.pSwapchains = &m_swapchain;
 	presentInfo.swapchainCount = 1;
 
-	presentInfo.pWaitSemaphores = &m_renderSemaphore;
+	presentInfo.pWaitSemaphores = &GetCurrentFrame().m_renderSemaphore;
 	presentInfo.waitSemaphoreCount = 1;
 
 	presentInfo.pImageIndices = &m_swapchainImageIndex;
 
 	VK_CHECK(vkQueuePresentKHR(m_graphicsQueue, &presentInfo));
+
+	m_currentFrame = m_currentFrame + 1 % std::numeric_limits<uint32_t>().max();
 }
 
 void VulkanRenderer::SetViewport(const Viewport& viewport)
 {
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	//VkViewport and viewport use the same memory layout so just reinterpret_cast
 	const VkViewport& vkViewport = reinterpret_cast<const VkViewport&>(viewport);
@@ -183,7 +185,7 @@ void VulkanRenderer::SetViewport(const Viewport& viewport)
 
 void VulkanRenderer::SetScissor(const Scissor& scissor)
 {
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	//VkRect2D and Scissor use the same memory layout so just reinterpret_cast
 	const VkRect2D& vkScissor = reinterpret_cast<const VkRect2D&>(scissor);
@@ -194,7 +196,7 @@ void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
 {
 	CORE_ASSERT(pipeline, "Pipline can't be null");
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const VulkanPipeline*>(pipeline)->GetPipeline());
 }
@@ -210,7 +212,7 @@ void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
 	}
 	
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(cmd, 0, 1, static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), &offset);
@@ -225,7 +227,7 @@ void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
 		return;
 	}
 
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	VkDeviceSize offset = 0;
 	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, sizeof(VertexIndexType) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
@@ -236,7 +238,7 @@ void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_
 {
 	CORE_ASSERT(pipelineLayout, "Pipline layout can't be null");
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
 	if (rangeIndex < 0 && rangeIndex >= pipelineLayout->PushConstants().size())
@@ -256,13 +258,13 @@ void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_
 
 void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 	vkCmdDraw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
-	VkCommandBuffer cmd = m_mainCommandBuffer;
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 	vkCmdDrawIndexed(cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
@@ -365,15 +367,18 @@ void VulkanRenderer::InitSwapchain()
 void VulkanRenderer::InitCommands()
 {
 	VkCommandPoolCreateInfo commandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	VK_CHECK(vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool));
 
-	//allocate the default command buffer that we will use for rendering
-	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_commandPool, 1);
-	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_mainCommandBuffer));
+	for (int i = 0; i < m_frames.size(); i++) {
+		VK_CHECK(vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_frames[i].m_commandPool));
 
-	m_mainDeletionQueue.push_function([=]() {
-		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-		});
+		//allocate the default command buffer that we will use for rendering
+		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_frames[i].m_commandPool, 1);
+		VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_frames[i].m_mainCommandBuffer));
+
+		m_mainDeletionQueue.push_function([=]() {
+			vkDestroyCommandPool(m_device, m_frames[i].m_commandPool, nullptr);
+			});
+	}
 }
 
 void VulkanRenderer::InitDefaultRenderpass()
@@ -511,22 +516,44 @@ void VulkanRenderer::InitSyncStructures()
 	//create synchronization structures
 
 	VkFenceCreateInfo fenceCreateInfo = vkinit::FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
-	VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_renderFence));
-
-	m_mainDeletionQueue.push_function([=]() {
-		vkDestroyFence(m_device, m_renderFence, nullptr);
-		});
-
-	//for the semaphores we don't need any flags
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::SemaphoreCreateInfo();
 
-	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore));
-	VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore));
+	for (int i = 0; i < m_frames.size(); i++)
+	{
+		VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_frames[i].m_renderFence));
 
-	m_mainDeletionQueue.push_function([=]() {
+		m_mainDeletionQueue.push_function([=]() {
+			vkDestroyFence(m_device, m_frames[i].m_renderFence, nullptr);
+			});
 
-		vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
-		vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
-		});
+		//for the semaphores we don't need any flags
+
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_frames[i].m_presentSemaphore));
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_frames[i].m_renderSemaphore));
+
+		m_mainDeletionQueue.push_function([=]() {
+
+			vkDestroySemaphore(m_device, m_frames[i].m_presentSemaphore, nullptr);
+			vkDestroySemaphore(m_device, m_frames[i].m_renderSemaphore, nullptr);
+			});
+	}
+}
+
+VulkanFrameData& VulkanRenderer::GetCurrentFrame()
+{
+	return m_frames.at(m_currentFrame % m_frames.size());
+}
+
+const SC::VulkanFrameData& VulkanRenderer::GetCurrentFrame() const
+{
+	return m_frames.at(m_currentFrame % m_frames.size());
+}
+
+void VulkanRenderer::WaitOnFences() const
+{
+	for (int i = 0; i < m_frames.size(); ++i)
+	{
+		vkWaitForFences(m_device, 1, &m_frames[i].m_renderFence, true, 10000000);
+	}
 }
 

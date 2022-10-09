@@ -208,7 +208,7 @@ bool VulkanPipelineLayout::Build()
 	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
 	m_deletionQueue.push_function([=]() {
-		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		renderer->WaitOnFences();
 		vkDestroyPipelineLayout(renderer->m_device, m_pipelineLayout, nullptr);
 		});
 
@@ -251,7 +251,7 @@ bool VulkanPipeline::Build()
 		VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::PipelineLayoutCreateInfo();
 		VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipeline_layout_info, nullptr, &m_tempPipelineLayout));
 		m_deletionQueue.push_function([=]() {
-			vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+			renderer->WaitOnFences();
 			vkDestroyPipelineLayout(renderer->m_device, m_tempPipelineLayout, nullptr);
 			});
 
@@ -367,7 +367,7 @@ bool VulkanPipeline::Build()
 
 
 	m_deletionQueue.push_function([=]() {
-		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		renderer->WaitOnFences();
 		vkDestroyPipeline(renderer->m_device, m_pipeline, nullptr);
 	});
 

@@ -23,6 +23,8 @@ m_allocation(VK_NULL_HANDLE)
 		bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	if (m_bufferUsage.test(to_underlying(BufferUsage::INDEX_BUFFER)))
 		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	if (m_bufferUsage.test(to_underlying(BufferUsage::UNIFORM_BUFFER)))
+		bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	switch (m_allocationUsage)
@@ -46,7 +48,7 @@ m_allocation(VK_NULL_HANDLE)
 	VK_CHECK(vmaCreateBuffer(renderer->m_allocator, &bufferInfo, &allocInfo, &m_buffer, &m_allocation, nullptr));
 
 	m_deletionQueue.push_function([=]() {
-		vkWaitForFences(renderer->m_device, 1, &renderer->m_renderFence, true, 10000000);
+		renderer->WaitOnFences();
 		vmaDestroyBuffer(renderer->m_allocator, m_buffer, m_allocation);
 		});
 }

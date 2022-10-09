@@ -19,6 +19,7 @@ namespace SC
 	{
 		VERTEX_BUFFER,
 		INDEX_BUFFER,
+		UNIFORM_BUFFER,
 		MAP,
 		COUNT
 	};

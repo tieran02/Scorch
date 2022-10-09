@@ -20,6 +20,15 @@
 
 namespace SC
 {
+	struct VulkanFrameData
+	{
+		VkSemaphore m_presentSemaphore, m_renderSemaphore;
+		VkFence m_renderFence;
+
+		VkCommandPool m_commandPool;
+		VkCommandBuffer m_mainCommandBuffer;
+	};
+
 	class VulkanRenderer : public Renderer
 	{
 	public:
@@ -44,6 +53,8 @@ namespace SC
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
+
+		void WaitOnFences() const;
 	private:
 		void InitVulkan();
 		void InitSwapchain();
@@ -53,6 +64,9 @@ namespace SC
 		void InitFramebuffers();
 
 		void InitSyncStructures();
+
+		VulkanFrameData& GetCurrentFrame();
+		const VulkanFrameData& GetCurrentFrame() const;
 	public:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle
@@ -68,14 +82,9 @@ namespace SC
 		VkQueue m_graphicsQueue; //queue we will submit to
 		uint32_t m_graphicsQueueFamily; //family of that queue
 
-		VkCommandPool m_commandPool; //the command pool for our commands
-		VkCommandBuffer m_mainCommandBuffer; //the buffer we will record into
-
 		VkRenderPass m_renderPass;
 		std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
-		VkSemaphore m_presentSemaphore, m_renderSemaphore;
-		VkFence m_renderFence;
 		VmaAllocator m_allocator; //vma lib allocator
 
 		std::unique_ptr<VulkanTexture> m_depthTexture;
@@ -84,5 +93,7 @@ namespace SC
 		DeletionQueue m_swapChainDeletionQueue;
 
 		uint32_t m_swapchainImageIndex;
+
+		std::array<VulkanFrameData, FRAME_OVERLAP_COUNT[to_underlying(GraphicsAPI::VULKAN)]> m_frames;
 	};
 }

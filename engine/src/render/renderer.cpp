@@ -4,6 +4,8 @@
 
 using namespace SC;
 
+
+
 std::unique_ptr<Renderer> Renderer::Create(GraphicsAPI api)
 {
 	switch (api)
@@ -29,4 +31,3 @@ GraphicsAPI Renderer::GetApi() const
 {
 	return m_api;
 }
-

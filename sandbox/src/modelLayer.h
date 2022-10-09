@@ -15,6 +15,9 @@ private:
 	std::unique_ptr<SC::Pipeline> m_pipeline;
 	std::unique_ptr<SC::Buffer> m_vertexBuffer;
 	std::unique_ptr<SC::Buffer> m_indexBuffer;
+
+	SC::FrameData<SC::Buffer> m_cameraBuffer;
+
 	SC::Mesh m_monkeyMesh;
 	float m_rotation;
 };

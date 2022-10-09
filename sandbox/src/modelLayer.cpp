@@ -8,6 +8,14 @@ struct MeshPushConstants
 	glm::mat4 render_matrix;
 };
 
+struct GPUCameraData
+{
+	glm::mat4 view;
+	glm::mat4 proj;
+	glm::mat4 viewproj;
+};
+
+
 ModelLayer::ModelLayer() : Layer("ModelLayer"),
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr),
@@ -69,6 +77,19 @@ void ModelLayer::OnAttach()
 			memcpy(mappedData.Data(), m_monkeyMesh.indices.data(), m_monkeyMesh.IndexSize());
 		}
 	}
+
+	//Upload camera data to uniform buffer for each overlapping frame using FrameData
+	SC::BufferUsageSet cameraBufferUsage;
+	cameraBufferUsage.set(to_underlying(SC::BufferUsage::UNIFORM_BUFFER));
+	cameraBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::DEVICE);
+	for (const auto& val : m_cameraBuffer) 
+	{
+		auto mappedData = val->Map();
+		GPUCameraData cameraData{};
+		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
+	}
+
 }
 
 void ModelLayer::OnDetach()
