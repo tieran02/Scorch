@@ -2,6 +2,7 @@
 #include "render/shaderModule.h"
 #include "render/renderer.h"
 
+
 using namespace SC;
 ShaderModuleBuilder& ShaderModuleBuilder::SetVertexModulePath(const std::string& path)
 {

@@ -9,7 +9,7 @@ std::string string_format(const char* format, Args... args) {
 	assert(length >= 0);
 
 	std::string str(length, 1);
-	std::snprintf(str.data(), length + 1, format, args...);
+	std::snprintf(str.data(), (size_t)length + 1, format, args...);
 
 	return str;
 }

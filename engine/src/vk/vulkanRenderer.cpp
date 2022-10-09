@@ -184,6 +184,22 @@ void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
 	vkCmdBindVertexBuffers(cmd, 0, 1, static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), &offset);
 }
 
+void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
+{
+	CORE_ASSERT(buffer, "Buffer can't be null");
+	if (!buffer->HasUsage(BufferUsage::INDEX_BUFFER))
+	{
+		CORE_ASSERT(false, "Buffer must be a index buffer");
+		return;
+	}
+
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	VkDeviceSize offset = 0;
+	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, VK_INDEX_TYPE_UINT16);
+}
+
+
 void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
 {
 	CORE_ASSERT(pipelineLayout, "Pipline layout can't be null");
@@ -224,6 +240,12 @@ void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t
 {
 	VkCommandBuffer cmd = m_mainCommandBuffer;
 	vkCmdDraw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
+{
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+	vkCmdDrawIndexed(cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VulkanRenderer::InitVulkan()

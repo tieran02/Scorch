@@ -8,6 +8,9 @@ using namespace SC;
 
 std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage)
 {
+	CORE_ASSERT(size > 0, "Size must be greater than 0");
+	CORE_ASSERT(bufferUsage.any(), "Buffer usaage must be set");
+
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
 	if (!app) return nullptr;

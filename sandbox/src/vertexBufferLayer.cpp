@@ -74,7 +74,7 @@ void VertexBufferLayer::OnDetach()
 
 void VertexBufferLayer::OnUpdate(float deltaTime)
 {
-	glm::vec3 camPos = { 0.f,-0.15f,-2.f };
+	glm::vec3 camPos = { 0.f,-0.25f,-2.f };
 
 	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
 	//camera projection

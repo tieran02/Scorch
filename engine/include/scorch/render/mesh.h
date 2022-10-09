@@ -4,6 +4,8 @@
 
 namespace SC
 {
+	using VertexIndexType = uint16_t;
+
 	struct Vertex
 	{
 		glm::vec3 position;
@@ -14,18 +16,24 @@ namespace SC
 	struct Mesh
 	{
 		std::vector<Vertex> vertices;
+		std::vector<VertexIndexType> indices;
 
 		uint32_t VertexCount() const;
-		uint32_t Size() const;
+		uint32_t VertexSize() const;
+
+		uint32_t IndexCount() const;
+		uint32_t IndexSize() const;
 	};
 
 	struct RenderObject
 	{
+		RenderObject();
+
 		Mesh mesh;
 		glm::mat4 transform;
 
 		//Load RenderObject from file such as obj/fbx
-		static bool LoadFromFile(const std::string& path, std::vector<RenderObject>& model);
+		static bool LoadFromFile(const std::string& path, std::vector<RenderObject>& model, bool useIndexBuffer);
 	};
 
 }

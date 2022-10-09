@@ -25,8 +25,10 @@ namespace SC
 
 		virtual void BindPipeline(const Pipeline* pipeline) = 0;
 		virtual void BindVertexBuffer(const Buffer* buffer) = 0;
+		virtual void BindIndexBuffer(const Buffer* buffer) = 0;
 		virtual void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) = 0;
 		virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+		virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) = 0;
 
 		virtual void Draw() = 0;
 	protected:

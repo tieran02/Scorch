@@ -9,6 +9,8 @@ struct MeshPushConstants
 };
 
 ModelLayer::ModelLayer() : Layer("ModelLayer"),
+m_vertexBuffer(nullptr),
+m_indexBuffer(nullptr),
 m_rotation(0)
 {
 
@@ -40,21 +42,33 @@ void ModelLayer::OnAttach()
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
 	std::vector<SC::RenderObject> model;
-	bool success = SC::RenderObject::LoadFromFile("models/monkey_smooth.obj", model);
+	constexpr bool USE_INDEX_BUFFER = true;
+	bool success = SC::RenderObject::LoadFromFile("models/monkey_smooth.obj", model, USE_INDEX_BUFFER);
 	m_monkeyMesh = model[0].mesh;
 
 	//test
-	SC::BufferUsageSet bufferUsage;
-	bufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
-	bufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+	SC::BufferUsageSet vertexBufferUsage;
+	vertexBufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
+	vertexBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
 
-	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.Size(), bufferUsage, SC::AllocationUsage::DEVICE);
+	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE);
 	{
 		auto mappedData = m_vertexBuffer->Map();
-		memcpy(mappedData.Data(), m_monkeyMesh.vertices.data(), m_monkeyMesh.Size());
+		memcpy(mappedData.Data(), m_monkeyMesh.vertices.data(), m_monkeyMesh.VertexSize());
 	}
 
-	int a = 0;
+	if (USE_INDEX_BUFFER)
+	{
+		SC::BufferUsageSet indexBufferUsage;
+		indexBufferUsage.set(to_underlying(SC::BufferUsage::INDEX_BUFFER));
+		indexBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+
+		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE);
+		{
+			auto mappedData = m_indexBuffer->Map();
+			memcpy(mappedData.Data(), m_monkeyMesh.indices.data(), m_monkeyMesh.IndexSize());
+		}
+	}
 }
 
 void ModelLayer::OnDetach()
@@ -64,7 +78,7 @@ void ModelLayer::OnDetach()
 
 void ModelLayer::OnUpdate(float deltaTime)
 {
-	glm::vec3 camPos = { 0.f,-0.25f,-2.f };
+	glm::vec3 camPos = { 0.f,-0.05f,-2.2f };
 
 	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
 	//camera projection
@@ -84,10 +98,17 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->BeginFrame();
 	renderer->BindPipeline(m_pipeline.get());
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
-
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 
-	renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
+
+	if(!m_indexBuffer)
+		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
+	else
+	{
+		//using a index buffer
+		renderer->BindIndexBuffer(m_indexBuffer.get());
+		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
+	}
 	renderer->EndFrame();
 }
 

@@ -18,6 +18,7 @@ namespace SC
 	enum class BufferUsage
 	{
 		VERTEX_BUFFER,
+		INDEX_BUFFER,
 		MAP,
 		COUNT
 	};

@@ -34,9 +34,12 @@ namespace SC
 
 		void BindPipeline(const Pipeline* pipeline) override;
 		void BindVertexBuffer(const Buffer* buffer) override;
+		void BindIndexBuffer(const Buffer* buffer) override;
+
 		void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) override;
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
+		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
 		void Draw() override;
 	private:
 		void InitVulkan();

@@ -21,6 +21,8 @@ m_allocation(VK_NULL_HANDLE)
 	bufferInfo.usage = 0;
 	if (m_bufferUsage.test(to_underlying(BufferUsage::VERTEX_BUFFER)))
 		bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	if (m_bufferUsage.test(to_underlying(BufferUsage::INDEX_BUFFER)))
+		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	switch (m_allocationUsage)
