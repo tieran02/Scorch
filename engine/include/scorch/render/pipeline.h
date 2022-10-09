@@ -37,6 +37,7 @@ namespace SC
 	struct Viewport
 	{
 		Viewport();
+		Viewport(float x, float y, float w, float h);
 		float	x, y, w, h;
 		float	minDepth, maxDepth;
 	};
@@ -44,6 +45,8 @@ namespace SC
 	struct Scissor
 	{
 		Scissor();
+		Scissor(uint32_t extentX, uint32_t extentY);
+
 		int32_t offsetX, offsetY;
 		uint32_t extentX, extentY;
 	};

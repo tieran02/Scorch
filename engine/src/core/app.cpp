@@ -258,6 +258,12 @@ bool App::OnWindowClose(WindowCloseEvent e)
 
 bool App::OnWindowResize(WindowResizeEvent e)
 {
+	m_width = e.GetWidth();
+	m_height = e.GetHeight();
+
+	if(m_width > 0 && m_height > 0)
+		m_renderer->CreateSwapchain();
+
 	return true;
 }
 

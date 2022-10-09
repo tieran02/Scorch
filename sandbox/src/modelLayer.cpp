@@ -78,6 +78,13 @@ void ModelLayer::OnDetach()
 
 void ModelLayer::OnUpdate(float deltaTime)
 {
+	const SC::App* app = SC::App::Instance();
+	int windowWidth{ 0 }, windowHeight{ 0 };
+	app->GetWindowExtent(windowWidth, windowHeight);
+
+	if (windowWidth <= 0 && windowHeight <= 0)
+		return;
+
 	glm::vec3 camPos = { 0.f,-0.05f,-2.2f };
 
 	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
@@ -97,6 +104,11 @@ void ModelLayer::OnUpdate(float deltaTime)
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();
 	renderer->BindPipeline(m_pipeline.get());
+
+	//Not optimal as we create a viewport object each frame but will do for demo
+	renderer->SetViewport(SC::Viewport(0, 0, windowWidth, windowHeight));
+	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
+
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 

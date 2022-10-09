@@ -28,9 +28,13 @@ namespace SC
 
 		void Init() override;
 		void Cleanup() override;
+		void CreateSwapchain() override;
 
 		void BeginFrame() override;
 		void EndFrame() override;
+
+		void SetViewport(const Viewport& viewport) override;
+		void SetScissor(const Scissor& viewport) override;
 
 		void BindPipeline(const Pipeline* pipeline) override;
 		void BindVertexBuffer(const Buffer* buffer) override;
@@ -77,6 +81,7 @@ namespace SC
 		std::unique_ptr<VulkanTexture> m_depthTexture;
 	private:
 		DeletionQueue m_mainDeletionQueue;
+		DeletionQueue m_swapChainDeletionQueue;
 
 		uint32_t m_swapchainImageIndex;
 	};

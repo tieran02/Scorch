@@ -135,6 +135,18 @@ namespace
 
 			pipelineInfo.pDepthStencilState = &_depthStencil;
 
+			std::vector<VkDynamicState> dynamicStates = 
+			{
+				VK_DYNAMIC_STATE_VIEWPORT,
+				VK_DYNAMIC_STATE_SCISSOR
+			};
+			VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+			dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+			dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+			dynamicStateInfo.pDynamicStates = dynamicStates.data();
+
+			pipelineInfo.pDynamicState = &dynamicStateInfo;
+
 			VkPipeline newPipeline;
 			if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
 			{

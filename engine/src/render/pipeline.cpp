@@ -91,11 +91,31 @@ Viewport::Viewport() :
 
 }
 
+Viewport::Viewport(float x, float y, float w, float h) :
+	x{ x },
+	y{ y },
+	w{ w },
+	h{ h },
+	minDepth(0.0f),
+	maxDepth(1.0f)
+{
+
+}
+
 Scissor::Scissor() :
 	offsetX{ 0 },
 	offsetY{ 0 },
 	extentX{ 0 },
 	extentY{ 0 }
+{
+
+}
+
+Scissor::Scissor(uint32_t extentX, uint32_t extentY) :
+	offsetX{ 0 },
+	offsetY{ 0 },
+	extentX{ extentX },
+	extentY{ extentY }
 {
 
 }

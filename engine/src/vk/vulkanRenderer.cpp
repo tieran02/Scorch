@@ -52,6 +52,7 @@ void VulkanRenderer::Cleanup()
 	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
 
 	m_depthTexture.reset();
+	m_swapChainDeletionQueue.flush();
 	m_mainDeletionQueue.flush();
 
 	vkDestroyDevice(m_device, nullptr);
@@ -60,6 +61,19 @@ void VulkanRenderer::Cleanup()
 	vkDestroyInstance(m_instance, nullptr);
 }
 
+void VulkanRenderer::CreateSwapchain()
+{
+	Log::PrintCore("Creating swapchain");
+
+	//Wait for rendering to finish before cleaning up
+	VK_CHECK(vkWaitForFences(m_device, 1, &m_renderFence, true, 10000000));
+
+	m_depthTexture.reset();
+	m_swapChainDeletionQueue.flush();
+
+	InitSwapchain();
+	InitFramebuffers();
+}
 
 void VulkanRenderer::BeginFrame()
 {
@@ -158,6 +172,23 @@ void VulkanRenderer::EndFrame()
 	VK_CHECK(vkQueuePresentKHR(m_graphicsQueue, &presentInfo));
 }
 
+void VulkanRenderer::SetViewport(const Viewport& viewport)
+{
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	//VkViewport and viewport use the same memory layout so just reinterpret_cast
+	const VkViewport& vkViewport = reinterpret_cast<const VkViewport&>(viewport);
+	vkCmdSetViewport(cmd, 0, 1, &vkViewport);
+}
+
+void VulkanRenderer::SetScissor(const Scissor& scissor)
+{
+	VkCommandBuffer cmd = m_mainCommandBuffer;
+
+	//VkRect2D and Scissor use the same memory layout so just reinterpret_cast
+	const VkRect2D& vkScissor = reinterpret_cast<const VkRect2D&>(scissor);
+	vkCmdSetScissor(cmd, 0, 1, &vkScissor);
+}
 
 void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
 {
@@ -321,7 +352,7 @@ void VulkanRenderer::InitSwapchain()
 
 	m_swapchainImageFormat = vkbSwapchain.image_format;
 
-	m_mainDeletionQueue.push_function([=]() {
+	m_swapChainDeletionQueue.push_function([=]() {
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 	});
 
@@ -468,7 +499,7 @@ void VulkanRenderer::InitFramebuffers()
 
 		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_swapChainFramebuffers[i]));
 
-		m_mainDeletionQueue.push_function([=]() {
+		m_swapChainDeletionQueue.push_function([=]() {
 			vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
 			vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
 			});
@@ -498,3 +529,4 @@ void VulkanRenderer::InitSyncStructures()
 		vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
 		});
 }
+
