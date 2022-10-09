@@ -24,7 +24,7 @@ namespace SC
 	{
 	public:
 		VulkanRenderer();
-		~VulkanRenderer() override;
+		~VulkanRenderer();
 
 		void Init() override;
 		void Cleanup() override;

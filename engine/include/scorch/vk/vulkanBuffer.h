@@ -9,7 +9,7 @@ namespace SC
 	{
 	public:
 		VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
-		~VulkanBuffer() override;
+		~VulkanBuffer();
 		ScopedMapData Map() override;
 
 		void Destroy() override;

@@ -9,7 +9,7 @@ namespace SC
 	{
 	public:
 		VulkanPipelineLayout();
-		~VulkanPipelineLayout() override;
+		~VulkanPipelineLayout();
 
 		bool Build() override;
 
@@ -23,7 +23,7 @@ namespace SC
 	{
 	public:
 		VulkanPipeline(const ShaderModule& module);
-		~VulkanPipeline() override;
+		~VulkanPipeline();
 
 		bool Build() override;
 

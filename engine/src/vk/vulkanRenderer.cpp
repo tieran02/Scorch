@@ -403,7 +403,7 @@ void VulkanRenderer::InitDefaultRenderpass()
 
 	//array of 2 attachments, one for the color, and other for depth
 	std::vector<VkAttachmentDescription> attachments = { color_attachment,depth_attachment };
-	render_pass_info.attachmentCount = attachments.size();
+	render_pass_info.attachmentCount = static_cast<uint32_t>(attachments.size());
 	render_pass_info.pAttachments = attachments.data();
 	//connect the subpass to the info
 	render_pass_info.subpassCount = 1;
@@ -426,7 +426,7 @@ void VulkanRenderer::InitDefaultRenderpass()
 	depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 	std::vector<VkSubpassDependency> dependencies = { dependency,depth_dependency };
-	render_pass_info.dependencyCount = dependencies.size();
+	render_pass_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
 	render_pass_info.pDependencies = dependencies.data();
 
 

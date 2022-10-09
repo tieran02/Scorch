@@ -10,7 +10,7 @@ namespace SC
 	{
 	public:
 		VulkanTexture(TextureType type, TextureUsage usage, Format format);
-		~VulkanTexture() override;
+		~VulkanTexture();
 
 		bool Build(uint32_t width, uint32_t height) override;
 	public:
