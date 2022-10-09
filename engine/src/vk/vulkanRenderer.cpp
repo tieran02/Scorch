@@ -17,6 +17,7 @@
 #include "vk/vulkanPipeline.h"
 #include "vk/vulkanBuffer.h"
 #include "vk/vulkanTexture.h"
+#include "render/mesh.h"
 
 using namespace SC;
 
@@ -196,7 +197,7 @@ void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
 	VkCommandBuffer cmd = m_mainCommandBuffer;
 
 	VkDeviceSize offset = 0;
-	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, sizeof(VertexIndexType) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
 }
 
 
@@ -220,20 +221,6 @@ void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_
 		shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	vkCmdPushConstants(cmd, layout, shaderStages, offset, pipelineLayout->PushConstants()[rangeIndex].size, data);
-}
-
-void VulkanRenderer::Draw()
-{
-	//BeginFrame();
-
-	////naming it cmd for shorter writing
-	//VkCommandBuffer cmd = m_mainCommandBuffer;
-
-	////do rendering here
-	//vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_trianglePipeline);
-	//vkCmdDraw(cmd, 3, 1, 0, 0);
-
-	//EndFrame();
 }
 
 void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
