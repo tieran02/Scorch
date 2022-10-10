@@ -161,6 +161,15 @@ const std::vector<SC::PushConstant>& PipelineLayout::PushConstants() const
 	return m_pushConstants;
 }
 
+void PipelineLayout::AddDescriptorSet(DescriptorSet* set)
+{
+	m_descriptorSets.push_back(set);
+}
+
+const std::vector<DescriptorSet*>& PipelineLayout::DescriptorSets() const
+{
+	return m_descriptorSets;
+}
 
 std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
 {

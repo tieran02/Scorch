@@ -1,4 +1,4 @@
-#include "modelLayer.h"
+#include "descriptorLayer.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
@@ -16,7 +16,7 @@ struct GPUCameraData
 };
 
 
-ModelLayer::ModelLayer() : Layer("ModelLayer"),
+DescriptorLayer::DescriptorLayer() : Layer("DescriptorLayer"),
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr),
 m_rotation(0)
@@ -24,7 +24,7 @@ m_rotation(0)
 
 }
 
-void ModelLayer::OnAttach()
+void DescriptorLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
@@ -40,11 +40,15 @@ void ModelLayer::OnAttach()
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
 	m_pipelineLayout->Build();
 
+	SC::DescriptorSetLayout setLayout({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
+	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(setLayout);
+
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
+	m_pipeline->m_descriptorSetLayout = { setLayout };
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
@@ -92,12 +96,12 @@ void ModelLayer::OnAttach()
 
 }
 
-void ModelLayer::OnDetach()
+void DescriptorLayer::OnDetach()
 {
 
 }
 
-void ModelLayer::OnUpdate(float deltaTime)
+void DescriptorLayer::OnUpdate(float deltaTime)
 {
 	const SC::App* app = SC::App::Instance();
 	int windowWidth{ 0 }, windowHeight{ 0 };
@@ -154,7 +158,7 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->EndFrame();
 }
 
-void ModelLayer::OnEvent(SC::Event& event)
+void DescriptorLayer::OnEvent(SC::Event& event)
 {
 	SC::Log::Print(event.ToString());
 }

@@ -2,6 +2,7 @@
 #include "testLayer.h"
 #include "vertexBufferLayer.h"
 #include "modelLayer.h"
+#include "descriptorLayer.h"
 
 int main()
 {
@@ -10,7 +11,9 @@ int main()
 	{
 		//std::shared_ptr<SC::Layer> testLayer = std::make_shared<TestLayer>();
 		//std::shared_ptr<SC::Layer> vertexBufferLayer = std::make_shared<VertexBufferLayer>();
-		std::shared_ptr<SC::Layer> modelLayer = std::make_shared<ModelLayer>();
+		//std::shared_ptr<SC::Layer> modelLayer = std::make_shared<ModelLayer>();
+		std::shared_ptr<SC::Layer> modelLayer = std::make_shared<DescriptorLayer>();
+
 		app->PushLayer(modelLayer);
 		app->Run();
 	}

@@ -557,3 +557,26 @@ void VulkanRenderer::WaitOnFences() const
 	}
 }
 
+void VulkanRenderer::InitDescriptors()
+{
+	//create a descriptor pool that will hold 10 uniform buffers
+	std::vector<VkDescriptorPoolSize> sizes =
+	{
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 }
+	};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = 0;
+	pool_info.maxSets = 10;
+	pool_info.poolSizeCount = (uint32_t)sizes.size();
+	pool_info.pPoolSizes = sizes.data();
+
+	vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool);
+
+	// add descriptor set layout to deletion queues
+	m_mainDeletionQueue.push_function([&]() {
+		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+		});
+}
+

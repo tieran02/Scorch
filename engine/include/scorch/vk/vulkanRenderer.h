@@ -65,6 +65,8 @@ namespace SC
 
 		void InitSyncStructures();
 
+		void InitDescriptors();
+
 		VulkanFrameData& GetCurrentFrame();
 		const VulkanFrameData& GetCurrentFrame() const;
 	public:
@@ -88,6 +90,8 @@ namespace SC
 		VmaAllocator m_allocator; //vma lib allocator
 
 		std::unique_ptr<VulkanTexture> m_depthTexture;
+
+		VkDescriptorPool m_descriptorPool;
 	private:
 		DeletionQueue m_mainDeletionQueue;
 		DeletionQueue m_swapChainDeletionQueue;

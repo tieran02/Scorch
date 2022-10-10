@@ -1,5 +1,6 @@
 #pragma once
 #include "shaderModule.h"
+#include "descriptorSet.h"
 
 namespace SC
 {
@@ -74,6 +75,7 @@ namespace SC
 		uint32_t size;
 	};
 
+	class DescriptorSet;
 	class PipelineLayout
 	{
 		//This will be used to hold information on push constants/uniforms and other set locations
@@ -88,11 +90,15 @@ namespace SC
 		void AddPushConstant(ShaderModuleFlags stages, uint32_t size);
 		const std::vector<PushConstant>& PushConstants() const;
 
+		void AddDescriptorSet(DescriptorSet* set);
+		const std::vector<DescriptorSet*>& DescriptorSets() const;
+
 		virtual bool Build() = 0;
 	protected:
 		PipelineLayout();
 
 		std::vector<PushConstant> m_pushConstants;
+		std::vector<DescriptorSet*> m_descriptorSets;
 	};
 
 	class ShaderModule;
@@ -108,6 +114,8 @@ namespace SC
 		PolygonMode				polygonMode;
 		Viewport				viewport;
 		Scissor					scissor;
+
+		std::vector<DescriptorSetLayout> m_descriptorSetLayout;
 
 		//TODO multi sampling and blending
 	public:

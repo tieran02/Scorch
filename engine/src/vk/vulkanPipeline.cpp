@@ -205,6 +205,8 @@ bool VulkanPipelineLayout::Build()
 	pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
 
+	//Create descriptors within pipeline creation, we need to cache these to reuse 
+
 	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
 	m_deletionQueue.push_function([=]() {

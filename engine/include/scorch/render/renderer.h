@@ -38,6 +38,8 @@ namespace SC
 		virtual void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) = 0;
 		virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
 		virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) = 0;
+
+		uint8_t FrameDataIndex() const;
 	protected:
 		Renderer(GraphicsAPI api);
 
@@ -49,7 +51,7 @@ namespace SC
 	//Number of frame to compute at the same time (Double buffering helps prevent the CPU waiting on the GPU)
 	constexpr std::array<uint8_t, to_underlying(GraphicsAPI::COUNT)> FRAME_OVERLAP_COUNT
 	{
-		50, //Vulkan frame overlap
+		2, //Vulkan frame overlap
 	};
 
 	//Frame data allows holds data such as buffers/textures for each overlapping frame (Use FrameData when an object gets changes per frame e.g uniforms)
@@ -68,8 +70,8 @@ namespace SC
 
 		std::vector<std::unique_ptr<T>>::iterator begin() { return data.begin(); }
 		std::vector<std::unique_ptr<T>>::iterator end() { return data.end(); }
-		std::vector<std::unique_ptr<T>>::iterator cbegin() { return data.cbegin(); }
-		std::vector<std::unique_ptr<T>>::iterator cend() { return data.cend(); }
+		std::vector<std::unique_ptr<T>>::const_iterator cbegin() { return data.cbegin(); }
+		std::vector<std::unique_ptr<T>>::const_iterator cend() { return data.cend(); }
 	private:
 		std::vector<std::unique_ptr<T>> data;
 	};
