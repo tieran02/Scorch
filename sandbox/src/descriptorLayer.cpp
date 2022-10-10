@@ -38,9 +38,11 @@ void DescriptorLayer::OnAttach()
 	SC::ShaderModuleFlags pushConstantStages;
 	pushConstantStages.set(to_underlying(SC::ShaderStage::VERTEX));
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
-	m_pipelineLayout->Build();
 
 	SC::DescriptorSetLayout setLayout({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
+	m_pipelineLayout->AddDescriptorSetLayout(setLayout);
+	m_pipelineLayout->Build();
+
 	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(setLayout);
 
 	m_pipeline = SC::Pipeline::Create(*shader);
@@ -48,7 +50,6 @@ void DescriptorLayer::OnAttach()
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
-	m_pipeline->m_descriptorSetLayout = { setLayout };
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();

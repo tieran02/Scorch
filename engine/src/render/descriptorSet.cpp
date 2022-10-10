@@ -48,3 +48,8 @@ void DescriptorSetLayout::AddBinding(DescriptorBindingType type, const ShaderMod
 	m_bindings.emplace_back(type, stages);
 }
 
+const std::vector<DescriptorBinding>& DescriptorSetLayout::Bindings() const
+{
+	return m_bindings;
+}
+

@@ -206,6 +206,52 @@ bool VulkanPipelineLayout::Build()
 	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
 
 	//Create descriptors within pipeline creation, we need to cache these to reuse 
+	m_vkSetLayouts.resize(m_descriptorSetLayouts.size());
+	for (int i = 0; i < m_descriptorSetLayouts.size(); ++i)
+	{
+		std::vector<VkDescriptorSetLayoutBinding > vkSetBindings;
+
+		const auto& setBindings = m_descriptorSetLayouts[i].Bindings();
+		for (int j = 0; j < setBindings.size(); ++j)
+		{
+			VkDescriptorSetLayoutBinding binding = {};
+			binding.binding = j;
+			binding.descriptorCount = 1;
+			
+			switch (setBindings[j].type)
+			{
+			case DescriptorBindingType::UNIFORM:
+				binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			}
+
+			if (setBindings[j].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+				binding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+			if (setBindings[j].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+				binding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+			vkSetBindings.push_back(binding);
+		}
+
+		VkDescriptorSetLayoutCreateInfo setinfo = {};
+		setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		setinfo.pNext = nullptr;
+
+		//we are going to have 1 binding
+		setinfo.bindingCount = setBindings.size();
+		//no flags
+		setinfo.flags = 0;
+		//point to the camera buffer binding
+		auto it(vkSetBindings.end() - setBindings.size());
+		setinfo.pBindings = &(*it);
+
+		//create descriptor layout
+		vkCreateDescriptorSetLayout(renderer->m_device, &setinfo, nullptr, &m_vkSetLayouts[i]);
+
+		m_deletionQueue.push_function([=]() {
+			renderer->WaitOnFences();
+			vkDestroyDescriptorSetLayout(renderer->m_device, m_vkSetLayouts[i], nullptr);
+			});
+	}
 
 	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 

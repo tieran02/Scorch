@@ -22,6 +22,7 @@ namespace SC
 		DescriptorSetLayout(std::vector<DescriptorBinding>&& bindings);
 
 		void AddBinding(DescriptorBindingType type, const ShaderModuleFlags&& stages);
+		const std::vector<DescriptorBinding>& Bindings() const;
 	private:
 		std::vector<DescriptorBinding> m_bindings;
 	};

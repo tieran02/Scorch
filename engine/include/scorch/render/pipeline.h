@@ -90,15 +90,15 @@ namespace SC
 		void AddPushConstant(ShaderModuleFlags stages, uint32_t size);
 		const std::vector<PushConstant>& PushConstants() const;
 
-		void AddDescriptorSet(DescriptorSet* set);
-		const std::vector<DescriptorSet*>& DescriptorSets() const;
+		void AddDescriptorSetLayout(const DescriptorSetLayout& layput);
+		const std::vector<DescriptorSetLayout>& DescriptorSetLayouts() const;
 
 		virtual bool Build() = 0;
 	protected:
 		PipelineLayout();
 
 		std::vector<PushConstant> m_pushConstants;
-		std::vector<DescriptorSet*> m_descriptorSets;
+		std::vector<DescriptorSetLayout> m_descriptorSetLayouts;
 	};
 
 	class ShaderModule;
@@ -114,8 +114,6 @@ namespace SC
 		PolygonMode				polygonMode;
 		Viewport				viewport;
 		Scissor					scissor;
-
-		std::vector<DescriptorSetLayout> m_descriptorSetLayout;
 
 		//TODO multi sampling and blending
 	public:
