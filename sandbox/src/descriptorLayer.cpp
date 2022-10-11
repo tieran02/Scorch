@@ -39,11 +39,11 @@ void DescriptorLayer::OnAttach()
 	pushConstantStages.set(to_underlying(SC::ShaderStage::VERTEX));
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
 
-	SC::DescriptorSetLayout setLayout({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
-	m_pipelineLayout->AddDescriptorSetLayout(setLayout);
+	m_setLayout = SC::DescriptorSetLayout::Create({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
+	m_pipelineLayout->AddDescriptorSetLayout(m_setLayout.get());
 	m_pipelineLayout->Build();
 
-	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(setLayout);
+	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_setLayout.get());
 
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos

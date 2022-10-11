@@ -15,15 +15,19 @@ namespace SC
 		ShaderModuleFlags shaderStages;
 	};
 
-	struct DescriptorSetLayout
+	class DescriptorSetLayout
 	{
 	public:
-		DescriptorSetLayout();
-		DescriptorSetLayout(std::vector<DescriptorBinding>&& bindings);
+		static std::unique_ptr<DescriptorSetLayout> Create();
+		static std::unique_ptr<DescriptorSetLayout> Create(std::vector<DescriptorBinding>&& bindings);
+		virtual ~DescriptorSetLayout();
 
 		void AddBinding(DescriptorBindingType type, const ShaderModuleFlags&& stages);
 		const std::vector<DescriptorBinding>& Bindings() const;
-	private:
+	protected:
+		DescriptorSetLayout();
+		DescriptorSetLayout(std::vector<DescriptorBinding>&& bindings);
+
 		std::vector<DescriptorBinding> m_bindings;
 	};
 
@@ -31,12 +35,12 @@ namespace SC
 	class DescriptorSet
 	{
 	public:
-		static std::unique_ptr<DescriptorSet> Create(const DescriptorSetLayout& layout);
+		static std::unique_ptr<DescriptorSet> Create(const DescriptorSetLayout* layout);
 
 		virtual void SetBuffer(const Buffer* buffer, uint32_t binding) = 0;
 	protected:
-		DescriptorSet(const DescriptorSetLayout& layout);
-		DescriptorSetLayout m_layout;
+		DescriptorSet(const DescriptorSetLayout* layout);
+		const DescriptorSetLayout* m_layout;
 
 	};
 }

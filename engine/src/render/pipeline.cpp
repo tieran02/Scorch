@@ -4,6 +4,7 @@
 #include "core/app.h"
 #include "render/renderer.h"
 #include "vk/vulkanPipeline.h"
+#include "render/descriptorSet.h"
 
 using namespace SC;
 
@@ -161,12 +162,12 @@ const std::vector<SC::PushConstant>& PipelineLayout::PushConstants() const
 	return m_pushConstants;
 }
 
-void PipelineLayout::AddDescriptorSetLayout(const DescriptorSetLayout& layput)
+void PipelineLayout::AddDescriptorSetLayout(const DescriptorSetLayout* layout)
 {
-	m_descriptorSetLayouts.push_back(layput);
+	m_descriptorSetLayouts.push_back(layout);
 }
 
-const std::vector<DescriptorSetLayout>& PipelineLayout::DescriptorSetLayouts() const
+const std::vector<const DescriptorSetLayout*>& PipelineLayout::DescriptorSetLayouts() const
 {
 	return m_descriptorSetLayouts;
 }

@@ -22,7 +22,8 @@
 using namespace SC;
 
 VulkanRenderer::VulkanRenderer() : Renderer(GraphicsAPI::VULKAN),
-	m_instance(VK_NULL_HANDLE)
+	m_instance(VK_NULL_HANDLE),
+	m_descriptorPool(VK_NULL_HANDLE)
 {
 }
 
@@ -42,6 +43,8 @@ void VulkanRenderer::Init()
 	InitFramebuffers();
 
 	InitSyncStructures();
+
+	InitDescriptors();
 }
 
 void VulkanRenderer::Cleanup()

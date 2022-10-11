@@ -16,9 +16,6 @@ namespace SC
 		VkPipelineLayout GetPipelineLayout() const;
 	private:
 		VkPipelineLayout m_pipelineLayout;
-
-		std::vector<VkDescriptorSetLayout> m_vkSetLayouts;	   //Each pipeline layout will hold descriptor layouts for now. not optimal and probably should cache and reuse set layouts
-
 		DeletionQueue m_deletionQueue;
 	};
 

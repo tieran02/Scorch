@@ -1,6 +1,5 @@
 #pragma once
 #include "shaderModule.h"
-#include "descriptorSet.h"
 
 namespace SC
 {
@@ -75,6 +74,7 @@ namespace SC
 		uint32_t size;
 	};
 
+	class DescriptorSetLayout;
 	class DescriptorSet;
 	class PipelineLayout
 	{
@@ -90,15 +90,15 @@ namespace SC
 		void AddPushConstant(ShaderModuleFlags stages, uint32_t size);
 		const std::vector<PushConstant>& PushConstants() const;
 
-		void AddDescriptorSetLayout(const DescriptorSetLayout& layput);
-		const std::vector<DescriptorSetLayout>& DescriptorSetLayouts() const;
+		void AddDescriptorSetLayout(const DescriptorSetLayout* layout);
+		const std::vector<const DescriptorSetLayout*>& DescriptorSetLayouts() const;
 
 		virtual bool Build() = 0;
 	protected:
 		PipelineLayout();
 
 		std::vector<PushConstant> m_pushConstants;
-		std::vector<DescriptorSetLayout> m_descriptorSetLayouts;
+		std::vector<const DescriptorSetLayout*> m_descriptorSetLayouts;
 	};
 
 	class ShaderModule;

@@ -18,6 +18,7 @@ private:
 
 	SC::FrameData<SC::Buffer> m_cameraBuffer;
 
+	std::unique_ptr<SC::DescriptorSetLayout> m_setLayout;
 	SC::FrameData<SC::DescriptorSet> m_globalDescriptorSet;
 	
 
