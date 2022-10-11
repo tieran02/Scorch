@@ -42,3 +42,14 @@ uint8_t Renderer::FrameDataIndex() const
 
 	return 1;
 }
+
+uint8_t Renderer::FrameDataIndexCount() const
+{
+	switch (m_api)
+	{
+	case GraphicsAPI::VULKAN:
+		return FRAME_OVERLAP_COUNT.at(to_underlying(GraphicsAPI::VULKAN));
+	}
+
+	return 1;
+}
