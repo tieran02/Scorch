@@ -42,6 +42,7 @@ namespace SC
 		virtual ScopedMapData Map() = 0;
 
 		bool HasUsage(BufferUsage usage) const;
+		size_t GetSize() const;
 	protected:
 		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
 		size_t m_size;

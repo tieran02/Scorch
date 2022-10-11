@@ -18,6 +18,7 @@
 #include "vk/vulkanBuffer.h"
 #include "vk/vulkanTexture.h"
 #include "render/mesh.h"
+#include "vk/vulkanDescriptorSet.h"
 
 using namespace SC;
 
@@ -236,6 +237,17 @@ void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
 	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, sizeof(VertexIndexType) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
 }
 
+void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet)
+{
+	CORE_ASSERT(descriptorSet, "descriptorSet can't be null");
+
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
+
+	const VulkanDescriptorSet* vulkanDescriptorSet = static_cast<const VulkanDescriptorSet*>(descriptorSet);
+	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
+
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &vulkanDescriptorSet->m_descriptorSet, 0, nullptr);
+}
 
 void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
 {

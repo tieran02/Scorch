@@ -34,6 +34,11 @@ DescriptorSet::DescriptorSet(const DescriptorSetLayout* layout) : m_layout(layou
 
 }
 
+const DescriptorSetLayout* DescriptorSet::Layout() const
+{
+	return m_layout;
+}
+
 DescriptorSetLayout::DescriptorSetLayout()
 {
 

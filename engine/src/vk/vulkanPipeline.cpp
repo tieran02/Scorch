@@ -5,6 +5,7 @@
 #include "vk/vulkanRenderer.h"
 #include "vk/vulkanInitialiser.h"
 #include "vk/vulkanUtils.h"
+#include "vk/vulkanDescriptorSet.h"
 
 using namespace SC;
 
@@ -204,6 +205,16 @@ bool VulkanPipelineLayout::Build()
 	}
 	pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+
+	std::vector<VkDescriptorSetLayout> setLayouts(m_descriptorSetLayouts.size());
+	for (int i = 0; i < m_descriptorSetLayouts.size(); ++i)
+	{
+		const VulkanDescriptorSetLayout* layout = static_cast<const VulkanDescriptorSetLayout*>(m_descriptorSetLayouts[i]);
+		setLayouts[i] = layout->m_layout;
+	}
+	pipelineLayoutInfo.pSetLayouts = setLayouts.data();
+	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+
 
 	VK_CHECK(vkCreatePipelineLayout(renderer->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 

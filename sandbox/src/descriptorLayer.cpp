@@ -28,8 +28,8 @@ void DescriptorLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/normalMesh.vert.spv")
-		.SetFragmentModulePath("shaders/normalMesh.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/descriptorMesh.vert.spv")
+		.SetFragmentModulePath("shaders/descriptorMesh.frag.spv")
 		.Build();
 
 
@@ -95,6 +95,29 @@ void DescriptorLayer::OnAttach()
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
 
+	//write descriptors to camera buffer
+	//camera view
+	glm::vec3 camPos = { 0.f,-0.5f,-4.f };
+	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+	//camera projection
+	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.0f);
+	projection[1][1] *= -1;
+
+	GPUCameraData camData;
+	camData.proj = projection;
+	camData.view = view;
+	camData.viewproj = projection * view;
+
+	for (uint8_t i = 0; i < m_globalDescriptorSet.FrameCount(); ++i)
+	{
+		SC::Buffer* buffer = m_cameraBuffer.GetFrameData(i);
+		SC::DescriptorSet* descriptorSet = m_globalDescriptorSet.GetFrameData(i);
+
+		descriptorSet->SetBuffer(buffer, 0);
+		
+		auto mappedData = buffer->Map();
+		memcpy(mappedData.Data(), &camData, sizeof(GPUCameraData));
+	}
 }
 
 void DescriptorLayer::OnDetach()
@@ -111,32 +134,14 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
-	glm::vec3 camPos = { 0.f,-0.05f,-2.2f };
-
-	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
-	//camera projection
-	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.0f);
-	projection[1][1] *= -1;
-	//model rotation
+	//calculate final mesh matrix
+	MeshPushConstants constants;
 	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
 	m_rotation += deltaTime * 20.0f;
-
-	//calculate final mesh matrix
-	glm::mat4 mesh_matrix = projection * view * model;
-
-	MeshPushConstants constants;
-	constants.render_matrix = mesh_matrix;
+	constants.render_matrix = model;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();
-
-	//upload camera data for this frame
-	{
-		auto frameIndex = renderer->FrameDataIndex();
-		auto mappedData = m_cameraBuffer.GetFrameData(frameIndex)->Map();
-		GPUCameraData cameraData{};
-		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
-	}
 
 	renderer->BindPipeline(m_pipeline.get());
 
@@ -146,6 +151,7 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
+	renderer->BindDescriptorSet(m_pipelineLayout.get(), m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
 
 
 	if(!m_indexBuffer)

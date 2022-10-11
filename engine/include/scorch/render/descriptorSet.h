@@ -38,6 +38,7 @@ namespace SC
 		static std::unique_ptr<DescriptorSet> Create(const DescriptorSetLayout* layout);
 
 		virtual void SetBuffer(const Buffer* buffer, uint32_t binding) = 0;
+		const DescriptorSetLayout* Layout() const;
 	protected:
 		DescriptorSet(const DescriptorSetLayout* layout);
 		const DescriptorSetLayout* m_layout;

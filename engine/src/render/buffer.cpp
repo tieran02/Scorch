@@ -48,6 +48,11 @@ bool Buffer::HasUsage(BufferUsage usage) const
 	return m_bufferUsage.test(to_underlying(usage));
 }
 
+size_t Buffer::GetSize() const
+{
+	return m_size;
+}
+
 ScopedMapData::ScopedMapData(void* mapData, std::function<void()>&& unmapFunc) : 
 	m_mapped(mapData),
 	m_unmapFunc(unmapFunc)
