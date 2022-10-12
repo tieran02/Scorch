@@ -105,7 +105,7 @@ void App::OnEvent(Event& e)
 
 	dispatcher.Dispatch<WindowResizeEvent>(std::bind(&App::OnWindowResize, this, std::placeholders::_1));
 
-	if (e.GetEventType() == EventType::KeyReleased && static_cast<KeyReleaseEvent&>(e).GetKeyCode() == 256) //escape key
+	if (e.GetEventType() == EventType::KeyReleased && static_cast<KeyReleaseEvent&>(e).GetKeyCode() == KEY_ESCAPE)
 		Close();
 
 	//handle layer events in reverse

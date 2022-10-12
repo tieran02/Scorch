@@ -19,7 +19,8 @@ struct GPUCameraData
 DescriptorLayer::DescriptorLayer() : Layer("DescriptorLayer"),
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr),
-m_rotation(0)
+m_rotation(0),
+m_pos( 0.f,-0.5f,-4.f )
 {
 
 }
@@ -131,13 +132,64 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	app->GetWindowExtent(windowWidth, windowHeight);
 
+	m_rotation += deltaTime * 20.0f;
+
+	//write descriptors to camera buffer
+	GPUCameraData camData;
+	camData.proj = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 200.0f);
+	camData.proj[1][1] *= -1;
+	camData.view = glm::translate(glm::mat4(1.f), m_pos);;
+	camData.viewproj = camData.proj * camData.view;
+
+	for (const auto& buffer : m_cameraBuffer)
+	{
+		auto mappedData = buffer->Map();
+		memcpy(mappedData.Data(), &camData, sizeof(GPUCameraData));
+	}
+
+	Draw();
+}
+
+void DescriptorLayer::OnEvent(SC::Event& event)
+{
+	SC::Log::Print(event.ToString());
+
+	//Crude input to update pos, should really use delta time
+	if (event.GetEventType() == SC::EventType::KeyPressed)
+	{
+		switch (static_cast<SC::KeyReleaseEvent&>(event).GetKeyCode())
+		{
+		case KEY_A:
+			m_pos.x += 0.1f;
+			break;
+		case KEY_D:
+			m_pos.x -= 0.1f;
+			break;
+		case KEY_W:
+			m_pos.y -= 0.1f;
+			break;
+		case KEY_S:
+			m_pos.y += 0.1f;
+			break;
+		default:
+			break;
+		}
+	}
+
+}
+
+void DescriptorLayer::Draw()
+{
+	const SC::App* app = SC::App::Instance();
+	int windowWidth{ 0 }, windowHeight{ 0 };
+	app->GetWindowExtent(windowWidth, windowHeight);
+
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
 	//calculate final mesh matrix
 	MeshPushConstants constants;
 	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
-	m_rotation += deltaTime * 20.0f;
 	constants.render_matrix = model;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
@@ -154,7 +206,7 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 	renderer->BindDescriptorSet(m_pipelineLayout.get(), m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
 
 
-	if(!m_indexBuffer)
+	if (!m_indexBuffer)
 		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
 	else
 	{
@@ -163,9 +215,4 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
 	}
 	renderer->EndFrame();
-}
-
-void DescriptorLayer::OnEvent(SC::Event& event)
-{
-	SC::Log::Print(event.ToString());
 }
