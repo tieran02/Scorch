@@ -7,6 +7,7 @@
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
 #include "vk/vulkanRenderer.h"
+#include "core/input.h"
 
 using namespace SC;
 
@@ -79,6 +80,7 @@ void App::Run()
 		m_time = currentTime;
 
 		glfwPollEvents();
+		Input::Update();
 
 		for (auto& layer : m_layerStack)
 		{
@@ -163,12 +165,14 @@ bool App::InitWindow(const std::string& title)
 			{
 				KeyPressedEvent event(key, 0);
 				EventCallback(event);
+				Input::SetKeyDown(key, true);
 				break;
 			}
 			case GLFW_RELEASE:
 			{
 				KeyReleaseEvent event(key);
 				EventCallback(event);
+				Input::SetKeyDown(key, false);
 				break;
 			}
 			case GLFW_REPEAT:

@@ -1,6 +1,7 @@
 #include "descriptorLayer.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#include "scorch/event/keyEvent.h"
 
 struct MeshPushConstants
 {
@@ -134,6 +135,24 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 
 	m_rotation += deltaTime * 20.0f;
 
+	constexpr float moveSpeed = 5;
+	if (SC::Input::IsKeyDown(KEY_W))
+	{
+		m_pos.y -= moveSpeed * deltaTime;
+	}
+	if (SC::Input::IsKeyDown(KEY_S))
+	{
+		m_pos.y += moveSpeed * deltaTime;
+	}
+	if (SC::Input::IsKeyDown(KEY_A))
+	{
+		m_pos.x += moveSpeed * deltaTime;
+	}
+	if (SC::Input::IsKeyDown(KEY_D))
+	{
+		m_pos.x -= moveSpeed * deltaTime;
+	}
+
 	//write descriptors to camera buffer
 	GPUCameraData camData;
 	camData.proj = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 200.0f);
@@ -153,29 +172,6 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 void DescriptorLayer::OnEvent(SC::Event& event)
 {
 	SC::Log::Print(event.ToString());
-
-	//Crude input to update pos, should really use delta time
-	if (event.GetEventType() == SC::EventType::KeyPressed)
-	{
-		switch (static_cast<SC::KeyReleaseEvent&>(event).GetKeyCode())
-		{
-		case KEY_A:
-			m_pos.x += 0.1f;
-			break;
-		case KEY_D:
-			m_pos.x -= 0.1f;
-			break;
-		case KEY_W:
-			m_pos.y -= 0.1f;
-			break;
-		case KEY_S:
-			m_pos.y += 0.1f;
-			break;
-		default:
-			break;
-		}
-	}
-
 }
 
 void DescriptorLayer::Draw()
