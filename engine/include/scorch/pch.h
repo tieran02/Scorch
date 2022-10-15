@@ -10,6 +10,7 @@
 #include <deque>
 #include <bitset>
 #include "core/log.h"
+#include "core/flags.h"
 #include <chrono>
 #include <limits>
 

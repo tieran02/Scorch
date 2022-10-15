@@ -15,7 +15,7 @@ namespace SC
 	};
 
 
-	enum class BufferUsage
+	enum class BufferUsage : uint8_t
 	{
 		VERTEX_BUFFER,
 		INDEX_BUFFER,
@@ -23,7 +23,7 @@ namespace SC
 		MAP,
 		COUNT
 	};
-	using BufferUsageSet = std::bitset<to_underlying(BufferUsage::COUNT)>;
+	using BufferUsageSet = Flags<BufferUsage>;
 
 	enum class AllocationUsage
 	{

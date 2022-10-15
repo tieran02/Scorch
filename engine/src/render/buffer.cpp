@@ -45,7 +45,7 @@ Buffer::~Buffer()
 
 bool Buffer::HasUsage(BufferUsage usage) const
 {
-	return m_bufferUsage.test(to_underlying(usage));
+	return m_bufferUsage.test(usage);
 }
 
 size_t Buffer::GetSize() const

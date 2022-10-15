@@ -26,7 +26,7 @@ void VertexBufferLayer::OnAttach()
 	//create a pipeline layout with push constants
 	m_pipelineLayout = SC::PipelineLayout::Create();
 	SC::ShaderModuleFlags pushConstantStages;
-	pushConstantStages.set(to_underlying(SC::ShaderStage::VERTEX));
+	pushConstantStages.set(SC::ShaderStage::VERTEX);
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
 	m_pipelineLayout->Build();
 
@@ -41,8 +41,8 @@ void VertexBufferLayer::OnAttach()
 
 	//test
 	SC::BufferUsageSet bufferUsage;
-	bufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
-	bufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+	bufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
+	bufferUsage.set(SC::BufferUsage::MAP);
 
 	m_vertexBuffer = SC::Buffer::Create(sizeof(int) * 4, bufferUsage, SC::AllocationUsage::DEVICE);
 	{

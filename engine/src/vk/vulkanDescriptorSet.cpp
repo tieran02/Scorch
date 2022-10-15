@@ -58,9 +58,9 @@ void VulkanDescriptorSetLayout::Init()
 
 		binding.descriptorType = convertType(m_bindings[j].type);
 
-		if (m_bindings[j].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+		if (m_bindings[j].shaderStages.test(ShaderStage::VERTEX))
 			binding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
-		if (m_bindings[j].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+		if (m_bindings[j].shaderStages.test(ShaderStage::FRAGMENT))
 			binding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		vkSetBindings.push_back(binding);

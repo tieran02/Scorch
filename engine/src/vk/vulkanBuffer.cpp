@@ -19,11 +19,11 @@ m_allocation(VK_NULL_HANDLE)
 	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.size = size;
 	bufferInfo.usage = 0;
-	if (m_bufferUsage.test(to_underlying(BufferUsage::VERTEX_BUFFER)))
+	if (m_bufferUsage.test(BufferUsage::VERTEX_BUFFER))
 		bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	if (m_bufferUsage.test(to_underlying(BufferUsage::INDEX_BUFFER)))
+	if (m_bufferUsage.test(BufferUsage::INDEX_BUFFER))
 		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	if (m_bufferUsage.test(to_underlying(BufferUsage::UNIFORM_BUFFER)))
+	if (m_bufferUsage.test(BufferUsage::UNIFORM_BUFFER))
 		bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
@@ -42,7 +42,7 @@ m_allocation(VK_NULL_HANDLE)
 	}
 
 	//If we have the map usage make sure we set VMA to allow mapping to this buffer
-	if (m_bufferUsage.test(to_underlying(BufferUsage::MAP)))
+	if (m_bufferUsage.test(BufferUsage::MAP))
 		allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
 	VK_CHECK(vmaCreateBuffer(renderer->m_allocator, &bufferInfo, &allocInfo, &m_buffer, &m_allocation, nullptr));

@@ -263,9 +263,9 @@ void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_
 	}
 
 	uint32_t shaderStages = 0;
-	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(ShaderStage::VERTEX))
 		shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
-	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(ShaderStage::FRAGMENT))
 		shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	vkCmdPushConstants(cmd, layout, shaderStages, offset, pipelineLayout->PushConstants()[rangeIndex].size, data);

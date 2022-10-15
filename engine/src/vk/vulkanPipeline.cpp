@@ -196,9 +196,9 @@ bool VulkanPipelineLayout::Build()
 		pushConstants[i].size = m_pushConstants[i].size;
 		//this push constant range is accessible only in the vertex shader
 		pushConstants[i].stageFlags = 0;
-		if(m_pushConstants[i].shaderStages.test(to_underlying(ShaderStage::VERTEX)))
+		if(m_pushConstants[i].shaderStages.test(ShaderStage::VERTEX))
 			pushConstants[i].stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
-		if (m_pushConstants[i].shaderStages.test(to_underlying(ShaderStage::FRAGMENT)))
+		if (m_pushConstants[i].shaderStages.test(ShaderStage::FRAGMENT))
 			pushConstants[i].stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		offset += pushConstants[i].size;

@@ -38,7 +38,7 @@ void DescriptorLayer::OnAttach()
 	//create a pipeline layout with push constants
 	m_pipelineLayout = SC::PipelineLayout::Create();
 	SC::ShaderModuleFlags pushConstantStages;
-	pushConstantStages.set(to_underlying(SC::ShaderStage::VERTEX));
+	pushConstantStages.set(SC::ShaderStage::VERTEX);
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
 
 	m_setLayout = SC::DescriptorSetLayout::Create({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
@@ -63,8 +63,8 @@ void DescriptorLayer::OnAttach()
 
 	//test
 	SC::BufferUsageSet vertexBufferUsage;
-	vertexBufferUsage.set(to_underlying(SC::BufferUsage::VERTEX_BUFFER));
-	vertexBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
+	vertexBufferUsage.set(SC::BufferUsage::MAP);
 
 	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE);
 	{
@@ -75,8 +75,8 @@ void DescriptorLayer::OnAttach()
 	if (USE_INDEX_BUFFER)
 	{
 		SC::BufferUsageSet indexBufferUsage;
-		indexBufferUsage.set(to_underlying(SC::BufferUsage::INDEX_BUFFER));
-		indexBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
+		indexBufferUsage.set(SC::BufferUsage::MAP);
 
 		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE);
 		{
@@ -87,8 +87,8 @@ void DescriptorLayer::OnAttach()
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
-	cameraBufferUsage.set(to_underlying(SC::BufferUsage::UNIFORM_BUFFER));
-	cameraBufferUsage.set(to_underlying(SC::BufferUsage::MAP));
+	cameraBufferUsage.set(SC::BufferUsage::UNIFORM_BUFFER);
+	cameraBufferUsage.set(SC::BufferUsage::MAP);
 	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::DEVICE);
 	for (const auto& val : m_cameraBuffer) 
 	{
@@ -194,7 +194,7 @@ void DescriptorLayer::Draw()
 	renderer->BindPipeline(m_pipeline.get());
 
 	//Not optimal as we create a viewport object each frame but will do for demo
-	renderer->SetViewport(SC::Viewport(0, 0, windowWidth, windowHeight));
+	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
