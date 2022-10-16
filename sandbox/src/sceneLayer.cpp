@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include "scorch/event/keyEvent.h"
+#include "glm/gtx/norm.hpp"
 
 struct MeshPushConstants
 {
@@ -109,30 +110,31 @@ void SceneLayer::OnUpdate(float deltaTime)
 	}
 	if (SC::Input::IsKeyDown(KEY_W))
 	{
-		input += m_camera.Front() * moveSpeed * deltaTime;
+		input += m_camera.Front();
 	}
 	if (SC::Input::IsKeyDown(KEY_S))
 	{
-		input -= m_camera.Front() * moveSpeed * deltaTime;
+		input -= m_camera.Front();
 	}
 	if (SC::Input::IsKeyDown(KEY_A))
 	{
-		input -= m_camera.Right() * moveSpeed* deltaTime;
+		input -= m_camera.Right();
 	}
 	if (SC::Input::IsKeyDown(KEY_D))
 	{
-		input += m_camera.Right() * moveSpeed * deltaTime;
+		input += m_camera.Right();
 	}
 	if (SC::Input::IsKeyDown(KEY_E))
 	{
-		input.y += moveSpeed * deltaTime;
+		input.y += 1.0f;
 	}
 	if (SC::Input::IsKeyDown(KEY_Q))
 	{
-		input.y -= moveSpeed * deltaTime;
+		input.y -= 1.0f;
 	}
-	glm::normalize(input);
-	m_camera.Translate(input);
+	if(glm::length2(input) > 0)
+		input = glm::normalize(input);
+	m_camera.Translate(input * moveSpeed * deltaTime);
 	float mouseX, mouseY;
 	SC::Input::GetMousePos(mouseX, mouseY);
 	m_camera.MousePosition(mouseX, mouseY);
