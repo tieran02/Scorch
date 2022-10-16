@@ -12,3 +12,4 @@
 #include "event/event.h"
 #include "core/input.h"
 #include "render/scene.h"
+#include "render/camera.h"

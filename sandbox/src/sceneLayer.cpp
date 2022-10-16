@@ -102,36 +102,42 @@ void SceneLayer::OnUpdate(float deltaTime)
 	app->GetWindowExtent(windowWidth, windowHeight);
 
 	constexpr float moveSpeed = 300;
+	glm::vec3 input{0,0,0};
 	if (SC::Input::IsKeyDown(KEY_W))
 	{
-		m_pos.z += moveSpeed * deltaTime;
+		input += m_camera.Front() * moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_S))
 	{
-		m_pos.z -= moveSpeed * deltaTime;
+		input -= m_camera.Front() * moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_A))
 	{
-		m_pos.x += moveSpeed * deltaTime;
+		input -= m_camera.Right() * moveSpeed* deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_D))
 	{
-		m_pos.x -= moveSpeed * deltaTime;
+		input += m_camera.Right() * moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_SPACE))
 	{
-		m_pos.y -= moveSpeed * deltaTime;
+		input.y += moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_LEFT_SHIFT))
 	{
-		m_pos.y += moveSpeed * deltaTime;
+		input.y -= moveSpeed * deltaTime;
 	}
+	glm::normalize(input);
+	m_camera.Translate(input);
+	float mouseX, mouseY;
+	SC::Input::GetMousePos(mouseX, mouseY);
+	m_camera.MousePosition(mouseX, mouseY);
 
 	//write descriptors to camera buffer
 	GPUCameraData camData;
-	camData.proj = glm::perspective(glm::radians(75.f), (float)windowWidth / (float)windowHeight, 0.01f, 20000.0f);
+	camData.proj = glm::perspective(glm::radians(m_camera.Fov()), (float)windowWidth / (float)windowHeight, 0.1f, 20000.0f);
 	camData.proj[1][1] *= -1;
-	camData.view = glm::translate(glm::mat4(1.f), m_pos);
+	camData.view = m_camera.GetViewMatrix();
 	camData.viewproj = camData.proj * camData.view;
 
 	for (const auto& buffer : m_cameraBuffer)

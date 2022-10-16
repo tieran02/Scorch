@@ -17,11 +17,13 @@ namespace SC
 		static bool IsKeyDown(int keyCode);
 		static bool IsKeyPressed(int keyCode);
 		static bool IsKeyReleased(int keyCode);
+		static void GetMousePos(float& x, float& y);
 	private:
 		friend class App;
 
 		static void Update();
 		static void SetKeyDown(int keyCode, bool down);
+		static void SetMousePos(float x, float y);
 	};
 }
 

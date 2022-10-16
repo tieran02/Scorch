@@ -7,6 +7,8 @@ namespace
 {
 	std::array<bool, KEY_LAST> m_keyDown;
 	std::array<uint8_t, KEY_LAST> m_keyStates;
+
+	float mouseX{0}, mouseY{0};
 }
 
 bool Input::IsKeyDown(int keyCode)
@@ -71,4 +73,16 @@ void Input::Update()
 				state = KeyStateNone;
 		}
 	}
+}
+
+void Input::SetMousePos(float x, float y)
+{
+	mouseX = x;
+	mouseY = y;
+}
+
+void Input::GetMousePos(float& x, float& y)
+{
+	x = mouseX;
+	y = mouseY;
 }

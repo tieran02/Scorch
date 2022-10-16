@@ -22,6 +22,7 @@ private:
 	std::unique_ptr<SC::DescriptorSetLayout> m_setLayout;
 	SC::FrameData<SC::DescriptorSet> m_globalDescriptorSet;
 
+	SC::Camera m_camera;
 	SC::Scene m_scene;
 
 	float m_rotation;
