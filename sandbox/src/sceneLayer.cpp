@@ -187,7 +187,7 @@ void SceneLayer::Draw()
 		return;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	renderer->BeginFrame();
+	renderer->BeginFrame(153.0f/255.0f, 217.0f / 255.0f, 234.0f / 255.0f);
 
 	//Not optimal as we create a viewport object each frame but will do for demo
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));

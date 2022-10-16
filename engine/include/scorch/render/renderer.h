@@ -27,7 +27,7 @@ namespace SC
 		virtual void Cleanup() = 0;
 		virtual void CreateSwapchain() = 0;
 
-		virtual void BeginFrame() = 0;
+		virtual void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) = 0;
 		virtual void EndFrame() = 0;
 
 		virtual void SetViewport(const Viewport& viewport) = 0;

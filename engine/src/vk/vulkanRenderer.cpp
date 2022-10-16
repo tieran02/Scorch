@@ -79,7 +79,7 @@ void VulkanRenderer::CreateSwapchain()
 	InitFramebuffers();
 }
 
-void VulkanRenderer::BeginFrame()
+void VulkanRenderer::BeginFrame(float r, float g, float b)
 {
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	const App* app = App::Instance();
@@ -111,8 +111,7 @@ void VulkanRenderer::BeginFrame()
 
 	//make a clear-color from frame number. This will flash with a 120*pi frame period.
 	VkClearValue clearValue;
-	float flash = abs(sin(static_cast<float>(app->GetWindowTime()) / 120.f));
-	clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+	clearValue.color = { { r, g, b, 1.0f } };
 
 	//clear depth at 1
 	VkClearValue depthClear;

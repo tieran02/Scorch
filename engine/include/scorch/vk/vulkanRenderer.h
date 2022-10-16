@@ -39,7 +39,7 @@ namespace SC
 		void Cleanup() override;
 		void CreateSwapchain() override;
 
-		void BeginFrame() override;
+		void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) override;
 		void EndFrame() override;
 
 		void SetViewport(const Viewport& viewport) override;
