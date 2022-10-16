@@ -101,8 +101,12 @@ void SceneLayer::OnUpdate(float deltaTime)
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	app->GetWindowExtent(windowWidth, windowHeight);
 
-	constexpr float moveSpeed = 300;
+	float moveSpeed = 300;
 	glm::vec3 input{0,0,0};
+	if (SC::Input::IsKeyDown(KEY_LEFT_SHIFT))
+	{
+		moveSpeed *= 4.0f;
+	}
 	if (SC::Input::IsKeyDown(KEY_W))
 	{
 		input += m_camera.Front() * moveSpeed * deltaTime;
@@ -119,11 +123,11 @@ void SceneLayer::OnUpdate(float deltaTime)
 	{
 		input += m_camera.Right() * moveSpeed * deltaTime;
 	}
-	if (SC::Input::IsKeyDown(KEY_SPACE))
+	if (SC::Input::IsKeyDown(KEY_E))
 	{
 		input.y += moveSpeed * deltaTime;
 	}
-	if (SC::Input::IsKeyDown(KEY_LEFT_SHIFT))
+	if (SC::Input::IsKeyDown(KEY_Q))
 	{
 		input.y -= moveSpeed * deltaTime;
 	}
