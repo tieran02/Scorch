@@ -101,16 +101,14 @@ void SceneLayer::OnUpdate(float deltaTime)
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	app->GetWindowExtent(windowWidth, windowHeight);
 
-	m_rotation += deltaTime * 20.0f;
-
-	constexpr float moveSpeed = 5;
+	constexpr float moveSpeed = 300;
 	if (SC::Input::IsKeyDown(KEY_W))
 	{
-		m_pos.y -= moveSpeed * deltaTime;
+		m_pos.z += moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_S))
 	{
-		m_pos.y += moveSpeed * deltaTime;
+		m_pos.z -= moveSpeed * deltaTime;
 	}
 	if (SC::Input::IsKeyDown(KEY_A))
 	{
@@ -120,10 +118,18 @@ void SceneLayer::OnUpdate(float deltaTime)
 	{
 		m_pos.x -= moveSpeed * deltaTime;
 	}
+	if (SC::Input::IsKeyDown(KEY_SPACE))
+	{
+		m_pos.y -= moveSpeed * deltaTime;
+	}
+	if (SC::Input::IsKeyDown(KEY_LEFT_SHIFT))
+	{
+		m_pos.y += moveSpeed * deltaTime;
+	}
 
 	//write descriptors to camera buffer
 	GPUCameraData camData;
-	camData.proj = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 200.0f);
+	camData.proj = glm::perspective(glm::radians(75.f), (float)windowWidth / (float)windowHeight, 0.01f, 20000.0f);
 	camData.proj[1][1] *= -1;
 	camData.view = glm::translate(glm::mat4(1.f), m_pos);
 	camData.viewproj = camData.proj * camData.view;
@@ -147,7 +153,7 @@ void SceneLayer::CreateScene()
 	{
 		std::vector<SC::Mesh> meshes;
 		std::vector<std::string> names;
-		SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", meshes, &names, true);
+		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, true);
 
 		for (int i = 0; i < meshes.size(); ++i)
 		{
@@ -161,21 +167,6 @@ void SceneLayer::CreateScene()
 			renderObject.material = material;
 
 			m_scene.CreateRenderObject(std::move(renderObject));
-
-			SC::RenderObject renderObject1;
-			renderObject1.name = names[i];
-			renderObject1.mesh = mesh;
-			renderObject1.material = material;
-			renderObject1.transform = glm::translate(glm::mat4(1.f), glm::vec3(3.5f,0,0));
-			m_scene.CreateRenderObject(std::move(renderObject1));
-
-
-			SC::RenderObject renderObject2;
-			renderObject2.name = names[i];
-			renderObject2.mesh = mesh;
-			renderObject2.material = material;
-			renderObject2.transform = glm::translate(glm::mat4(1.f), glm::vec3(-3.5f, 0, 0));
-			m_scene.CreateRenderObject(std::move(renderObject2));
 		}
 	}
 }
@@ -201,7 +192,6 @@ void SceneLayer::Draw()
 		{	//Per object func gets called on each render object
 			MeshPushConstants constants;
 			constants.render_matrix = renderObject.transform;
-			constants.render_matrix *= glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
 
 			renderer->PushConstants(renderObject.material->pipelineLayout, 0, 0, sizeof(MeshPushConstants), &constants);
 			if(pipelineChanged) //only bind camera descriptors if pipeline changed
