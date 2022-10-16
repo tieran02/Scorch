@@ -74,26 +74,26 @@ namespace
 		return mesh;
 	}
 
-	void processNode(aiNode* node, const aiScene* scene, std::vector<SC::RenderObject>& outObjects, bool indexBuffer)
+	void processNode(aiNode* node, const aiScene* scene, std::vector<SC::Mesh>& outObjects, std::vector<std::string>* outNames, bool indexBuffer)
 	{
 		// process all the node's meshes (if any)
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			SC::RenderObject renderObject;
-			renderObject.mesh = processMesh(mesh, scene, indexBuffer);
-			outObjects.push_back(renderObject);
+			outObjects.push_back(processMesh(mesh, scene, indexBuffer));
+			if (outNames)
+				outNames->push_back(mesh->mName.C_Str());
 		}
 		// then do the same for each of its children
 		for (unsigned int i = 0; i < node->mNumChildren; i++)
 		{
-			processNode(node->mChildren[i], scene, outObjects, indexBuffer);
+			processNode(node->mChildren[i], scene, outObjects, outNames, indexBuffer);
 		}
 	}
 
 }
 
-bool RenderObject::LoadFromFile(const std::string& path, std::vector<RenderObject>& model, bool useIndexBuffer)
+bool Mesh::LoadMeshesFromFile(const std::string& path, std::vector<Mesh>& meshes, std::vector<std::string>* names, bool useIndexBuffer)
 {
 	// Check if file exists
 	std::ifstream fin(path.c_str());
@@ -106,8 +106,11 @@ bool RenderObject::LoadFromFile(const std::string& path, std::vector<RenderObjec
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality);
 
-	processNode(scene->mRootNode, scene, model, useIndexBuffer);
-	return !model.empty();
+	if (names)
+		names->clear();
+
+	processNode(scene->mRootNode, scene, meshes, names, useIndexBuffer);
+	return !meshes.empty();
 }
 
 RenderObject::RenderObject() : transform(glm::mat4(1))
@@ -124,6 +127,7 @@ uint32_t SC::Mesh::VertexSize() const
 {
 	return static_cast<uint32_t>(vertices.size() * sizeof(Vertex));
 }
+
 
 uint32_t Mesh::IndexCount() const
 {

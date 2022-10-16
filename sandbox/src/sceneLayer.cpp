@@ -1,4 +1,4 @@
-#include "descriptorLayer.h"
+#include "sceneLayer.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include "scorch/event/keyEvent.h"
@@ -17,23 +17,20 @@ struct GPUCameraData
 };
 
 
-DescriptorLayer::DescriptorLayer() : Layer("DescriptorLayer"),
-m_vertexBuffer(nullptr),
-m_indexBuffer(nullptr),
+SceneLayer::SceneLayer() : Layer("SceneLayer"),
 m_rotation(0),
 m_pos( 0.f,-0.5f,-4.f )
 {
 
 }
 
-void DescriptorLayer::OnAttach()
+void SceneLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
 	auto shader = shaderBuilder.SetVertexModulePath("shaders/descriptorMesh.vert.spv")
 		.SetFragmentModulePath("shaders/descriptorMesh.frag.spv")
 		.Build();
-
 
 	//create a pipeline layout with push constants
 	m_pipelineLayout = SC::PipelineLayout::Create();
@@ -53,37 +50,6 @@ void DescriptorLayer::OnAttach()
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
-
-	auto stride = m_pipeline->vertexInputDescription.GetStride();
-
-	std::vector<SC::Mesh> model;
-	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, USE_INDEX_BUFFER);
-	m_monkeyMesh = model[0];
-
-	//test
-	SC::BufferUsageSet vertexBufferUsage;
-	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::MAP);
-
-	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE);
-	{
-		auto mappedData = m_vertexBuffer->Map();
-		memcpy(mappedData.Data(), m_monkeyMesh.vertices.data(), m_monkeyMesh.VertexSize());
-	}
-
-	if (USE_INDEX_BUFFER)
-	{
-		SC::BufferUsageSet indexBufferUsage;
-		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-		indexBufferUsage.set(SC::BufferUsage::MAP);
-
-		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE);
-		{
-			auto mappedData = m_indexBuffer->Map();
-			memcpy(mappedData.Data(), m_monkeyMesh.indices.data(), m_monkeyMesh.IndexSize());
-		}
-	}
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
@@ -120,14 +86,16 @@ void DescriptorLayer::OnAttach()
 		auto mappedData = buffer->Map();
 		memcpy(mappedData.Data(), &camData, sizeof(GPUCameraData));
 	}
+
+	CreateScene();
 }
 
-void DescriptorLayer::OnDetach()
+void SceneLayer::OnDetach()
 {
 
 }
 
-void DescriptorLayer::OnUpdate(float deltaTime)
+void SceneLayer::OnUpdate(float deltaTime)
 {
 	const SC::App* app = SC::App::Instance();
 	int windowWidth{ 0 }, windowHeight{ 0 };
@@ -157,7 +125,7 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 	GPUCameraData camData;
 	camData.proj = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 200.0f);
 	camData.proj[1][1] *= -1;
-	camData.view = glm::translate(glm::mat4(1.f), m_pos);;
+	camData.view = glm::translate(glm::mat4(1.f), m_pos);
 	camData.viewproj = camData.proj * camData.view;
 
 	for (const auto& buffer : m_cameraBuffer)
@@ -169,12 +137,50 @@ void DescriptorLayer::OnUpdate(float deltaTime)
 	Draw();
 }
 
-void DescriptorLayer::OnEvent(SC::Event& event)
+void SceneLayer::OnEvent(SC::Event& event)
 {
 	SC::Log::Print(event.ToString());
 }
 
-void DescriptorLayer::Draw()
+void SceneLayer::CreateScene()
+{
+	{
+		std::vector<SC::Mesh> meshes;
+		std::vector<std::string> names;
+		SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", meshes, &names, true);
+
+		for (int i = 0; i < meshes.size(); ++i)
+		{
+			SC::Mesh* mesh = m_scene.InsertMesh(names[i], std::move(meshes[i]));
+
+			SC::RenderObject renderObject;
+			renderObject.name = names[i];
+			renderObject.mesh = mesh;
+
+			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_pipelineLayout.get(), "default");
+			renderObject.material = material;
+
+			m_scene.CreateRenderObject(std::move(renderObject));
+
+			SC::RenderObject renderObject1;
+			renderObject1.name = names[i];
+			renderObject1.mesh = mesh;
+			renderObject1.material = material;
+			renderObject1.transform = glm::translate(glm::mat4(1.f), glm::vec3(3.5f,0,0));
+			m_scene.CreateRenderObject(std::move(renderObject1));
+
+
+			SC::RenderObject renderObject2;
+			renderObject2.name = names[i];
+			renderObject2.mesh = mesh;
+			renderObject2.material = material;
+			renderObject2.transform = glm::translate(glm::mat4(1.f), glm::vec3(-3.5f, 0, 0));
+			m_scene.CreateRenderObject(std::move(renderObject2));
+		}
+	}
+}
+
+void SceneLayer::Draw()
 {
 	const SC::App* app = SC::App::Instance();
 	int windowWidth{ 0 }, windowHeight{ 0 };
@@ -183,32 +189,25 @@ void DescriptorLayer::Draw()
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
-	//calculate final mesh matrix
-	MeshPushConstants constants;
-	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
-	constants.render_matrix = model;
-
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame();
-
-	renderer->BindPipeline(m_pipeline.get());
 
 	//Not optimal as we create a viewport object each frame but will do for demo
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindVertexBuffer(m_vertexBuffer.get());
-	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
-	renderer->BindDescriptorSet(m_pipelineLayout.get(), m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
+	m_scene.DrawObjects(renderer, 
+		[=](const SC::RenderObject& renderObject, bool pipelineChanged)
+		{	//Per object func gets called on each render object
+			MeshPushConstants constants;
+			constants.render_matrix = renderObject.transform;
+			constants.render_matrix *= glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
 
+			renderer->PushConstants(renderObject.material->pipelineLayout, 0, 0, sizeof(MeshPushConstants), &constants);
+			if(pipelineChanged) //only bind camera descriptors if pipeline changed
+				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
 
-	if (!m_indexBuffer)
-		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
-	else
-	{
-		//using a index buffer
-		renderer->BindIndexBuffer(m_indexBuffer.get());
-		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
-	}
+		});
+
 	renderer->EndFrame();
 }

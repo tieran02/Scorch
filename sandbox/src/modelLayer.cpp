@@ -49,10 +49,10 @@ void ModelLayer::OnAttach()
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
-	std::vector<SC::RenderObject> model;
+	std::vector<SC::Mesh> model;
 	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::RenderObject::LoadFromFile("models/monkey_smooth.obj", model, USE_INDEX_BUFFER);
-	m_monkeyMesh = model[0].mesh;
+	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, USE_INDEX_BUFFER);
+	m_monkeyMesh = model[0];
 
 	//test
 	SC::BufferUsageSet vertexBufferUsage;

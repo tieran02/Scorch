@@ -4,6 +4,8 @@
 
 namespace SC
 {
+	class Pipeline;
+	class PipelineLayout;
 	using VertexIndexType = uint16_t;
 
 	struct Vertex
@@ -23,17 +25,24 @@ namespace SC
 
 		uint32_t IndexCount() const;
 		uint32_t IndexSize() const;
+
+		static bool LoadMeshesFromFile(const std::string& path, std::vector<Mesh>& meshes, std::vector<std::string>* names, bool useIndexBuffer);
+	};
+
+	struct Material
+	{
+		Pipeline* pipeline;
+		PipelineLayout* pipelineLayout;
 	};
 
 	struct RenderObject
 	{
 		RenderObject();
 
-		Mesh mesh;
+		std::string name;
+		Mesh* mesh;
+		Material* material;
 		glm::mat4 transform;
-
-		//Load RenderObject from file such as obj/fbx
-		static bool LoadFromFile(const std::string& path, std::vector<RenderObject>& model, bool useIndexBuffer);
 	};
 
 }
