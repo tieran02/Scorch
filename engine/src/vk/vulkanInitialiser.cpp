@@ -278,4 +278,3 @@ VkPipelineDepthStencilStateCreateInfo vkinit::DepthStencilCreateInfo(bool bDepth
 
 	return info;
 }
-

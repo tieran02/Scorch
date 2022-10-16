@@ -393,6 +393,18 @@ void VulkanRenderer::InitCommands()
 			vkDestroyCommandPool(m_device, m_frames[i].m_commandPool, nullptr);
 			});
 	}
+
+	VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily);
+	//create pool for upload context
+	VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.m_commandPool));
+
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroyCommandPool(m_device, m_uploadContext.m_commandPool, nullptr);
+		});
+
+	//allocate the default command buffer that we will use for the instant commands
+	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_uploadContext.m_commandPool, 1);
+	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_uploadContext.m_commandBuffer));
 }
 
 void VulkanRenderer::InitDefaultRenderpass()
@@ -551,6 +563,12 @@ void VulkanRenderer::InitSyncStructures()
 			vkDestroySemaphore(m_device, m_frames[i].m_renderSemaphore, nullptr);
 			});
 	}
+
+	VkFenceCreateInfo uploadFenceCreateInfo = vkinit::FenceCreateInfo();
+	VK_CHECK(vkCreateFence(m_device, &uploadFenceCreateInfo, nullptr, &m_uploadContext.m_uploadFence));
+	m_mainDeletionQueue.push_function([=]() {
+		vkDestroyFence(m_device, m_uploadContext.m_uploadFence, nullptr);
+		});
 }
 
 VulkanFrameData& VulkanRenderer::GetCurrentFrame()
@@ -592,5 +610,32 @@ void VulkanRenderer::InitDescriptors()
 	m_mainDeletionQueue.push_function([&]() {
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 		});
+}
+
+void VulkanRenderer::ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) const
+{
+	VkCommandBuffer cmd = m_uploadContext.m_commandBuffer;
+
+	//begin the command buffer recording. We will use this command buffer exactly once before resetting, so we tell vulkan that
+	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+	//execute the function
+	function(cmd);
+
+	VK_CHECK(vkEndCommandBuffer(cmd));
+
+	VkSubmitInfo submit = vkinit::SubmitInfo(&cmd);
+
+
+	//submit command buffer to the queue and execute it.
+	// _uploadFence will now block until the graphic commands finish execution
+	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, m_uploadContext.m_uploadFence));
+
+	vkWaitForFences(m_device, 1, &m_uploadContext.m_uploadFence, true, 9999999999);
+	vkResetFences(m_device, 1, &m_uploadContext.m_uploadFence);
+
+	// reset the command buffers inside the command pool
+	vkResetCommandPool(m_device, m_uploadContext.m_commandPool, 0);
 }
 

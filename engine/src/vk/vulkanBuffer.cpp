@@ -5,7 +5,7 @@
 
 using namespace SC;
 
-VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) : Buffer(size, bufferUsage,allocationUsage),
+VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) : Buffer(size, bufferUsage,allocationUsage, dataPtr),
 m_buffer(VK_NULL_HANDLE),
 m_allocation(VK_NULL_HANDLE)
 {
@@ -25,6 +25,8 @@ m_allocation(VK_NULL_HANDLE)
 		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	if (m_bufferUsage.test(BufferUsage::UNIFORM_BUFFER))
 		bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	if (m_bufferUsage.test(BufferUsage::TRANSFER))
+		bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	switch (m_allocationUsage)
@@ -51,6 +53,61 @@ m_allocation(VK_NULL_HANDLE)
 		renderer->WaitOnFences();
 		vmaDestroyBuffer(renderer->m_allocator, m_buffer, m_allocation);
 		});
+
+	//upload data if we have set the dataPtr
+	if (dataPtr)
+	{
+		if (m_bufferUsage.test(BufferUsage::MAP))
+		{
+			auto mappedData = Map();
+			memcpy(mappedData.Data(), dataPtr, m_size);
+		}
+		else if (m_bufferUsage.test(BufferUsage::TRANSFER))
+		{
+			//Create a temp buffer that is readable on the cpu, then transfer to GPU only memory
+			//allocate staging buffer
+			VkBufferCreateInfo stagingBufferInfo = {};
+			stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+			stagingBufferInfo.pNext = nullptr;
+
+			stagingBufferInfo.size = m_size;
+			stagingBufferInfo.usage = bufferInfo.usage;
+			stagingBufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+			//let the VMA library know that this data should be on CPU RAM
+			VmaAllocationCreateInfo vmaallocInfo = {};
+			vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+			vmaallocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+
+			VkBuffer stagingBuffer;
+			VmaAllocation stagingBufferAllocation;
+
+			//allocate the buffer
+			VK_CHECK(vmaCreateBuffer(renderer->m_allocator, &stagingBufferInfo, &vmaallocInfo,
+				&stagingBuffer,
+				&stagingBufferAllocation,
+				nullptr));
+
+			void* data;
+			vmaMapMemory(renderer->m_allocator, stagingBufferAllocation, &data);
+			memcpy(data, dataPtr, m_size);
+			vmaUnmapMemory(renderer->m_allocator, stagingBufferAllocation);
+
+			renderer->ImmediateSubmit([=](VkCommandBuffer cmd){
+				VkBufferCopy copy;
+				copy.dstOffset = 0;
+				copy.srcOffset = 0;
+				copy.size = m_size;
+				vkCmdCopyBuffer(cmd, stagingBuffer, m_buffer, 1, &copy);
+				});
+
+			vmaDestroyBuffer(renderer->m_allocator, stagingBuffer, stagingBufferAllocation);
+		}
+		else
+		{
+			CORE_ASSERT(false, "Invalid buffer usage to map data (must have map or transfer usagge)");
+		}
+	}
 }
 
 VulkanBuffer::~VulkanBuffer()

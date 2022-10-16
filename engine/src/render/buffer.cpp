@@ -6,7 +6,7 @@
 
 using namespace SC;
 
-std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage)
+std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr)
 {
 	CORE_ASSERT(size > 0, "Size must be greater than 0");
 	CORE_ASSERT(bufferUsage.any(), "Buffer usaage must be set");
@@ -23,14 +23,14 @@ std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& buffer
 	switch (renderer->GetApi())
 	{
 	case GraphicsAPI::VULKAN:
-		buffer = std::unique_ptr<VulkanBuffer>(new VulkanBuffer(size, bufferUsage, allocationUsage));
+		buffer = std::unique_ptr<VulkanBuffer>(new VulkanBuffer(size, bufferUsage, allocationUsage, dataPtr));
 	}
 
 	CORE_ASSERT(buffer, "failed to create buffer");
 	return std::move(buffer);
 }
 
-Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) :
+Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) :
 	m_size(size),
 	m_bufferUsage(bufferUsage),
 	m_allocationUsage(allocationUsage)

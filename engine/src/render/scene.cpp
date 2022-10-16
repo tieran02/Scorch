@@ -29,24 +29,16 @@ Mesh* Scene::InsertMesh(const std::string& name, Mesh&& mesh)
 	//also create the gpu buffers for the mesh
 	SC::BufferUsageSet vertexBufferUsage;
 	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::MAP); //todo stage vertex buffer to fast memory
+	vertexBufferUsage.set(SC::BufferUsage::TRANSFER); //Transfer this to gpu only memory
 
-	auto vertexBuffer = SC::Buffer::Create(insertedMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE);
-	{
-		auto mappedData = vertexBuffer->Map();
-		memcpy(mappedData.Data(), insertedMesh.vertices.data(), insertedMesh.VertexSize());
-	}
+	auto vertexBuffer = SC::Buffer::Create(insertedMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, insertedMesh.vertices.data());
 	m_vertexBuffers.emplace(name, std::move(vertexBuffer));
 
 	SC::BufferUsageSet indexBufferUsage;
 	indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-	indexBufferUsage.set(SC::BufferUsage::MAP);
+	indexBufferUsage.set(SC::BufferUsage::TRANSFER);
 
-	auto indexBuffer = SC::Buffer::Create(insertedMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE);
-	{
-		auto mappedData = indexBuffer->Map();
-		memcpy(mappedData.Data(), insertedMesh.indices.data(), insertedMesh.IndexSize());
-	}
+	auto indexBuffer = SC::Buffer::Create(insertedMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, insertedMesh.indices.data());
 	m_indexBuffers.emplace(name, std::move(indexBuffer));
 
 	return &insertedMesh;

@@ -21,6 +21,7 @@ namespace SC
 		INDEX_BUFFER,
 		UNIFORM_BUFFER,
 		MAP,
+		TRANSFER,
 		COUNT
 	};
 	using BufferUsageSet = Flags<BufferUsage>;
@@ -35,7 +36,7 @@ namespace SC
 	class Buffer
 	{
 	public:
-		static std::unique_ptr<Buffer> Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
+		static std::unique_ptr<Buffer> Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr = nullptr);
 		virtual ~Buffer();
 		virtual void Destroy() = 0;
 
@@ -44,7 +45,7 @@ namespace SC
 		bool HasUsage(BufferUsage usage) const;
 		size_t GetSize() const;
 	protected:
-		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
+		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr);
 		size_t m_size;
 		BufferUsageSet m_bufferUsage;
 		AllocationUsage m_allocationUsage;

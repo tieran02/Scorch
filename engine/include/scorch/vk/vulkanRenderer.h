@@ -29,6 +29,13 @@ namespace SC
 		VkCommandBuffer m_mainCommandBuffer;
 	};
 
+	struct UploadContext
+	{
+		VkFence m_uploadFence;
+		VkCommandPool m_commandPool;
+		VkCommandBuffer m_commandBuffer;
+	};
+
 	class VulkanRenderer : public Renderer
 	{
 	public:
@@ -54,6 +61,8 @@ namespace SC
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
+
+		void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) const;
 
 		void WaitOnFences() const;
 	private:
@@ -98,6 +107,8 @@ namespace SC
 		DeletionQueue m_swapChainDeletionQueue;
 
 		uint32_t m_swapchainImageIndex;
+
+		UploadContext m_uploadContext;
 
 		std::array<VulkanFrameData, FRAME_OVERLAP_COUNT[to_underlying(GraphicsAPI::VULKAN)]> m_frames;
 	};
