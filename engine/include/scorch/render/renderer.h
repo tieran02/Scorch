@@ -54,7 +54,7 @@ namespace SC
 	//Number of frame to compute at the same time (Double buffering helps prevent the CPU waiting on the GPU)
 	constexpr std::array<uint8_t, to_underlying(GraphicsAPI::COUNT)> FRAME_OVERLAP_COUNT
 	{
-		2, //Vulkan frame overlap
+		3, //Vulkan frame overlap
 	};
 
 	//Frame data allows holds data such as buffers/textures for each overlapping frame (Use FrameData when an object gets changes per frame e.g uniforms)

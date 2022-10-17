@@ -25,7 +25,9 @@ m_allocation(VK_NULL_HANDLE)
 		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	if (m_bufferUsage.test(BufferUsage::UNIFORM_BUFFER))
 		bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	if (m_bufferUsage.test(BufferUsage::TRANSFER))
+	if (m_bufferUsage.test(BufferUsage::TRANSFER_SRC))
+		bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	if (m_bufferUsage.test(BufferUsage::TRANSFER_DST))
 		bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
@@ -35,7 +37,9 @@ m_allocation(VK_NULL_HANDLE)
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 		break;
 	case AllocationUsage::DEVICE:
+		CORE_ASSERT(m_bufferUsage.test(BufferUsage::MAP), "Must be allocated to host memory for mapping");
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		break;
 	default:
 		CORE_ASSERT(false, "Failed to find supported allocation usage (default to auto)")
@@ -62,50 +66,15 @@ m_allocation(VK_NULL_HANDLE)
 			auto mappedData = Map();
 			memcpy(mappedData.Data(), dataPtr, m_size);
 		}
-		else if (m_bufferUsage.test(BufferUsage::TRANSFER))
+		else if (m_allocationUsage == AllocationUsage::DEVICE)
 		{
-			//Create a temp buffer that is readable on the cpu, then transfer to GPU only memory
-			//allocate staging buffer
-			VkBufferCreateInfo stagingBufferInfo = {};
-			stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-			stagingBufferInfo.pNext = nullptr;
+			//Create a staging buffer and copy data to GPU
+			BufferUsageSet stagingUsage = bufferUsage;
+			stagingUsage.set(BufferUsage::TRANSFER_SRC);
+			stagingUsage.set(BufferUsage::MAP);
+			VulkanBuffer stagingBuffer(size, stagingUsage, AllocationUsage::HOST, dataPtr);
 
-			stagingBufferInfo.size = m_size;
-			stagingBufferInfo.usage = bufferInfo.usage;
-			stagingBufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-			//let the VMA library know that this data should be on CPU RAM
-			VmaAllocationCreateInfo vmaallocInfo = {};
-			vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-			vmaallocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-
-			VkBuffer stagingBuffer;
-			VmaAllocation stagingBufferAllocation;
-
-			//allocate the buffer
-			VK_CHECK(vmaCreateBuffer(renderer->m_allocator, &stagingBufferInfo, &vmaallocInfo,
-				&stagingBuffer,
-				&stagingBufferAllocation,
-				nullptr));
-
-			void* data;
-			vmaMapMemory(renderer->m_allocator, stagingBufferAllocation, &data);
-			memcpy(data, dataPtr, m_size);
-			vmaUnmapMemory(renderer->m_allocator, stagingBufferAllocation);
-
-			renderer->ImmediateSubmit([=](VkCommandBuffer cmd){
-				VkBufferCopy copy;
-				copy.dstOffset = 0;
-				copy.srcOffset = 0;
-				copy.size = m_size;
-				vkCmdCopyBuffer(cmd, stagingBuffer, m_buffer, 1, &copy);
-				});
-
-			vmaDestroyBuffer(renderer->m_allocator, stagingBuffer, stagingBufferAllocation);
-		}
-		else
-		{
-			CORE_ASSERT(false, "Invalid buffer usage to map data (must have map or transfer usagge)");
+			CopyFrom(&stagingBuffer);
 		}
 	}
 }
@@ -146,6 +115,45 @@ ScopedMapData VulkanBuffer::Map()
 	}
 	CORE_ASSERT(false, "Failed to map buffer data");
 	return ScopedMapData();
+}
+
+void VulkanBuffer::CopyFrom(Buffer* src)
+{
+	CORE_ASSERT(src, "src buffer cant be null");
+	if (!src) return;
+
+	if (!src->HasUsage(BufferUsage::TRANSFER_SRC)) 
+	{
+		CORE_ASSERT(false, "Src buffer must have BufferUsage::TRANSFER_SRC");
+		return;
+	}
+
+	if (!HasUsage(BufferUsage::TRANSFER_DST))
+	{
+		CORE_ASSERT(false, "Dst buffer must have BufferUsage::TRANSFER_DST");
+		return;
+	}
+
+	if (src->GetSize() > GetSize())
+	{
+		CORE_ASSERT(false, "Src is larger than dst");
+		return;
+	}
+
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer) return;
+
+	renderer->ImmediateSubmit([=](VkCommandBuffer cmd) {
+		VkBufferCopy copy;
+		copy.dstOffset = 0;
+		copy.srcOffset = 0;
+		copy.size = m_size;
+		vkCmdCopyBuffer(cmd, *static_cast<VulkanBuffer*>(src)->GetBuffer(), *GetBuffer(), 1, &copy);
+		});
 }
 
 const VkBuffer* VulkanBuffer::GetBuffer() const

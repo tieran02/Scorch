@@ -4,6 +4,7 @@
 #include "vk/vulkanRenderer.h"
 #include "vk/vulkanUtils.h"
 #include "vk/vulkanInitialiser.h"
+#include "vk/vulkanBuffer.h"
 
 using namespace SC;
 
@@ -65,6 +66,9 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 	{
 	case SC::TextureUsage::DEPTH:
 		imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	case SC::TextureUsage::COLOUR:
+		imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+		break;
 		break;
 	default:
 		CORE_ASSERT(false, "Usage flag not supported");
@@ -81,4 +85,97 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 		});
 
 	return true;
+}
+
+bool VulkanTexture::LoadFromFile(const std::string& path)
+{
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return false;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer)
+		return false;
+
+	ImageData imageData;
+	if (!ReadImageFromFile(path, imageData))
+		return false;
+
+	BufferUsageSet stagingBufferUsage;
+	stagingBufferUsage.set(BufferUsage::TRANSFER_SRC);
+	stagingBufferUsage.set(BufferUsage::MAP);
+	VulkanBuffer stagingBuffer(imageData.Size(), stagingBufferUsage, AllocationUsage::HOST, imageData.pixels.data());
+
+	VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
+	VkExtent3D imageExtent;
+	imageExtent.width = static_cast<uint32_t>(imageData.width);
+	imageExtent.height = static_cast<uint32_t>(imageData.height);
+	imageExtent.depth = 1;
+
+	VkImageCreateInfo dimg_info = vkinit::ImageCreateInfo(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
+	VmaAllocationCreateInfo dimg_allocinfo = {};
+	dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	//allocate and create the image
+	vmaCreateImage(renderer->m_allocator, &dimg_info, &dimg_allocinfo, &m_image, &m_allocation, nullptr);
+
+	//now copy from the staging buffer into the texture
+	renderer->ImmediateSubmit([&](VkCommandBuffer cmd) {
+		VkImageSubresourceRange range;
+		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		range.baseMipLevel = 0;
+		range.levelCount = 1;
+		range.baseArrayLayer = 0;
+		range.layerCount = 1;
+
+		VkImageMemoryBarrier imageBarrier_toTransfer = {};
+		imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+
+		imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imageBarrier_toTransfer.image = m_image;
+		imageBarrier_toTransfer.subresourceRange = range;
+
+		imageBarrier_toTransfer.srcAccessMask = 0;
+		imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		//barrier the image into the transfer-receive layout
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+		
+		VkBufferImageCopy copyRegion = {};
+		copyRegion.bufferOffset = 0;
+		copyRegion.bufferRowLength = 0;
+		copyRegion.bufferImageHeight = 0;
+
+		copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copyRegion.imageSubresource.mipLevel = 0;
+		copyRegion.imageSubresource.baseArrayLayer = 0;
+		copyRegion.imageSubresource.layerCount = 1;
+		copyRegion.imageExtent = imageExtent;
+
+		//copy the buffer into the image
+		vkCmdCopyBufferToImage(cmd, *stagingBuffer.GetBuffer(),m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+
+		VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+
+		imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		//barrier the image into the shader readable layout
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+
+		});
+
+
+	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
+
+	m_deletionQueue.push_function([=]() {
+		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
+		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
+		});
 }

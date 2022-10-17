@@ -13,3 +13,4 @@
 #include "core/input.h"
 #include "render/scene.h"
 #include "render/camera.h"
+#include "render/texture.h"

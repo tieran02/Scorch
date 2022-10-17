@@ -21,7 +21,8 @@ namespace SC
 		INDEX_BUFFER,
 		UNIFORM_BUFFER,
 		MAP,
-		TRANSFER,
+		TRANSFER_SRC,
+		TRANSFER_DST,
 		COUNT
 	};
 	using BufferUsageSet = Flags<BufferUsage>;
@@ -41,6 +42,8 @@ namespace SC
 		virtual void Destroy() = 0;
 
 		virtual ScopedMapData Map() = 0;
+
+		virtual void CopyFrom(Buffer* src) = 0;
 
 		bool HasUsage(BufferUsage usage) const;
 		size_t GetSize() const;

@@ -89,6 +89,10 @@ void SceneLayer::OnAttach()
 	}
 
 	CreateScene();
+
+	//test texture
+	m_testTexture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+	m_testTexture->LoadFromFile("models/sponza/textures/lion.png");
 }
 
 void SceneLayer::OnDetach()

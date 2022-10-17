@@ -3,8 +3,17 @@
 #include "core/app.h"
 #include "render/renderer.h"
 #include "vk/vulkanTexture.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 
 using namespace SC;
+
+size_t ImageData::Size() const
+{
+	return width * height * channels;
+}
+
 
 std::unique_ptr<Texture> Texture::Create(TextureType type, TextureUsage usage, Format format)
 {
@@ -41,3 +50,20 @@ Texture::~Texture()
 {
 
 }
+
+bool Texture::ReadImageFromFile(const std::string& path, ImageData& imageData)
+{
+	stbi_uc* rawPixelData = stbi_load(path.c_str(), &imageData.width, &imageData.height, &imageData.channels, STBI_rgb_alpha);
+	imageData.channels = 4; //Set to 4 channels as were using STBI_rgb_alpha
+	if (!rawPixelData)
+	{
+		CORE_ASSERT(false, string_format("Failed to load image: %s", path.c_str()));
+		return false;
+	}
+
+	imageData.pixels.resize(imageData.Size());
+	memmove(imageData.pixels.data(), rawPixelData, imageData.Size());
+
+	return true;
+}
+

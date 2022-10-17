@@ -62,5 +62,12 @@
 			"url": "https://github.com/assimp/assimp.git",
 			"revision": "v5.2.5"
 		}
+	},
+	{
+		"name": "stb",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/nothings/stb.git"
+		}
 	}
 ]

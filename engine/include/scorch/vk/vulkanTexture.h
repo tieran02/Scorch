@@ -13,6 +13,7 @@ namespace SC
 		~VulkanTexture();
 
 		bool Build(uint32_t width, uint32_t height) override;
+		bool LoadFromFile(const std::string& path) override;
 	public:
 		VkImage m_image;
 		VmaAllocation m_allocation;

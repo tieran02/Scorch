@@ -49,6 +49,7 @@ target_include_directories(Engine PRIVATE vendor/src/vkbootstrap/src)
 target_include_directories(Engine PRIVATE vendor/src/vma/include)
 target_include_directories(Engine PRIVATE vendor/src/glm)
 target_include_directories(Engine PRIVATE vendor/src/assimp/include)
+target_include_directories(Engine PRIVATE vendor/src/stb)
 
 
 target_include_directories(Sandbox PRIVATE vendor/src/glm)

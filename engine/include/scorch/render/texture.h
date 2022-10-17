@@ -3,6 +3,16 @@
 
 namespace SC
 {
+	struct ImageData
+	{
+		std::vector<unsigned char> pixels;
+		int width;
+		int height;
+		int channels;
+
+		size_t Size() const;
+	};
+
 	enum class TextureType
 	{
 		TEXTURE2D
@@ -11,6 +21,7 @@ namespace SC
 	enum class TextureUsage
 	{
 		DEPTH,
+		COLOUR,
 	};
 
 	struct Texture
@@ -20,7 +31,10 @@ namespace SC
 		virtual ~Texture();
 
 		virtual bool Build(uint32_t width, uint32_t height) = 0;
+		virtual bool LoadFromFile(const std::string& path) = 0;
 	protected:
+		bool ReadImageFromFile(const std::string& path, ImageData& imageData);
+
 		Texture(TextureType type, TextureUsage usage, Format format);
 		TextureType m_type;
 		TextureUsage m_usage;

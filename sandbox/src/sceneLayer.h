@@ -27,5 +27,7 @@ private:
 
 	float m_rotation;
 	glm::vec3 m_pos;
+
+	std::unique_ptr<SC::Texture> m_testTexture;
 };
 
