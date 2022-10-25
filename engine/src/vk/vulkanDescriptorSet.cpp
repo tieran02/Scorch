@@ -3,6 +3,7 @@
 #include "core/app.h"
 #include "vk/vulkanRenderer.h"
 #include "vk/vulkanBuffer.h"
+#include "vk/vulkanInitialiser.h"
 
 using namespace SC;
 
@@ -14,6 +15,8 @@ namespace
 		{
 		case DescriptorBindingType::UNIFORM:
 			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		case DescriptorBindingType::SAMPLER:
+			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		}
 
 		CORE_ASSERT(false, "Type not supported");
@@ -106,7 +109,8 @@ m_descriptorSet(VK_NULL_HANDLE)
 
 	CORE_ASSERT(renderer->m_descriptorPool, "Descriptor cant be null");
 
-	vkAllocateDescriptorSets(renderer->m_device, &allocInfo, &m_descriptorSet);
+	VK_CHECK(vkAllocateDescriptorSets(renderer->m_device, &allocInfo, &m_descriptorSet));
+	CORE_ASSERT(m_descriptorSet, "Failed to create descriptor set")
 }
 
 void VulkanDescriptorSet::SetBuffer(const Buffer* buffer, uint32_t binding)
@@ -145,4 +149,31 @@ void VulkanDescriptorSet::SetBuffer(const Buffer* buffer, uint32_t binding)
 	setWrite.pBufferInfo = &binfo;
 
 	vkUpdateDescriptorSets(renderer->m_device, 1, &setWrite, 0, nullptr);
+}
+
+void VulkanDescriptorSet::SetTexture(const Texture* texture, uint32_t binding)
+{
+	CORE_ASSERT(texture, "Buffer can't be null");
+	CORE_ASSERT(binding >= 0 && binding < m_layout->Bindings().size(), "binding index out of range");
+
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer) return;
+
+	VkSamplerCreateInfo samplerInfo = vkinit::SamplerCreateInfo(VK_FILTER_NEAREST);
+	VkSampler blockySampler;
+	vkCreateSampler(renderer->m_device, &samplerInfo, nullptr, &blockySampler);
+
+	//write to the descriptor set so that it points to our empire_diffuse texture
+	VkDescriptorImageInfo imageBufferInfo;
+	imageBufferInfo.sampler = blockySampler;
+	imageBufferInfo.imageView = static_cast<const VulkanTexture*>(texture)->m_imageView;
+	imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	VkWriteDescriptorSet texture1 = vkinit::WriteDescriptorImage(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_descriptorSet, &imageBufferInfo, binding);
+
+	vkUpdateDescriptorSets(renderer->m_device, 1, &texture1, 0, nullptr);
 }

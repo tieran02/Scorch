@@ -28,6 +28,13 @@ namespace
 			vector.z = aimesh->mColors[index]->b;
 			outVertex.color = vector;
 		}
+
+		if (aimesh->HasTextureCoords(0))
+		{
+			outVertex.uv.x = aimesh->mTextureCoords[0][index].x;
+			outVertex.uv.y = aimesh->mTextureCoords[0][index].y;
+			
+		}
 	}
 
 	Mesh processMesh(aiMesh* aimesh, const aiScene* scene, bool indexBuffer)
@@ -52,10 +59,9 @@ namespace
 			}
 			else
 			{
-				for (uint32_t i = 0; i < 3; ++i)
+				for (uint32_t j = 0; j < 3; ++j)
 				{
-					uint32_t index = face.mIndices[i];
-					mesh.indices.push_back(face.mIndices[i]);
+					mesh.indices.push_back(static_cast<VertexIndexType>(face.mIndices[j]));
 				}
 			}
 		}

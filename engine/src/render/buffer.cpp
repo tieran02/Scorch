@@ -30,7 +30,7 @@ std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& buffer
 	return std::move(buffer);
 }
 
-Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) :
+Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) :
 	m_size(size),
 	m_bufferUsage(bufferUsage),
 	m_allocationUsage(allocationUsage)

@@ -236,7 +236,7 @@ void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
 	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, sizeof(VertexIndexType) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
 }
 
-void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet)
+void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet, int set)
 {
 	CORE_ASSERT(descriptorSet, "descriptorSet can't be null");
 
@@ -245,7 +245,7 @@ void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, con
 	const VulkanDescriptorSet* vulkanDescriptorSet = static_cast<const VulkanDescriptorSet*>(descriptorSet);
 	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
 
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &vulkanDescriptorSet->m_descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, set, 1, &vulkanDescriptorSet->m_descriptorSet, 0, nullptr);
 }
 
 void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
@@ -594,13 +594,14 @@ void VulkanRenderer::InitDescriptors()
 	//create a descriptor pool that will hold 10 uniform buffers
 	std::vector<VkDescriptorPoolSize> sizes =
 	{
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 }
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4000 }
 	};
 
 	VkDescriptorPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = 0;
-	pool_info.maxSets = 10;
+	pool_info.maxSets = 1000;
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes = sizes.data();
 

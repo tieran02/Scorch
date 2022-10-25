@@ -25,6 +25,7 @@ namespace SC
 		VulkanDescriptorSet(const DescriptorSetLayout* layout);
 
 		void SetBuffer(const Buffer* buffer, uint32_t binding) override;
+		void SetTexture(const Texture* texture, uint32_t binding) override;
 
 		VkDescriptorSet m_descriptorSet;
 	private:

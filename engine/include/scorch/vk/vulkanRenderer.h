@@ -56,7 +56,7 @@ namespace SC
 		void BindVertexBuffer(const Buffer* buffer) override;
 		void BindIndexBuffer(const Buffer* buffer) override;
 
-		void BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet) override;
+		void BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet,int set = 0) override;
 		void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) override;
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;

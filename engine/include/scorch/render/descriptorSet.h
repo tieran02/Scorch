@@ -6,6 +6,7 @@ namespace SC
 	enum class DescriptorBindingType
 	{
 		UNIFORM,
+		SAMPLER,
 		COUNT
 	};
 
@@ -32,12 +33,14 @@ namespace SC
 	};
 
 	class Buffer;
+	struct Texture;
 	class DescriptorSet
 	{
 	public:
 		static std::unique_ptr<DescriptorSet> Create(const DescriptorSetLayout* layout);
 
 		virtual void SetBuffer(const Buffer* buffer, uint32_t binding) = 0;
+		virtual void SetTexture(const Texture* texture, uint32_t binding) = 0;
 		const DescriptorSetLayout* Layout() const;
 	protected:
 		DescriptorSet(const DescriptorSetLayout* layout);

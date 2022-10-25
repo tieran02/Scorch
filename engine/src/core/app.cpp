@@ -218,9 +218,9 @@ bool App::InitWindow(const std::string& title)
 
 	glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xPos, double yPos)
 		{
-			MouseMovedEvent event((float)xPos, (float)yPos);
+			MouseMovedEvent event(static_cast<float>(xPos), static_cast<float>(yPos));
 			EventCallback(event);
-			Input::SetMousePos(xPos, yPos);
+			Input::SetMousePos(static_cast<float>(xPos), static_cast<float>(yPos));
 		});
 
 	EventCallback = std::bind(&App::OnEvent, this, std::placeholders::_1);

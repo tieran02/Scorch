@@ -15,4 +15,9 @@ target_compile_definitions(Engine PRIVATE
   $<$<CONFIG:Debug>:SCORCH_DEBUG=1>
 )
 
+target_compile_options(Engine PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /wd4100>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
+)
+
 target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap assimp)

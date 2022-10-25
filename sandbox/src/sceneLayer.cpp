@@ -29,8 +29,8 @@ void SceneLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/descriptorMesh.vert.spv")
-		.SetFragmentModulePath("shaders/descriptorMesh.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("shaders/textured.vert.spv")
+		.SetFragmentModulePath("shaders/textured.frag.spv")
 		.Build();
 
 	//create a pipeline layout with push constants
@@ -40,7 +40,13 @@ void SceneLayer::OnAttach()
 	m_pipelineLayout->AddPushConstant(pushConstantStages, sizeof(MeshPushConstants));
 
 	m_setLayout = SC::DescriptorSetLayout::Create({ { SC::DescriptorBindingType::UNIFORM, pushConstantStages } });
+
+	SC::ShaderModuleFlags textureStages;
+	textureStages.set(SC::ShaderStage::FRAGMENT);
+	m_textureSetLayout = SC::DescriptorSetLayout::Create({ { SC::DescriptorBindingType::SAMPLER, textureStages} });
+
 	m_pipelineLayout->AddDescriptorSetLayout(m_setLayout.get());
+	m_pipelineLayout->AddDescriptorSetLayout(m_textureSetLayout.get());
 	m_pipelineLayout->Build();
 
 	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_setLayout.get());
@@ -49,6 +55,7 @@ void SceneLayer::OnAttach()
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
+	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //uvS
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
 
@@ -56,7 +63,7 @@ void SceneLayer::OnAttach()
 	SC::BufferUsageSet cameraBufferUsage;
 	cameraBufferUsage.set(SC::BufferUsage::UNIFORM_BUFFER);
 	cameraBufferUsage.set(SC::BufferUsage::MAP);
-	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::DEVICE);
+	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::HOST);
 	for (const auto& val : m_cameraBuffer) 
 	{
 		auto mappedData = val->Map();
@@ -89,10 +96,6 @@ void SceneLayer::OnAttach()
 	}
 
 	CreateScene();
-
-	//test texture
-	m_testTexture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-	m_testTexture->LoadFromFile("models/sponza/textures/lion.png");
 }
 
 void SceneLayer::OnDetach()
@@ -171,6 +174,9 @@ void SceneLayer::CreateScene()
 		std::vector<std::string> names;
 		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, true);
 
+		m_testTexture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+		m_testTexture->LoadFromFile("models/sponza/textures/spnza_bricks_a_diff.png");
+		bool created = false;
 		for (int i = 0; i < meshes.size(); ++i)
 		{
 			SC::Mesh* mesh = m_scene.InsertMesh(names[i], std::move(meshes[i]));
@@ -182,6 +188,8 @@ void SceneLayer::CreateScene()
 			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_pipelineLayout.get(), "default");
 			renderObject.material = material;
 
+			renderObject.material->textureDescriptorSet = SC::DescriptorSet::Create(m_textureSetLayout.get());
+			renderObject.material->textureDescriptorSet->SetTexture(m_testTexture.get(),0);
 			m_scene.CreateRenderObject(std::move(renderObject));
 		}
 	}
@@ -210,8 +218,11 @@ void SceneLayer::Draw()
 			constants.render_matrix = renderObject.transform;
 
 			renderer->PushConstants(renderObject.material->pipelineLayout, 0, 0, sizeof(MeshPushConstants), &constants);
-			if(pipelineChanged) //only bind camera descriptors if pipeline changed
+			if (pipelineChanged) { //only bind camera descriptors if pipeline changed
 				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
+
+				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, renderObject.material->textureDescriptorSet.get(), 1);
+			}
 
 		});
 

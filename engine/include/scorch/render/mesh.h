@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/vec3.hpp>
 #include <glm/gtx/transform.hpp>
+#include "descriptorSet.h"
 
 namespace SC
 {
@@ -13,6 +14,7 @@ namespace SC
 		glm::vec3 position;
 		glm::vec3 normal;
 		glm::vec3 color;
+		glm::vec2 uv;
 	};
 
 	struct Mesh
@@ -33,6 +35,7 @@ namespace SC
 	{
 		Pipeline* pipeline;
 		PipelineLayout* pipelineLayout;
+		std::unique_ptr<DescriptorSet> textureDescriptorSet;
 	};
 
 	struct RenderObject

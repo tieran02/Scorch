@@ -48,7 +48,7 @@ namespace SC
 		bool HasUsage(BufferUsage usage) const;
 		size_t GetSize() const;
 	protected:
-		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr);
+		Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage);
 		size_t m_size;
 		BufferUsageSet m_bufferUsage;
 		AllocationUsage m_allocationUsage;

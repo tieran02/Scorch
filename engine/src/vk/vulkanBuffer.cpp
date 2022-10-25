@@ -5,7 +5,7 @@
 
 using namespace SC;
 
-VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) : Buffer(size, bufferUsage,allocationUsage, dataPtr),
+VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) : Buffer(size, bufferUsage,allocationUsage),
 m_buffer(VK_NULL_HANDLE),
 m_allocation(VK_NULL_HANDLE)
 {
@@ -37,7 +37,7 @@ m_allocation(VK_NULL_HANDLE)
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 		break;
 	case AllocationUsage::DEVICE:
-		CORE_ASSERT(m_bufferUsage.test(BufferUsage::MAP), "Must be allocated to host memory for mapping");
+		CORE_ASSERT(!m_bufferUsage.test(BufferUsage::MAP), "Must be allocated to host memory for mapping");
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 		bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		break;

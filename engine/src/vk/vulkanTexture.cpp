@@ -66,9 +66,9 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 	{
 	case SC::TextureUsage::DEPTH:
 		imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+		break;
 	case SC::TextureUsage::COLOUR:
 		imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-		break;
 		break;
 	default:
 		CORE_ASSERT(false, "Usage flag not supported");
@@ -106,7 +106,7 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 	stagingBufferUsage.set(BufferUsage::MAP);
 	VulkanBuffer stagingBuffer(imageData.Size(), stagingBufferUsage, AllocationUsage::HOST, imageData.pixels.data());
 
-	VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
+	VkFormat image_format = vkutils::ConvertFormat(m_format);
 	VkExtent3D imageExtent;
 	imageExtent.width = static_cast<uint32_t>(imageData.width);
 	imageExtent.height = static_cast<uint32_t>(imageData.height);
@@ -171,11 +171,13 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 		});
 
 
-	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(image_format, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
 	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
 
 	m_deletionQueue.push_function([=]() {
 		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
 		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
 		});
+
+	return m_image != VK_NULL_HANDLE;
 }

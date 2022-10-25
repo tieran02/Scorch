@@ -4,6 +4,7 @@
 #include "render/pipeline.h"
 #include "render/mesh.h"
 #include "render/buffer.h"
+#include "render/texture.h"
 
 using namespace SC;
 
@@ -81,4 +82,19 @@ void Scene::DrawObjects(Renderer* renderer,
 
 		lastLayout = renderable.material->pipelineLayout;
 	}
+}
+
+Texture* Scene::CreateTexture(const std::string& path)
+{
+	auto foundIt = m_textures.find(path);
+	if (foundIt != m_textures.end())
+	{
+		return foundIt->second.get();
+	}
+
+	std::unique_ptr<Texture> texture = Texture::Create(TextureType::TEXTURE2D, TextureUsage::COLOUR, Format::R8G8B8A8_SRGB);
+	texture->LoadFromFile(path);
+	auto it = m_textures.insert(std::make_pair(path, std::move(texture)));
+
+	return it.first->second.get();
 }
