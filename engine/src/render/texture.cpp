@@ -67,3 +67,36 @@ bool Texture::ReadImageFromFile(const std::string& path, ImageData& imageData)
 	return true;
 }
 
+//
+//Sampler::Sampler(TextureType type, Texture* boundTexture) : 
+//	m_type(type),
+//	m_boundTexture(boundTexture)
+//{
+//
+//}
+//
+//void Sampler::BindTexture(Texture* boundTexture)
+//{
+//	m_boundTexture = boundTexture;
+//}
+//
+//std::unique_ptr<SC::Texture> Sampler::Create(TextureType type, Texture* boundTexture /*= nullptr*/)
+//{
+//	const App* app = App::Instance();
+//	CORE_ASSERT(app, "App instance is null");
+//	if (!app) return nullptr;
+//
+//	const Renderer* renderer = app->GetRenderer();
+//	CORE_ASSERT(renderer, "renderer is null");
+//	if (!renderer) return nullptr;
+//
+//	std::unique_ptr<Sampler> sampler{ nullptr };
+//	switch (renderer->GetApi())
+//	{
+//	case GraphicsAPI::VULKAN:
+//		sampler = std::unique_ptr<Sampler>(new VulkanSampler(type, boundTexture));
+//	}
+//
+//	CORE_ASSERT(sampler, "failed to create sampler");
+//	return std::move(sampler);
+//}

@@ -41,4 +41,15 @@ namespace SC
 		Format m_format;
 		uint32_t m_width, m_height;
 	};
+
+	//struct Sampler
+	//{
+	//	static std::unique_ptr<Texture> Create(TextureType type, Texture* boundTexture = nullptr);
+	//	void BindTexture(Texture* boundTexture);
+	//protected:
+	//	Sampler(TextureType type, Texture* boundTexture);
+
+	//	Texture* m_boundTexture;
+	//	TextureType m_type;
+	//};
 }

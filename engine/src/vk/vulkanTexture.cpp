@@ -175,6 +175,7 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
 
 	m_deletionQueue.push_function([=]() {
+		renderer->WaitOnFences();
 		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
 		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
 		});

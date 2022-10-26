@@ -38,6 +38,7 @@ namespace SC
 	{
 	public:
 		static std::unique_ptr<DescriptorSet> Create(const DescriptorSetLayout* layout);
+		virtual ~DescriptorSet();
 
 		virtual void SetBuffer(const Buffer* buffer, uint32_t binding) = 0;
 		virtual void SetTexture(const Texture* texture, uint32_t binding) = 0;

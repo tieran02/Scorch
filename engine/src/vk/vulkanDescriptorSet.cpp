@@ -52,7 +52,6 @@ void VulkanDescriptorSetLayout::Init()
 	if (!renderer) return;
 
 	std::vector<VkDescriptorSetLayoutBinding > vkSetBindings;
-
 	for (int j = 0; j < m_bindings.size(); ++j)
 	{
 		VkDescriptorSetLayoutBinding binding = {};
@@ -90,6 +89,17 @@ void VulkanDescriptorSetLayout::Init()
 		});
 }
 
+int VulkanDescriptorSetLayout::GetSamplerCount() const
+{
+	int sampler2DCount = 0;
+	for (int j = 0; j < m_bindings.size(); ++j)
+	{
+		if (m_bindings[j].type == DescriptorBindingType::SAMPLER)
+			sampler2DCount++;
+	}
+	return sampler2DCount;
+}
+
 VulkanDescriptorSet::VulkanDescriptorSet(const DescriptorSetLayout* layout) : DescriptorSet(layout), 
 m_descriptorSet(VK_NULL_HANDLE)
 {
@@ -110,7 +120,9 @@ m_descriptorSet(VK_NULL_HANDLE)
 	CORE_ASSERT(renderer->m_descriptorPool, "Descriptor cant be null");
 
 	VK_CHECK(vkAllocateDescriptorSets(renderer->m_device, &allocInfo, &m_descriptorSet));
-	CORE_ASSERT(m_descriptorSet, "Failed to create descriptor set")
+	CORE_ASSERT(m_descriptorSet, "Failed to create descriptor set");
+
+	CreateSamplers();
 }
 
 void VulkanDescriptorSet::SetBuffer(const Buffer* buffer, uint32_t binding)
@@ -163,17 +175,42 @@ void VulkanDescriptorSet::SetTexture(const Texture* texture, uint32_t binding)
 	const VulkanRenderer* renderer = app->GetVulkanRenderer();
 	if (!renderer) return;
 
-	VkSamplerCreateInfo samplerInfo = vkinit::SamplerCreateInfo(VK_FILTER_NEAREST);
-	VkSampler blockySampler;
-	vkCreateSampler(renderer->m_device, &samplerInfo, nullptr, &blockySampler);
-
 	//write to the descriptor set so that it points to our empire_diffuse texture
 	VkDescriptorImageInfo imageBufferInfo;
-	imageBufferInfo.sampler = blockySampler;
+	imageBufferInfo.sampler = m_samplers[binding];
 	imageBufferInfo.imageView = static_cast<const VulkanTexture*>(texture)->m_imageView;
 	imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	VkWriteDescriptorSet texture1 = vkinit::WriteDescriptorImage(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_descriptorSet, &imageBufferInfo, binding);
 
 	vkUpdateDescriptorSets(renderer->m_device, 1, &texture1, 0, nullptr);
+}
+
+void VulkanDescriptorSet::CreateSamplers()
+{
+	m_samplers.resize(static_cast<const VulkanDescriptorSetLayout*>(m_layout)->GetSamplerCount());
+	if (m_samplers.empty()) return;
+
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer) return;
+
+	for (int i = 0; i < m_samplers.size(); ++i)
+	{
+		VkSamplerCreateInfo samplerInfo = vkinit::SamplerCreateInfo(VK_FILTER_LINEAR);
+		vkCreateSampler(renderer->m_device, &samplerInfo, nullptr, &m_samplers[i]);
+
+		m_deletionQueue.push_function([=]() {
+			renderer->WaitOnFences();
+			vkDestroySampler(renderer->m_device, m_samplers[i], nullptr);
+			});
+	}
+}
+
+VulkanDescriptorSet::~VulkanDescriptorSet()
+{
+	m_deletionQueue.flush();
 }

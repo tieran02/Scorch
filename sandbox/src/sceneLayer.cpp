@@ -186,10 +186,13 @@ void SceneLayer::CreateScene()
 			renderObject.mesh = mesh;
 
 			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_pipelineLayout.get(), "default");
-			renderObject.material = material;
+			if (!material->textureDescriptorSet) 
+			{
+				material->textureDescriptorSet = std::move(SC::DescriptorSet::Create(m_textureSetLayout.get()));
+				material->textureDescriptorSet->SetTexture(m_testTexture.get(), 0);
+			}
 
-			renderObject.material->textureDescriptorSet = SC::DescriptorSet::Create(m_textureSetLayout.get());
-			renderObject.material->textureDescriptorSet->SetTexture(m_testTexture.get(),0);
+			renderObject.material = material;
 			m_scene.CreateRenderObject(std::move(renderObject));
 		}
 	}
