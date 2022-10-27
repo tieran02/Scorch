@@ -51,7 +51,7 @@ void ModelLayer::OnAttach()
 
 	std::vector<SC::Mesh> model;
 	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, USE_INDEX_BUFFER);
+	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, nullptr, USE_INDEX_BUFFER);
 	m_monkeyMesh = model[0];
 
 	//test

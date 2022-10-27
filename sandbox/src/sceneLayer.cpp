@@ -172,24 +172,43 @@ void SceneLayer::CreateScene()
 	{
 		std::vector<SC::Mesh> meshes;
 		std::vector<std::string> names;
-		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, true);
+		std::vector<SC::MaterialData> materialData;
+		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, &materialData, true);
 
-		m_testTexture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-		m_testTexture->LoadFromFile("models/sponza/textures/spnza_bricks_a_diff.png");
+		for (const auto& matData : materialData)
+		{
+			if(matData.diffuseTexturePath.empty() || m_textures.find(matData.diffuseTexturePath) != m_textures.end())
+				continue;
+
+			auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+			texture->LoadFromFile(string_format("models/sponza/%s", matData.diffuseTexturePath.c_str()));
+
+			m_textures.emplace(matData.diffuseTexturePath, std::move(texture));
+		}
+
 		bool created = false;
 		for (int i = 0; i < meshes.size(); ++i)
 		{
+			if(meshes[i].materialName == "Material__47") continue; //ignore this for now as it has no texture
 			SC::Mesh* mesh = m_scene.InsertMesh(names[i], std::move(meshes[i]));
 
 			SC::RenderObject renderObject;
 			renderObject.name = names[i];
 			renderObject.mesh = mesh;
 
-			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_pipelineLayout.get(), "default");
+			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_pipelineLayout.get(), mesh->materialName);
 			if (!material->textureDescriptorSet) 
 			{
-				material->textureDescriptorSet = std::move(SC::DescriptorSet::Create(m_textureSetLayout.get()));
-				material->textureDescriptorSet->SetTexture(m_testTexture.get(), 0);
+				//find mat
+				auto mat = std::find_if(materialData.begin(), materialData.end(), [mesh](const SC::MaterialData& material)
+					{
+						return material.materialName == mesh->materialName;
+					});
+				if (mat != materialData.end() && !mat->diffuseTexturePath.empty())
+				{
+					material->textureDescriptorSet = std::move(SC::DescriptorSet::Create(m_textureSetLayout.get()));
+					material->textureDescriptorSet->SetTexture(m_textures.at(mat->diffuseTexturePath).get(), 0);
+				}
 			}
 
 			renderObject.material = material;
@@ -221,10 +240,10 @@ void SceneLayer::Draw()
 			constants.render_matrix = renderObject.transform;
 
 			renderer->PushConstants(renderObject.material->pipelineLayout, 0, 0, sizeof(MeshPushConstants), &constants);
+			renderer->BindDescriptorSet(renderObject.material->pipelineLayout, renderObject.material->textureDescriptorSet.get(), 1);
+
 			if (pipelineChanged) { //only bind camera descriptors if pipeline changed
 				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
-
-				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, renderObject.material->textureDescriptorSet.get(), 1);
 			}
 
 		});

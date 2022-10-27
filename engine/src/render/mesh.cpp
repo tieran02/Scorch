@@ -77,6 +77,11 @@ namespace
 			}
 		}
 
+		if (scene->HasMaterials())
+		{
+			mesh.materialName = scene->mMaterials[aimesh->mMaterialIndex]->GetName().C_Str();
+		}
+
 		return mesh;
 	}
 
@@ -99,7 +104,11 @@ namespace
 
 }
 
-bool Mesh::LoadMeshesFromFile(const std::string& path, std::vector<Mesh>& meshes, std::vector<std::string>* names, bool useIndexBuffer)
+bool Mesh::LoadMeshesFromFile(const std::string& path,
+	std::vector<Mesh>& meshes,
+	std::vector<std::string>* names,
+	std::vector<MaterialData>* materialData,
+	bool useIndexBuffer)
 {
 	// Check if file exists
 	std::ifstream fin(path.c_str());
@@ -110,10 +119,38 @@ bool Mesh::LoadMeshesFromFile(const std::string& path, std::vector<Mesh>& meshes
 	}
 
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality);
+	const aiScene* scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality | aiProcess_FlipUVs);
 
 	if (names)
 		names->clear();
+
+	if (materialData)
+	{
+		materialData->clear();
+
+		if (scene->HasMaterials())
+		{
+			materialData->reserve(scene->mNumMaterials);
+			std::unordered_set<std::string> parsedMats;
+
+			for (uint32_t i =0; i < scene->mNumMaterials; ++i)
+			{
+				const auto& aiMat = scene->mMaterials[i];
+
+				//Material already parsed
+				if(parsedMats.find(aiMat->GetName().C_Str()) != parsedMats.end())
+					continue;
+
+				aiString diffusePath;
+				if (aiMat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+				{
+					aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
+				}
+				materialData->emplace_back(aiMat->GetName().C_Str(), diffusePath.C_Str());
+				parsedMats.insert(aiMat->GetName().C_Str());
+			}
+		}
+	}
 
 	processNode(scene->mRootNode, scene, meshes, names, useIndexBuffer);
 	return !meshes.empty();
@@ -144,3 +181,8 @@ uint32_t Mesh::IndexSize() const
 {
 	return static_cast<uint32_t>(indices.size() * sizeof(VertexIndexType));
 }
+//
+//MaterialData::MaterialData(const char* name, const char* diffuse) : materialName(name), diffuseTexturePath(diffuse)
+//{
+//
+//}

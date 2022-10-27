@@ -30,6 +30,6 @@ private:
 	float m_rotation;
 	glm::vec3 m_pos;
 
-	std::unique_ptr<SC::Texture> m_testTexture;
+	std::unordered_map<std::string, std::unique_ptr<SC::Texture>> m_textures;
 };
 
