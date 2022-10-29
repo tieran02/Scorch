@@ -4,6 +4,10 @@
 
 using namespace SC;
 
+namespace
+{
+	std::unique_ptr<Texture> gWhiteTexture;
+}
 
 
 std::unique_ptr<Renderer> Renderer::Create(GraphicsAPI api)
@@ -52,4 +56,26 @@ uint8_t Renderer::FrameDataIndexCount() const
 	}
 
 	return 1;
+}
+
+void Renderer::Init()
+{
+	if (!gWhiteTexture)
+	{
+		gWhiteTexture = Texture::Create(TextureType::TEXTURE2D, TextureUsage::COLOUR, Format::R8G8B8A8_SRGB);
+		gWhiteTexture->Build(1, 1);
+
+		std::array<uint8_t,4> pixel{ 255,255,255,255 };
+		gWhiteTexture->CopyData(pixel.data(), pixel.size() * sizeof(uint8_t));
+	}
+}
+
+void Renderer::Cleanup()
+{
+	gWhiteTexture.reset();
+}
+
+const SC::Texture* Renderer::WhiteTexture() const
+{
+	return gWhiteTexture.get();
 }

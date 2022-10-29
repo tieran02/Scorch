@@ -18,6 +18,7 @@ VulkanTexture::~VulkanTexture()
 	m_deletionQueue.flush();
 }
 
+
 bool VulkanTexture::Build(uint32_t width, uint32_t height)
 {
 	const App* app = App::Instance();
@@ -38,11 +39,14 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 	m_height = height;
 
 	VkFormat imageFormat = vkutils::ConvertFormat(m_format);
-	VkImageUsageFlagBits usageFlags;
+	uint32_t usageFlags;
 	switch (m_usage)
 	{
 	case SC::TextureUsage::DEPTH:
 		usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		break;
+	case SC::TextureUsage::COLOUR:
+		usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		break;
 	default:
 		CORE_ASSERT(false, "Usage flag not supported");
@@ -101,16 +105,11 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 	if (!ReadImageFromFile(path, imageData))
 		return false;
 
-	BufferUsageSet stagingBufferUsage;
-	stagingBufferUsage.set(BufferUsage::TRANSFER_SRC);
-	stagingBufferUsage.set(BufferUsage::MAP);
-	VulkanBuffer stagingBuffer(imageData.Size(), stagingBufferUsage, AllocationUsage::HOST, imageData.pixels.data());
+	m_width = static_cast<uint32_t>(imageData.width);
+	m_height = static_cast<uint32_t>(imageData.height);
 
 	VkFormat image_format = vkutils::ConvertFormat(m_format);
-	VkExtent3D imageExtent;
-	imageExtent.width = static_cast<uint32_t>(imageData.width);
-	imageExtent.height = static_cast<uint32_t>(imageData.height);
-	imageExtent.depth = 1;
+	VkExtent3D imageExtent{m_width,m_height,1};
 
 	VkImageCreateInfo dimg_info = vkinit::ImageCreateInfo(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
 	VmaAllocationCreateInfo dimg_allocinfo = {};
@@ -118,6 +117,40 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 
 	//allocate and create the image
 	vmaCreateImage(renderer->m_allocator, &dimg_info, &dimg_allocinfo, &m_image, &m_allocation, nullptr);
+
+	CopyData(imageData.pixels.data(), imageData.Size());
+
+	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(image_format, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
+
+	m_deletionQueue.push_function([=]() {
+		renderer->WaitOnFences();
+		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
+		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
+		});
+
+	return m_image != VK_NULL_HANDLE;
+}
+
+bool VulkanTexture::CopyData(void* data, size_t size)
+{
+	//TODO check if texture has dst flag
+
+	CORE_ASSERT(m_image != VK_NULL_HANDLE, "Image can't be null");
+	if (m_image == VK_NULL_HANDLE) return false;
+
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return false;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer)
+		return false;
+
+	BufferUsageSet stagingBufferUsage;
+	stagingBufferUsage.set(BufferUsage::TRANSFER_SRC);
+	stagingBufferUsage.set(BufferUsage::MAP);
+	VulkanBuffer stagingBuffer(size, stagingBufferUsage, AllocationUsage::HOST, data);
 
 	//now copy from the staging buffer into the texture
 	renderer->ImmediateSubmit([&](VkCommandBuffer cmd) {
@@ -141,7 +174,7 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 
 		//barrier the image into the transfer-receive layout
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
-		
+
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferOffset = 0;
 		copyRegion.bufferRowLength = 0;
@@ -151,11 +184,10 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 		copyRegion.imageSubresource.mipLevel = 0;
 		copyRegion.imageSubresource.baseArrayLayer = 0;
 		copyRegion.imageSubresource.layerCount = 1;
-		copyRegion.imageExtent = imageExtent;
+		copyRegion.imageExtent = { m_width , m_height, 1};
 
 		//copy the buffer into the image
-		vkCmdCopyBufferToImage(cmd, *stagingBuffer.GetBuffer(),m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-
+		vkCmdCopyBufferToImage(cmd, *stagingBuffer.GetBuffer(), m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 		VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -167,18 +199,7 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 
 		//barrier the image into the shader readable layout
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
-
 		});
 
-
-	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(image_format, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
-	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
-
-	m_deletionQueue.push_function([=]() {
-		renderer->WaitOnFences();
-		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
-		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
-		});
-
-	return m_image != VK_NULL_HANDLE;
+	return true;
 }

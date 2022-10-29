@@ -3,6 +3,7 @@
 #include <glm/gtx/transform.hpp>
 #include "scorch/event/keyEvent.h"
 #include "glm/gtx/norm.hpp"
+#include "scorch/core/app.h"
 
 struct MeshPushConstants
 {
@@ -189,7 +190,6 @@ void SceneLayer::CreateScene()
 		bool created = false;
 		for (int i = 0; i < meshes.size(); ++i)
 		{
-			if(meshes[i].materialName == "Material__47") continue; //ignore this for now as it has no texture
 			SC::Mesh* mesh = m_scene.InsertMesh(names[i], std::move(meshes[i]));
 
 			SC::RenderObject renderObject;
@@ -204,10 +204,12 @@ void SceneLayer::CreateScene()
 					{
 						return material.materialName == mesh->materialName;
 					});
-				if (mat != materialData.end() && !mat->diffuseTexturePath.empty())
+				if (mat != materialData.end())
 				{
 					material->textureDescriptorSet = std::move(SC::DescriptorSet::Create(m_textureSetLayout.get()));
-					material->textureDescriptorSet->SetTexture(m_textures.at(mat->diffuseTexturePath).get(), 0);
+					auto it = m_textures.find(mat->diffuseTexturePath);
+					const SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
+					material->textureDescriptorSet->SetTexture(texture, 0);
 				}
 			}
 

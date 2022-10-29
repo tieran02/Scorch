@@ -15,6 +15,7 @@ namespace SC
 	class Buffer;
 	struct Viewport;
 	struct Scissor;
+	struct Texture;
 	class Renderer
 	{
 	public:
@@ -23,8 +24,8 @@ namespace SC
 
 		GraphicsAPI GetApi() const;
 
-		virtual void Init() = 0;
-		virtual void Cleanup() = 0;
+		virtual void Init();
+		virtual void Cleanup();
 		virtual void CreateSwapchain() = 0;
 
 		virtual void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) = 0;
@@ -43,6 +44,8 @@ namespace SC
 
 		uint8_t FrameDataIndex() const;
 		uint8_t FrameDataIndexCount() const;
+
+		const Texture* WhiteTexture() const;
 	protected:
 		Renderer(GraphicsAPI api);
 

@@ -56,6 +56,8 @@ m_allocation(VK_NULL_HANDLE)
 	m_deletionQueue.push_function([=]() {
 		renderer->WaitOnFences();
 		vmaDestroyBuffer(renderer->m_allocator, m_buffer, m_allocation);
+		vmaFlushAllocation(renderer->m_allocator, m_allocation, 0, size);
+
 		});
 
 	//upload data if we have set the dataPtr

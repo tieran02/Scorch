@@ -46,10 +46,14 @@ void VulkanRenderer::Init()
 	InitSyncStructures();
 
 	InitDescriptors();
+
+	Renderer::Init();
 }
 
 void VulkanRenderer::Cleanup()
 {
+	Renderer::Cleanup();
+
 	Log::PrintCore("Cleaning up Vulkan Renderer");
 
 	//Wait for rendering to finish before cleaning up
