@@ -108,7 +108,7 @@ namespace
 bool Mesh::LoadMeshesFromFile(const std::string& path,
 	std::vector<Mesh>& meshes,
 	std::vector<std::string>* names,
-	std::vector<MaterialData>* materialData,
+	std::vector<MaterialInfo>* materialData,
 	bool useIndexBuffer)
 {
 	// Check if file exists
@@ -147,7 +147,9 @@ bool Mesh::LoadMeshesFromFile(const std::string& path,
 				{
 					aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
 				}
-				materialData->emplace_back(aiMat->GetName().C_Str(), diffusePath.C_Str());
+
+				//Just add one texture for now
+				materialData->emplace_back("", aiMat->GetName().C_Str(), std::vector<std::string>{ diffusePath.C_Str() });
 				parsedMats.insert(aiMat->GetName().C_Str());
 			}
 		}

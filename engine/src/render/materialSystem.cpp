@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "render/materialSystem.h"
 #include "render/pipeline.h"
+#include "render/texture.h"
 
 using namespace SC;
 
@@ -102,3 +103,113 @@ Pipeline* ShaderPass::GetPipeline() const
 {
 	return m_pipeline.get();
 }
+
+EffectTemplate::EffectTemplate()
+{
+
+}
+
+
+bool MaterialData::operator==(const MaterialData& other) const
+{
+	if (other.baseTemplate.compare(baseTemplate) != 0 || other.textures.size() != textures.size())
+	{
+		return false;
+	}
+	else {
+		//binary compare textures
+		bool comp = memcmp(other.textures.data(), textures.data(), textures.size() * sizeof(textures[0])) == 0;
+		return comp;
+	}
+}
+
+size_t MaterialData::hash() const
+{
+	using std::size_t;
+	using std::hash;
+
+	size_t result = hash<std::string>()(baseTemplate);
+
+	for (const auto& b : textures)
+	{
+		//pack the binding data into a single int64. Not fully correct but its ok
+		size_t texture_hash = (std::hash<size_t>()((size_t)b) << 3) & (std::hash<size_t>()((size_t)b->GetFormat()) >> 7);
+
+		//shuffle the packed binding data and xor it with the main hash
+		result ^= std::hash<size_t>()(texture_hash);
+	}
+
+	return result;
+}
+
+Material* MaterialSystem::BuildMaterial(const std::string& materialName, const MaterialData& info)
+{
+	std::shared_ptr<Material> mat;
+	//search material in the cache first in case its already built
+	auto it = m_materialCache.find(info);
+	if (it != m_materialCache.end())
+	{
+		mat = (*it).second;
+		m_materials[materialName] = mat;
+	}
+	else {
+
+		//need to build the material
+		auto newMat = std::make_shared<Material>();
+		newMat->original = &m_templateCache[info.baseTemplate];
+		//not handled yet
+		newMat->passSets[MeshpassType::DirectionalShadow] = nullptr;
+		newMat->textures = info.textures;
+
+		auto forwadPass = newMat->original->passShaders[MeshpassType::Forward];
+		CORE_ASSERT(forwadPass, "pass shaders must be set");
+		if (!forwadPass) return nullptr;
+
+		//Descriptor set 1 is used for materialData
+		auto* forwardEffect = newMat->original->passShaders[MeshpassType::Forward]->GetShaderEffect();
+		CORE_ASSERT(forwardEffect, "")
+		DescriptorSetLayout* forwardShader = forwardEffect->GetDescriptorSetLayout(1);
+
+		for (int i = 0; i < info.textures.size(); i++)
+		{
+			auto& forwardDescriptor = newMat->passSets[MeshpassType::Forward];
+			forwardDescriptor = std::move(DescriptorSet::Create(forwardShader));
+			forwardDescriptor->SetTexture(info.textures[i], i);
+		}
+
+		Log::Print(string_format("Built New Material %s", materialName));
+		//add material to cache
+		m_materialCache[info] = (newMat);
+		mat = newMat;
+		m_materials[materialName] = mat;
+	}
+
+	return mat.get();
+}
+
+SC::Material* MaterialSystem::GetMaterial(const std::string& materialName)
+{
+	auto it = m_materials.find(materialName);
+	if (it != m_materials.end())
+	{
+		return(*it).second.get();
+	}
+	else {
+		return nullptr;
+	}
+}
+
+SC::EffectTemplate* MaterialSystem::AddEffectTemplate(const std::string& name, const EffectTemplate& effectTemplate)
+{
+	auto it = m_templateCache.find(name);
+	if (it != m_templateCache.end())
+	{
+		return &(*it).second;
+	}
+	else
+	{
+		m_templateCache[name] = effectTemplate;
+		return &m_templateCache[name];
+	}
+}
+

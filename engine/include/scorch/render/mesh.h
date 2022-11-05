@@ -2,6 +2,7 @@
 #include <glm/vec3.hpp>
 #include <glm/gtx/transform.hpp>
 #include "descriptorSet.h"
+#include "materialSystem.h"
 
 namespace SC
 {
@@ -9,7 +10,7 @@ namespace SC
 	class PipelineLayout;
 	using VertexIndexType = uint16_t;
 	struct Material;
-	struct MaterialData;
+	struct MaterialInfo;
 
 	struct Vertex
 	{
@@ -34,7 +35,7 @@ namespace SC
 		static bool LoadMeshesFromFile(const std::string& path,
 			std::vector<Mesh>& meshes,
 			std::vector<std::string>* names,
-			std::vector<MaterialData>* materialData,
+			std::vector<MaterialInfo>* materialData,
 			bool useIndexBuffer);
 	};
 

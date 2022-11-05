@@ -67,6 +67,11 @@ bool Texture::ReadImageFromFile(const std::string& path, ImageData& imageData)
 	return true;
 }
 
+Format Texture::GetFormat() const
+{
+	return m_format;
+}
+
 //
 //Sampler::Sampler(TextureType type, Texture* boundTexture) : 
 //	m_type(type),

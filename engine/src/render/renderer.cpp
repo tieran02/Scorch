@@ -75,7 +75,7 @@ void Renderer::Cleanup()
 	gWhiteTexture.reset();
 }
 
-const SC::Texture* Renderer::WhiteTexture() const
+SC::Texture* Renderer::WhiteTexture() const
 {
 	return gWhiteTexture.get();
 }

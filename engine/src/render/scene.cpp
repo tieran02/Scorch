@@ -45,22 +45,6 @@ Mesh* Scene::InsertMesh(const std::string& name, Mesh&& mesh)
 	return &insertedMesh;
 }
 
-
-Material* Scene::CreateMaterial(Pipeline* pipeline, PipelineLayout* pipelineLayout, const std::string& name)
-{
-	auto foundIt = m_materials.find(name);
-	if (foundIt != m_materials.end())
-	{
-		return &foundIt->second;
-	}
-
-	auto it = m_materials.emplace(std::piecewise_construct,
-		std::forward_as_tuple(name),
-		std::forward_as_tuple(pipeline, pipelineLayout));  // construct in-place
-
-	return &it.first->second;
-}
-
 void Scene::DrawObjects(Renderer* renderer,
 	std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc)
 {
@@ -69,9 +53,10 @@ void Scene::DrawObjects(Renderer* renderer,
 	PipelineLayout* lastLayout{ nullptr };
 	for (RenderObject& renderable : m_renderables)
 	{
-		const bool pipelineChanged = !lastLayout || lastLayout != renderable.material->pipelineLayout;
+		auto forwardEffect = renderable.material->original->passShaders[MeshpassType::Forward];
+		const bool pipelineChanged = !lastLayout || lastLayout != forwardEffect->GetShaderEffect()->GetPipelineLayout();
 		if(pipelineChanged)
-			renderer->BindPipeline(renderable.material->pipeline);
+			renderer->BindPipeline(forwardEffect->GetPipeline());
 
 		renderer->BindVertexBuffer(m_vertexBuffers.at(renderable.name).get());
 		renderer->BindIndexBuffer(m_indexBuffers.at(renderable.name).get());
@@ -80,7 +65,7 @@ void Scene::DrawObjects(Renderer* renderer,
 		
 		renderer->DrawIndexed(renderable.mesh->IndexCount(), 1, 0, 0, 0);
 
-		lastLayout = renderable.material->pipelineLayout;
+		lastLayout = forwardEffect->GetShaderEffect()->GetPipelineLayout();
 	}
 }
 

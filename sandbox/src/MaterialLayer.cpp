@@ -39,6 +39,10 @@ void MaterialLayer::OnAttach()
 
 	m_shaderPass.Build(m_shaderEffect);
 
+	SC::EffectTemplate effectTemplate;
+	effectTemplate.passShaders[SC::MeshpassType::Forward] = &m_shaderPass;
+	m_materialSystem.AddEffectTemplate("default", effectTemplate);
+
 	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_shaderEffect.GetDescriptorSetLayout(0));
 
 
@@ -155,18 +159,23 @@ void MaterialLayer::CreateScene()
 	{
 		std::vector<SC::Mesh> meshes;
 		std::vector<std::string> names;
-		std::vector<SC::MaterialData> materialData;
+		std::vector<SC::MaterialInfo> materialData;
 		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, &materialData, true);
 
 		for (const auto& matData : materialData)
 		{
-			if (matData.diffuseTexturePath.empty() || m_textures.find(matData.diffuseTexturePath) != m_textures.end())
+			if (matData.textures.empty())
+				continue;
+
+			//Just use the first diffuse for now, TODO add other texture types e.g specular
+			const std::string& diffusePath = matData.textures[0];
+			if (diffusePath.empty() || m_textures.find(diffusePath) != m_textures.end())
 				continue;
 
 			auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-			texture->LoadFromFile(string_format("models/sponza/%s", matData.diffuseTexturePath.c_str()));
+			texture->LoadFromFile(string_format("models/sponza/%s", diffusePath.c_str()));
 
-			m_textures.emplace(matData.diffuseTexturePath, std::move(texture));
+			m_textures.emplace(diffusePath, std::move(texture));
 		}
 
 		bool created = false;
@@ -178,23 +187,23 @@ void MaterialLayer::CreateScene()
 			renderObject.name = names[i];
 			renderObject.mesh = mesh;
 
-			SC::Material* material = m_scene.CreateMaterial(m_shaderPass.GetPipeline(), m_shaderEffect.GetPipelineLayout(), mesh->materialName);
-			if (!material->textureDescriptorSet)
-			{
-				//find mat
-				auto mat = std::find_if(materialData.begin(), materialData.end(), [mesh](const SC::MaterialData& material)
-					{
-						return material.materialName == mesh->materialName;
-					});
-				if (mat != materialData.end())
+			auto matInfo = std::find_if(materialData.begin(), materialData.end(), [mesh](const SC::MaterialInfo& material)
 				{
-					material->textureDescriptorSet = std::move(SC::DescriptorSet::Create(m_shaderEffect.GetDescriptorSetLayout(1)));
-					auto it = m_textures.find(mat->diffuseTexturePath);
-					const SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
-					material->textureDescriptorSet->SetTexture(texture, 0);
-				}
+					return material.materialName == mesh->materialName;
+				});
+			CORE_ASSERT(matInfo, "Couldn't find material info");
+
+			SC::MaterialData matData;
+			if (matInfo != materialData.end())
+			{
+				matData.baseTemplate = "default";
+				auto it = matInfo->textures.empty() ? m_textures.end() : m_textures.find(matInfo->textures[0]);
+				SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
+				matData.textures.push_back(texture);
 			}
 
+			SC::Material* material = m_materialSystem.BuildMaterial(mesh->materialName, matData);
+			CORE_ASSERT(material, "Failed to build material");
 			renderObject.material = material;
 			m_scene.CreateRenderObject(std::move(renderObject));
 		}
@@ -223,11 +232,14 @@ void MaterialLayer::Draw()
 			MeshPushConstants constants;
 			constants.render_matrix = renderObject.transform;
 
-			renderer->PushConstants(renderObject.material->pipelineLayout, 0, 0, sizeof(MeshPushConstants), &constants);
-			renderer->BindDescriptorSet(renderObject.material->pipelineLayout, renderObject.material->textureDescriptorSet.get(), 1);
+			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
+			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].get();
+
+			renderer->PushConstants(shaderEffect->GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
+			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 1);
 
 			if (pipelineChanged) { //only bind camera descriptors if pipeline changed
-				renderer->BindDescriptorSet(renderObject.material->pipelineLayout, m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
+				renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
 			}
 
 		});

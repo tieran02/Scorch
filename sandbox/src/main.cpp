@@ -3,7 +3,6 @@
 #include "vertexBufferLayer.h"
 #include "modelLayer.h"
 #include "descriptorLayer.h"
-#include "sceneLayer.h"
 #include "MaterialLayer.h"
 
 int main()

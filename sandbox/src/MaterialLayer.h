@@ -14,6 +14,7 @@ private:
 	void CreateScene();
 	void Draw();
 private:
+	SC::MaterialSystem m_materialSystem;
 	SC::ShaderEffect m_shaderEffect;
 	SC::ShaderPass m_shaderPass;
 

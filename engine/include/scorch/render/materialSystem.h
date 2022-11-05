@@ -10,26 +10,6 @@ namespace SC
 	class Pipeline;
 	class PipelineLayout;
 
-	struct MaterialData
-	{
-		std::string materialName;
-		std::string diffuseTexturePath;
-	};
-
-	struct Material
-	{
-		Pipeline* pipeline;
-		PipelineLayout* pipelineLayout;
-		std::unique_ptr<DescriptorSet> textureDescriptorSet;
-	};
-
-	/*class MaterialManager
-	{
-		void CreateMaterial(const std::string name, )
-	private:
-		std::unordered_map<std::string, Material> m_materials;
-	};*/
-
 	struct ShaderEffect
 	{
 	public:
@@ -65,4 +45,99 @@ namespace SC
 		const ShaderEffect* m_effect{ nullptr };
 		std::unique_ptr<Pipeline> m_pipeline{ nullptr };
 	};
+
+	enum class MeshpassType 
+	{
+		Forward,
+		Transparency,
+		DirectionalShadow
+	};
+
+	template<typename T>
+	struct PerPassData 
+	{
+	public:
+		T& operator[](MeshpassType pass)
+		{
+			switch (pass)
+			{
+			case MeshpassType::Forward:
+				return data[0];
+			case MeshpassType::Transparency:
+				return data[1];
+			case MeshpassType::DirectionalShadow:
+				return data[2];
+			}
+			assert(false);
+			return data[0];
+		};
+
+		void clear(T&& val)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				data[i] = val;
+			}
+		}
+
+	private:
+		std::array<T, 3> data;
+	};
+
+	enum class TransparencyMode :uint8_t {
+		Opaque,
+		Transparent,
+		Masked
+	};
+
+	struct EffectTemplate 
+	{
+		EffectTemplate();
+		PerPassData<ShaderPass*> passShaders;
+		TransparencyMode transparency;
+	};
+
+	struct Material {
+		EffectTemplate* original;
+		PerPassData<std::unique_ptr<DescriptorSet>> passSets;
+		std::vector<Texture*> textures; //Material doesn't own textures
+	};
+
+	struct MaterialInfo
+	{
+		std::string baseEffect;
+		std::string materialName;
+		std::vector<std::string> textures; //path
+		TransparencyMode transparency;
+	};
+
+	struct MaterialData 
+	{
+		std::vector<Texture*> textures; //Material doesn't own textures
+		std::string baseTemplate;
+
+		bool operator==(const MaterialData& other) const;
+		size_t hash() const;
+	};
+
+	class MaterialSystem
+	{
+	public:
+		EffectTemplate* AddEffectTemplate(const std::string& name, const EffectTemplate& effectTemplate);
+		Material* BuildMaterial(const std::string& materialName, const MaterialData& info);
+		Material* GetMaterial(const std::string& materialName);
+	private:
+		struct MaterialInfoHash
+		{
+			std::size_t operator()(const MaterialData& k) const
+			{
+				return k.hash();
+			}
+		};
+	private:
+		std::unordered_map<std::string, EffectTemplate> m_templateCache;
+		std::unordered_map<std::string, std::shared_ptr<Material>> m_materials;
+		std::unordered_map<MaterialData, std::shared_ptr<Material>, MaterialInfoHash> m_materialCache;
+	};
+
 }
