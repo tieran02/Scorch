@@ -37,15 +37,10 @@ void MaterialLayer::OnAttach()
 		.AddSet("textureData", { { SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}} })
 		.Build();
 
+	m_shaderPass.Build(m_shaderEffect);
+
 	m_globalDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_shaderEffect.GetDescriptorSetLayout(0));
 
-	m_pipeline = SC::Pipeline::Create(*m_shaderEffect.GetShaderModule());
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //uvS
-	m_pipeline->pipelineLayout = m_shaderEffect.GetPipelineLayout();
-	m_pipeline->Build();
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
@@ -183,7 +178,7 @@ void MaterialLayer::CreateScene()
 			renderObject.name = names[i];
 			renderObject.mesh = mesh;
 
-			SC::Material* material = m_scene.CreateMaterial(m_pipeline.get(), m_shaderEffect.GetPipelineLayout(), mesh->materialName);
+			SC::Material* material = m_scene.CreateMaterial(m_shaderPass.GetPipeline(), m_shaderEffect.GetPipelineLayout(), mesh->materialName);
 			if (!material->textureDescriptorSet)
 			{
 				//find mat

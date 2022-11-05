@@ -41,8 +41,8 @@ namespace SC
 		ShaderEffect&& Build();
 	public:
 		ShaderModule* GetShaderModule() const;
-		DescriptorSetLayout* GetDescriptorSetLayout(int index);
-		PipelineLayout* GetPipelineLayout();
+		DescriptorSetLayout* GetDescriptorSetLayout(int index) const;
+		PipelineLayout* GetPipelineLayout() const;
 	private:
 		ShaderEffect(std::unique_ptr<ShaderModule>&& shader);
 
@@ -57,8 +57,12 @@ namespace SC
 
 	struct ShaderPass
 	{
-		ShaderEffect* effect{ nullptr };
-		Pipeline* pipeline{ nullptr };
-		PipelineLayout* layout{ nullptr };
+		void Build(const ShaderEffect& effect);
+		const ShaderEffect* GetShaderEffect() const;
+		Pipeline* GetPipeline() const;
+
+	private:
+		const ShaderEffect* m_effect{ nullptr };
+		std::unique_ptr<Pipeline> m_pipeline{ nullptr };
 	};
 }

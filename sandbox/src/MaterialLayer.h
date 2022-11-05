@@ -14,9 +14,8 @@ private:
 	void CreateScene();
 	void Draw();
 private:
-	std::unique_ptr<SC::Pipeline> m_pipeline;
-
 	SC::ShaderEffect m_shaderEffect;
+	SC::ShaderPass m_shaderPass;
 
 	SC::FrameData<SC::Buffer> m_cameraBuffer;
 	SC::FrameData<SC::DescriptorSet> m_globalDescriptorSet;
