@@ -7,6 +7,15 @@ namespace SC
 		static_assert(std::is_enum_v<EnumT>, "Flags can only be specialized for enum types");
 		using UnderlyingT = typename std::make_unsigned_t<typename std::underlying_type_t<EnumT>>;
 	public:
+		Flags() = default;
+		Flags(std::initializer_list<EnumT> l)
+		{
+			for (auto& flag : l)
+			{
+				set(flag);
+			}
+		}
+
 		Flags& set(EnumT e, bool value = true) noexcept {
 			m_bits.set(underlying(e), value);
 			return *this;

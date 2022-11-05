@@ -9,6 +9,7 @@
 #include "render/buffer.h"
 #include "render/descriptorSet.h"
 #include "render/mesh.h"
+#include "render/materialSystem.h"
 #include "event/event.h"
 #include "core/input.h"
 #include "render/scene.h"

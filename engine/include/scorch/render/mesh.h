@@ -8,6 +8,8 @@ namespace SC
 	class Pipeline;
 	class PipelineLayout;
 	using VertexIndexType = uint16_t;
+	struct Material;
+	struct MaterialData;
 
 	struct Vertex
 	{
@@ -15,12 +17,6 @@ namespace SC
 		glm::vec3 normal;
 		glm::vec3 color;
 		glm::vec2 uv;
-	};
-
-	struct MaterialData
-	{
-		std::string materialName;
-		std::string diffuseTexturePath;
 	};
 
 	struct Mesh
@@ -40,13 +36,6 @@ namespace SC
 			std::vector<std::string>* names,
 			std::vector<MaterialData>* materialData,
 			bool useIndexBuffer);
-	};
-
-	struct Material
-	{
-		Pipeline* pipeline;
-		PipelineLayout* pipelineLayout;
-		std::unique_ptr<DescriptorSet> textureDescriptorSet;
 	};
 
 	struct RenderObject

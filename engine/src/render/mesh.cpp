@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "render/mesh.h"
+#include "render/materialSystem.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
