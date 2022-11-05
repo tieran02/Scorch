@@ -57,6 +57,12 @@ namespace SC
 	struct PerPassData 
 	{
 	public:
+		PerPassData() = default;
+		PerPassData(T&& val)
+		{
+			clear(std::move(val));
+		}
+
 		T& operator[](MeshpassType pass)
 		{
 			switch (pass)

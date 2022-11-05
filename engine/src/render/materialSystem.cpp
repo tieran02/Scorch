@@ -2,6 +2,8 @@
 #include "render/materialSystem.h"
 #include "render/pipeline.h"
 #include "render/texture.h"
+#include "core/app.h"
+#include "render/renderer.h"
 
 using namespace SC;
 
@@ -104,9 +106,10 @@ Pipeline* ShaderPass::GetPipeline() const
 	return m_pipeline.get();
 }
 
-EffectTemplate::EffectTemplate()
+EffectTemplate::EffectTemplate() :
+	passShaders(nullptr),
+	transparency(TransparencyMode::Opaque)
 {
-
 }
 
 
@@ -161,20 +164,56 @@ Material* MaterialSystem::BuildMaterial(const std::string& materialName, const M
 		newMat->passSets[MeshpassType::DirectionalShadow] = nullptr;
 		newMat->textures = info.textures;
 
-		auto forwadPass = newMat->original->passShaders[MeshpassType::Forward];
-		CORE_ASSERT(forwadPass, "pass shaders must be set");
-		if (!forwadPass) return nullptr;
-
-		//Descriptor set 1 is used for materialData
-		auto* forwardEffect = newMat->original->passShaders[MeshpassType::Forward]->GetShaderEffect();
-		CORE_ASSERT(forwardEffect, "")
-		DescriptorSetLayout* forwardShader = forwardEffect->GetDescriptorSetLayout(1);
-
-		for (int i = 0; i < info.textures.size(); i++)
+		if (!info.textures.empty()) 
 		{
-			auto& forwardDescriptor = newMat->passSets[MeshpassType::Forward];
-			forwardDescriptor = std::move(DescriptorSet::Create(forwardShader));
-			forwardDescriptor->SetTexture(info.textures[i], i);
+			ShaderPass* forwadPass = newMat->original->passShaders[MeshpassType::Forward];
+			ShaderPass* transparancyPass = newMat->original->passShaders[MeshpassType::Transparency];
+
+			CORE_ASSERT(forwadPass || transparancyPass, "pass shaders must be set");
+			if (!forwadPass && !transparancyPass) return nullptr;
+
+			DescriptorSetLayout* forwardLayout{ nullptr };
+			DescriptorSetLayout* transparancyLayout{ nullptr };
+			if (forwadPass)
+			{
+				if (auto effect = forwadPass->GetShaderEffect())
+					forwardLayout = effect->GetDescriptorSetLayout(1);
+			}
+			if (transparancyPass)
+			{
+				if (auto effect = transparancyPass->GetShaderEffect())
+					transparancyLayout = effect->GetDescriptorSetLayout(1);
+			}
+
+
+			if (forwardLayout)
+			{
+				auto& forwardDescriptor = newMat->passSets[MeshpassType::Forward];
+				forwardDescriptor = std::move(DescriptorSet::Create(forwardLayout));
+
+				for (int i = 0; i < forwardLayout->Bindings().size(); ++i)
+				{
+					if (i < info.textures.size())
+						forwardDescriptor->SetTexture(info.textures[i], i);
+					else
+						forwardDescriptor->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); //Fill empty textures 
+				}
+
+			}
+
+			if (transparancyLayout)
+			{
+				auto& transparancyDescriptor = newMat->passSets[MeshpassType::Transparency];
+				transparancyDescriptor = std::move(DescriptorSet::Create(transparancyLayout));
+
+				for (int i = 0; i < transparancyLayout->Bindings().size(); ++i)
+				{
+					if (i < info.textures.size())
+						transparancyDescriptor->SetTexture(info.textures[i], i);
+					else
+						transparancyDescriptor->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); //Fill empty textures 
+				}
+			}
 		}
 
 		Log::Print(string_format("Built New Material %s", materialName));

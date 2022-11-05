@@ -31,10 +31,16 @@ void MaterialLayer::OnAttach()
 	m_rotation = 0;
 
 	//create a pipeline layout with push constants
-	m_shaderEffect = SC::ShaderEffect::Builder("shaders/textured.vert.spv", "shaders/textured.frag.spv")
+	m_shaderEffect = SC::ShaderEffect::Builder("shaders/textured.vert.spv", "shaders/lit.frag.spv")
 		.AddPushConstant("modelPush", { {SC::ShaderStage::VERTEX}, sizeof(MeshPushConstants) })
 		.AddSet("cameraData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX} } })
-		.AddSet("textureData", { { SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}} })
+		.AddSet("textureData",
+			{
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Spec
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Normal
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Mask
+			})
 		.Build();
 
 	m_shaderPass.Build(m_shaderEffect);
@@ -151,7 +157,7 @@ void MaterialLayer::OnUpdate(float deltaTime)
 
 void MaterialLayer::OnEvent(SC::Event& event)
 {
-	SC::Log::Print(event.ToString());
+
 }
 
 void MaterialLayer::CreateScene()
