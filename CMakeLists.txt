@@ -38,7 +38,7 @@ set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "")
 set(BUILD_SHARED_LIBS ON CACHE BOOL "")
 add_subdirectory(vendor/src/assimp)
 
-add_subdirectory(assetlib)
+add_subdirectory(JAAM)
 add_subdirectory(Engine)
 add_subdirectory(Sandbox)
 
