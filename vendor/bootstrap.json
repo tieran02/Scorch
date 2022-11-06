@@ -69,5 +69,21 @@
 			"type": "git",
 			"url": "https://github.com/nothings/stb.git"
 		}
+	},
+	{
+		"name": "lz4",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/lz4/lz4.git",
+			"revision": "v1.9.4"
+		}
+	},
+	{
+		"name": "json",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/nlohmann/json",
+			"revision": "v3.11.2"
+		}
 	}
 ]
