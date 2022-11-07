@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
+#include <functional>
 #include <stdlib.h>
 
 #include <assimp/Importer.hpp>
@@ -198,6 +199,112 @@ namespace
 		}
 		return true;
 	}
+
+	bool ConvertNodes(const aiScene* scene, const fs::path& input, const fs::path& outputFolder)
+	{
+		ModelInfo model;
+
+		glm::mat4 ident{ 1.f };
+
+		std::array<float, 16> identityMatrix;
+		memcpy(&identityMatrix, &ident, sizeof(glm::mat4));
+
+
+		uint64_t lastNode = 0;
+		std::function<void(aiNode* node, aiMatrix4x4& parentmat, uint64_t)> process_node = [&](aiNode* node, aiMatrix4x4& parentmat, uint64_t parentID) {
+
+			aiMatrix4x4 node_mat = /*parentmat * */node->mTransformation;
+
+			glm::mat4 modelmat;
+			for (int y = 0; y < 4; y++)
+			{
+				for (int x = 0; x < 4; x++)
+				{
+					modelmat[y][x] = node_mat[x][y];
+				}
+			}
+
+			uint64_t nodeindex = lastNode;
+			lastNode++;
+
+			std::array<float, 16> matrix;
+			memcpy(&matrix, &modelmat, sizeof(glm::mat4));
+
+			if (parentID != nodeindex)
+			{
+				model.node_parents[nodeindex] = parentID;
+			}
+
+			model.node_matrices[nodeindex] = model.matrices.size();
+			model.matrices.push_back(matrix);
+
+
+			std::string nodename = node->mName.C_Str();
+			//std::cout << nodename << std::endl;
+
+			if (nodename.size() > 0)
+			{
+				model.node_names[nodeindex] = nodename;
+			}
+			for (unsigned int msh = 0; msh < node->mNumMeshes; msh++) {
+
+				int mesh_index = node->mMeshes[msh];
+				std::string meshname = "Mesh: " + std::string{ scene->mMeshes[mesh_index]->mName.C_Str() };
+
+				//std::cout << meshname << std::endl;
+
+				std::string matname = AssimpMaterialName(scene, scene->mMeshes[mesh_index]->mMaterialIndex);
+				meshname = AssimpMeshName(scene, mesh_index);
+
+				fs::path materialpath = (outputFolder.string() + "_materials/" + matname + ".mat");
+				fs::path meshpath = (outputFolder.string() + "_meshes/" + meshname + ".mesh");
+
+				materialpath = ChangeRoot(outputFolder.parent_path(), "", materialpath);
+				meshpath = ChangeRoot(outputFolder.parent_path(), "", meshpath);
+
+
+				ModelInfo::NodeMesh nmesh;
+				nmesh.mesh_path = meshpath.string();
+				nmesh.material_path = materialpath.string();
+				uint64_t newNode = lastNode; lastNode++;
+
+				model.node_meshes[newNode] = nmesh;
+				model.node_parents[newNode] = nodeindex;
+
+				model.node_matrices[newNode] = model.matrices.size();
+				model.matrices.push_back(identityMatrix);
+			}
+
+			for (unsigned int ch = 0; ch < node->mNumChildren; ch++)
+			{
+				process_node(node->mChildren[ch], node_mat, nodeindex);
+			}
+		};
+
+		aiMatrix4x4 mat{};
+		glm::mat4 rootmat{ 1 };// (, rootMatrix.v);
+
+		for (int y = 0; y < 4; y++)
+		{
+			for (int x = 0; x < 4; x++)
+			{
+				mat[x][y] = rootmat[y][x];
+			}
+		}
+
+		process_node(scene->mRootNode, mat, 0);
+
+		AssetFile newFile = PackModel(model);
+
+		fs::path scenefilepath = (outputFolder.parent_path()) / input.stem();
+
+		scenefilepath.replace_extension(".pfb");
+
+		//save to disk
+		SaveBinaryFile(scenefilepath.string().c_str(), newFile);
+		return true;
+	}
+
 }
 
 
@@ -223,5 +330,6 @@ bool ConvertMesh(const fs::path& input, const fs::path& outputFolder, const std:
 
 	bool success = ConvertAssimpMesh(scene, input, meshDir, fileName);
 	success = ConvertAssimpMaterials(scene, input, materialDir);
+	success = ConvertNodes(scene, input, outputDir);
 	return success;
 }
