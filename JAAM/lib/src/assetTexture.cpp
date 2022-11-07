@@ -19,6 +19,15 @@ namespace
 	}
 }
 
+TextureInfo::TextureInfo() :
+	textureSize(0),
+	textureFormat(TextureFormat::Unknown),
+	compressionMode(CompressionMode::LZ4),
+	pixelsize{0,0,0}
+{
+
+}
+
 TextureInfo Asset::ReadTextureInfo(AssetFile* file)
 {
 	TextureInfo info;

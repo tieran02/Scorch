@@ -11,10 +11,12 @@ namespace Asset
 
 	struct TextureInfo 
 	{
+		TextureInfo();
+
 		int textureSize;
 		TextureFormat textureFormat;
 		CompressionMode compressionMode;
-		uint32_t pixelsize[3]; //[0] width [1] height [2] depth
+		std::array<uint32_t, 3> pixelsize; //[0] width [1] height [2] depth
 		std::string originalFile;
 	};
 

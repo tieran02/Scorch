@@ -3,12 +3,20 @@
 
 using namespace Asset;
 
+
+AssetFile::AssetFile() :
+	type{0,0,0,0},
+	version(0)
+{
+
+}
+
 bool Asset::SaveBinaryFile(const char* path, const AssetFile& file)
 {
 	std::ofstream outfile;
 	outfile.open(path, std::ios::binary | std::ios::out);
 
-	outfile.write(file.type, 4);
+	outfile.write(file.type.data(), 4);
 	uint32_t version = file.version;
 	//version
 	outfile.write((const char*)&version, sizeof(uint32_t));
@@ -41,7 +49,7 @@ bool Asset::LoadBinaryFile(const char* path, AssetFile& outputFile)
 	//move file cursor to beginning
 	infile.seekg(0);
 
-	infile.read(outputFile.type, 4);
+	infile.read(outputFile.type.data(), 4);
 	infile.read((char*)&outputFile.version, sizeof(uint32_t));
 
 	uint32_t jsonlen = 0;

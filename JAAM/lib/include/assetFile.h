@@ -2,12 +2,15 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace Asset
 {
 	struct AssetFile
 	{
-		char type[4];
+		AssetFile();
+
+		std::array<char, 4> type;
 		uint32_t version;
 		std::string json;
 		std::vector<char> binaryBlob;
