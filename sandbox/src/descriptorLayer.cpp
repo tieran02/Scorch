@@ -51,45 +51,39 @@ void DescriptorLayer::OnAttach()
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
+	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //UV
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
-	std::vector<SC::Mesh> model;
+	std::vector<SC::Mesh> meshes;
+	std::vector<std::string> names;
+	std::vector<SC::MaterialInfo> materialData;
 	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, nullptr, USE_INDEX_BUFFER);
-	m_monkeyMesh = model[0];
+	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", meshes, &names, &materialData, USE_INDEX_BUFFER);
+	m_monkeyMesh = meshes[0];
+
 
 	//test
 	SC::BufferUsageSet vertexBufferUsage;
 	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::MAP);
-
-	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE);
-	{
-		auto mappedData = m_vertexBuffer->Map();
-		memcpy(mappedData.Data(), m_monkeyMesh.vertices.data(), m_monkeyMesh.VertexSize());
-	}
+	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
+	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.vertices.data());
 
 	if (USE_INDEX_BUFFER)
 	{
 		SC::BufferUsageSet indexBufferUsage;
 		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-		indexBufferUsage.set(SC::BufferUsage::MAP);
-
-		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE);
-		{
-			auto mappedData = m_indexBuffer->Map();
-			memcpy(mappedData.Data(), m_monkeyMesh.indices.data(), m_monkeyMesh.IndexSize());
-		}
+		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
+		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
 	}
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
 	cameraBufferUsage.set(SC::BufferUsage::UNIFORM_BUFFER);
 	cameraBufferUsage.set(SC::BufferUsage::MAP);
-	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::DEVICE);
+	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::HOST);
 	for (const auto& val : m_cameraBuffer) 
 	{
 		auto mappedData = val->Map();
