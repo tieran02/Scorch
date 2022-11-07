@@ -7,8 +7,10 @@ include(../cmake/commonmacros.txt)
 SETUP_APP(Sandbox "Scorch")
 set_target_properties(Sandbox PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/sandbox")
 
-target_link_libraries(Sandbox Engine)
-target_include_directories(Sandbox PRIVATE ../Engine/include)
+target_link_libraries(Sandbox Engine JAAMLib)
+target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/Engine/include)
+target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/JAAM/lib/include)
+
 
 get_target_property(ENGINE_BINARY_DIR Engine BINARY_DIR)
 get_target_property(SANDBOX_BINARY_DIR Sandbox BINARY_DIR)

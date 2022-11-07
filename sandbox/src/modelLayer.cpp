@@ -26,6 +26,12 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
+
+	Asset::AssetFile modelAsset;
+	Asset::LoadBinaryFile("models/monkey_smooth.modl", modelAsset);
+
+	Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
+
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
 	auto shader = shaderBuilder.SetVertexModulePath("shaders/normalMesh.vert.spv")

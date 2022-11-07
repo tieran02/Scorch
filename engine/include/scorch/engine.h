@@ -1,6 +1,8 @@
 #pragma once
 
 #include "pch.h"
+#include "jaam.h"
+
 #include "core/app.h"
 #include "core/log.h"
 #include "render/renderer.h"

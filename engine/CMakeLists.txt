@@ -8,6 +8,7 @@ SETUP_LIB(Engine "Scorch")
 
 target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
 target_include_directories(Engine PRIVATE include/scorch)
+target_include_directories(Engine PRIVATE ${CMAKE_SOURCE_DIR}/JAAM/lib/include)
 
 target_precompile_headers(Engine PRIVATE include/scorch/pch.h)
 

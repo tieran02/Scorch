@@ -29,7 +29,7 @@ namespace
 		return matname;
 	}
 
-	bool ConvertAssimpMaterials(const aiScene* scene, const fs::path& input, const fs::path& outputFolder)
+	bool ConvertAssimpMaterials(const aiScene* scene, const fs::path& input, const fs::path& outputFolder, const fs::path& rootPath)
 	{
 		for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
 			std::string matname = AssimpMaterialName(scene, m);
@@ -86,7 +86,7 @@ namespace
 			fs::path baseColorPath = outputFolder.parent_path() / texPath;
 
 			baseColorPath.replace_extension(".tx");
-			baseColorPath = RemoveRootDir(outputFolder.parent_path(), baseColorPath);
+			baseColorPath = GetRelativePathFrom(baseColorPath, rootPath.string());
 
 			newMaterial.textures["baseColor"] = baseColorPath.string();
 
@@ -100,7 +100,7 @@ namespace
 		return true;
 	}
 
-	bool ConvertAssimpMesh(const aiScene* scene, const fs::path& input, const fs::path& outputFolder, const std::string& fileName)
+	bool ConvertAssimpMesh(const aiScene* scene, const fs::path& input, const fs::path& outputFolder, const fs::path& rootPath)
 	{
 		for (unsigned int meshindex = 0; meshindex < scene->mNumMeshes; meshindex++) {
 
@@ -188,7 +188,7 @@ namespace
 			meshinfo.vertexBuferSize = _vertices.size() * sizeof(VertexFormat);
 			meshinfo.indexBuferSize = _indices.size() * sizeof(uint32_t);
 			meshinfo.indexSize = sizeof(uint32_t);
-			meshinfo.originalFile = fileName;
+			meshinfo.originalFile = GetRelativePathFrom(input, rootPath.string()).string();
 
 			AssetFile newFile = PackMesh(&meshinfo, (char*)_vertices.data(), (char*)_indices.data());
 
@@ -200,7 +200,7 @@ namespace
 		return true;
 	}
 
-	bool ConvertNodes(const aiScene* scene, const fs::path& input, const fs::path& outputFolder)
+	bool ConvertNodes(const aiScene* scene, const fs::path& input, const fs::path& outputFolder, const fs::path& rootPath)
 	{
 		ModelInfo model;
 
@@ -259,8 +259,8 @@ namespace
 				fs::path materialpath = (outputFolder.string() + "_materials/" + matname + ".mat");
 				fs::path meshpath = (outputFolder.string() + "_meshes/" + meshname + ".mesh");
 
-				materialpath = ChangeRoot(outputFolder.parent_path(), "", materialpath);
-				meshpath = ChangeRoot(outputFolder.parent_path(), "", meshpath);
+				materialpath = GetRelativePathFrom(materialpath, rootPath.string());
+				meshpath = GetRelativePathFrom(meshpath, rootPath.string());
 
 
 				ModelInfo::NodeMesh nmesh;
@@ -298,7 +298,7 @@ namespace
 
 		fs::path scenefilepath = (outputFolder.parent_path()) / input.stem();
 
-		scenefilepath.replace_extension(".pfb");
+		scenefilepath.replace_extension(".modl");
 
 		//save to disk
 		SaveBinaryFile(scenefilepath.string().c_str(), newFile);
@@ -308,7 +308,7 @@ namespace
 }
 
 
-bool ConvertMesh(const fs::path& input, const fs::path& outputFolder, const std::string& fileName)
+bool ConvertMesh(const fs::path& input, const fs::path& outputFolder, const fs::path& rootPath)
 {
 	// Check if file exists
 	std::ifstream fin(input.string().c_str());
@@ -328,8 +328,8 @@ bool ConvertMesh(const fs::path& input, const fs::path& outputFolder, const std:
 	fs::create_directories(meshDir);
 	fs::create_directories(materialDir);
 
-	bool success = ConvertAssimpMesh(scene, input, meshDir, fileName);
-	success = ConvertAssimpMaterials(scene, input, materialDir);
-	success = ConvertNodes(scene, input, outputDir);
+	bool success = ConvertAssimpMesh(scene, input, meshDir, rootPath);
+	success = ConvertAssimpMaterials(scene, input, materialDir, rootPath);
+	success = ConvertNodes(scene, input, outputDir, rootPath);
 	return success;
 }

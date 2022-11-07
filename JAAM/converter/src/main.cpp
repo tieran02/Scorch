@@ -17,7 +17,7 @@
 
 using namespace Asset;
 
-bool ConvertImage(const fs::path& input, const fs::path& output, const std::string& fileName)
+bool ConvertImage(const fs::path& input, const fs::path& output, const fs::path& rootPath)
 {
 	int texWidth, texHeight, texChannels;
 
@@ -35,7 +35,7 @@ bool ConvertImage(const fs::path& input, const fs::path& output, const std::stri
 	texinfo.pixelsize[0] = texWidth;
 	texinfo.pixelsize[1] = texHeight;
 	texinfo.textureFormat = TextureFormat::RGBA8;
-	texinfo.originalFile = fileName;
+	texinfo.originalFile = GetRelativePathFrom(input, rootPath.string()).string();
 	AssetFile newImage = PackTexture(&texinfo, pixels);
 
 	stbi_image_free(pixels);
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 
 	for (auto& p : fs::recursive_directory_iterator(path))
 	{
-		const fs::path relativePath = RemoveRootDir(path, p.path());
+		const fs::path rootPath = path.filename();
 		fs::path newpath = ChangeRoot(path, output, p.path());
 		fs::path newdir = newpath;
 
@@ -68,14 +68,14 @@ int main(int argc, char** argv)
 			std::cout << "found a texture" << p << std::endl;
 
 			newpath.replace_extension(".tx");
-			ConvertImage(p.path(), newpath, relativePath.string());
+			ConvertImage(p.path(), newpath, rootPath);
 		}
 		if (p.path().extension() == ".obj")
 		{
 			std::cout << "found a mesh" << p << std::endl;
 
 			newpath.replace_extension(".mesh");
-			ConvertMesh(p.path(), newpath, relativePath.string());
+			ConvertMesh(p.path(), newpath, rootPath);
 		}
 	}
 }
