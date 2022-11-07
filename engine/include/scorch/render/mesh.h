@@ -8,7 +8,7 @@ namespace SC
 {
 	class Pipeline;
 	class PipelineLayout;
-	using VertexIndexType = uint16_t;
+	using VertexIndexType = uint32_t;
 	struct Material;
 	struct MaterialInfo;
 

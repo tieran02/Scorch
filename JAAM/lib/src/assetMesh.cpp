@@ -25,6 +25,7 @@ MeshInfo::MeshInfo() :
 	vertexBuferSize(0),
 	indexBuferSize(0),
 	vertexFormat(VertexFormat::P32N32C32V32),
+	vertexSize(0),
 	indexSize(0),
 	compressionMode(CompressionMode::LZ4)
 {
@@ -39,6 +40,7 @@ MeshInfo Asset::ReadMeshInfo(AssetFile* file)
 
 	info.vertexBuferSize = metadata["vertex_buffer_size"];
 	info.indexBuferSize = metadata["index_buffer_size"];
+	info.vertexSize = (uint8_t)metadata["vertex_size"];
 	info.indexSize = (uint8_t)metadata["index_size"];
 	info.originalFile = metadata["original_file"];
 
@@ -61,8 +63,10 @@ void Asset::UnpackMesh(MeshInfo* info, const char* sourcebuffer, size_t sourceSi
 	//copy vertex buffer
 	memcpy(vertexBufer, decompressedBuffer.data(), info->vertexBuferSize);
 
-	//copy index buffer
-	memcpy(indexBuffer, decompressedBuffer.data() + info->vertexBuferSize, info->indexBuferSize);
+	////copy index buffer
+	memcpy(indexBuffer, &decompressedBuffer[info->vertexBuferSize], info->indexBuferSize);
+
+	decompressedBuffer.clear();
 }
 
 AssetFile Asset::PackMesh(MeshInfo* info, char* vertexData, char* indexData)
@@ -81,6 +85,7 @@ AssetFile Asset::PackMesh(MeshInfo* info, char* vertexData, char* indexData)
 
 	metadata["vertex_buffer_size"] = info->vertexBuferSize;
 	metadata["index_buffer_size"] = info->indexBuferSize;
+	metadata["vertex_size"] = info->vertexSize;
 	metadata["index_size"] = info->indexSize;
 	metadata["original_file"] = info->originalFile;
 

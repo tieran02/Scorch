@@ -26,16 +26,16 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{
 
 ## find all the shader files under the shaders folder
 file(GLOB_RECURSE GLSL_SOURCE_FILES
-    "${PROJECT_SOURCE_DIR}/shaders/*.frag"
-    "${PROJECT_SOURCE_DIR}/shaders/*.vert"
-    "${PROJECT_SOURCE_DIR}/shaders/*.comp"
+    "${PROJECT_SOURCE_DIR}/data/shaders/*.frag"
+    "${PROJECT_SOURCE_DIR}/data/shaders/*.vert"
+    "${PROJECT_SOURCE_DIR}/data/shaders/*.comp"
     )
 
 ## iterate each shader
 foreach(GLSL ${GLSL_SOURCE_FILES})
   message(STATUS "BUILDING SHADER")
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${SANDBOX_BINARY_DIR}/shaders/${FILE_NAME}.spv")
+  set(SPIRV "${SANDBOX_BINARY_DIR}/data/shaders/${FILE_NAME}.spv")
   message(STATUS ${GLSL})
   ##execute glslang command to compile that specific shader
   add_custom_command(
@@ -52,5 +52,5 @@ add_custom_target(
 
 add_custom_command(TARGET Sandbox POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/models"
-        $<TARGET_FILE_DIR:Sandbox>/models)
+        "${PROJECT_SOURCE_DIR}/data"
+        $<TARGET_FILE_DIR:Sandbox>/data)

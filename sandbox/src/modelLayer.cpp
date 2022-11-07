@@ -28,14 +28,22 @@ void ModelLayer::OnAttach()
 {
 
 	Asset::AssetFile modelAsset;
-	Asset::LoadBinaryFile("models/monkey_smooth.modl", modelAsset);
-
+	Asset::LoadBinaryFile("data/models/monkey_smooth.modl", modelAsset);
 	Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
+
+	Asset::AssetFile meshAsset;
+	Asset::LoadBinaryFile(modelInfo.node_meshes[2].mesh_path.c_str(), meshAsset);
+	Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
+
+	m_monkeyMesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
+	m_monkeyMesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
+	Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
+		(char*)m_monkeyMesh.vertices.data(), (char*)m_monkeyMesh.indices.data());
 
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/normalMesh.vert.spv")
-		.SetFragmentModulePath("shaders/normalMesh.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("data/shaders/normalMesh.vert.spv")
+		.SetFragmentModulePath("data/shaders/normalMesh.frag.spv")
 		.Build();
 
 
@@ -56,10 +64,7 @@ void ModelLayer::OnAttach()
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
-	std::vector<SC::Mesh> model;
 	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", model, nullptr, nullptr, USE_INDEX_BUFFER);
-	m_monkeyMesh = model[0];
 
 	//test
 	SC::BufferUsageSet vertexBufferUsage;

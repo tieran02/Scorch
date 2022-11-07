@@ -185,8 +185,9 @@ namespace
 
 			MeshInfo meshinfo;
 			meshinfo.vertexFormat = VertexFormatEnum;
-			meshinfo.vertexBuferSize = _vertices.size() * sizeof(VertexFormat);
+			meshinfo.vertexBuferSize = _vertices.size() * sizeof(VertexFormatType);
 			meshinfo.indexBuferSize = _indices.size() * sizeof(uint32_t);
+			meshinfo.vertexSize = sizeof(VertexFormatType);
 			meshinfo.indexSize = sizeof(uint32_t);
 			meshinfo.originalFile = GetRelativePathFrom(input, rootPath.string()).string();
 

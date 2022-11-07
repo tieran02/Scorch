@@ -32,7 +32,8 @@ namespace Asset
 		uint64_t vertexBuferSize;
 		uint64_t indexBuferSize;
 		VertexFormat vertexFormat;
-		char indexSize;
+		uint8_t vertexSize;
+		uint8_t indexSize;
 		CompressionMode compressionMode;
 		std::string originalFile;
 	};
