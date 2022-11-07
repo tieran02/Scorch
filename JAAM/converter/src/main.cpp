@@ -12,7 +12,9 @@
 #include "stb_image.h"
 #include "assetTexture.h"
 
-namespace fs = std::filesystem;
+#include "util.h"
+#include "modelConverter.h"
+
 using namespace Asset;
 
 bool ConvertImage(const fs::path& input, const fs::path& output, const std::string& fileName)
@@ -56,8 +58,8 @@ int main(int argc, char** argv)
 
 	for (auto& p : fs::recursive_directory_iterator(path))
 	{
-		fs::path newpath = p.path().string().replace(0, path.string().length(), output.string());
-		const fs::path relativePath = p.path().string().erase(0, path.string().length());
+		const fs::path relativePath = RemoveRootDir(path, p.path());
+		fs::path newpath = ChangeRoot(path, output, p.path());
 		fs::path newdir = newpath;
 
 		fs::create_directories(newdir.remove_filename());
@@ -68,11 +70,12 @@ int main(int argc, char** argv)
 			newpath.replace_extension(".tx");
 			ConvertImage(p.path(), newpath, relativePath.string());
 		}
-		if (p.path().extension() == ".obj") {
+		if (p.path().extension() == ".obj")
+		{
 			std::cout << "found a mesh" << p << std::endl;
 
 			newpath.replace_extension(".mesh");
-			//convert_mesh(p.path(), newpath);
+			ConvertMesh(p.path(), newpath, relativePath.string());
 		}
 	}
 }

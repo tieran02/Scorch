@@ -12,6 +12,7 @@ target_include_directories(JAAMConverter SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/vend
 target_include_directories(JAAMConverter SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/stb)
 target_include_directories(JAAMConverter SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/lz4/lib)
 target_include_directories(JAAMConverter SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/json/include)
+target_include_directories(JAAMConverter SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/glm)
 
 set_property(TARGET zlibstatic PROPERTY FOLDER "ThirdPartyLibraries")
 set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "ThirdPartyLibraries")
