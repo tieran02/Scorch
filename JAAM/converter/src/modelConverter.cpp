@@ -22,6 +22,83 @@ namespace
 		return matname;
 	}
 
+	std::string AssimpMaterialName(const aiScene* scene, int materialIndex)
+	{
+		std::string matname = "MAT_" + std::to_string(materialIndex) + "_" + std::string{ scene->mMaterials[materialIndex]->GetName().C_Str() };
+		return matname;
+	}
+
+	bool ConvertAssimpMaterials(const aiScene* scene, const fs::path& input, const fs::path& outputFolder)
+	{
+		for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
+			std::string matname = AssimpMaterialName(scene, m);
+
+			MaterialInfo newMaterial;
+			newMaterial.baseEffect = "default";
+
+			aiMaterial* material = scene->mMaterials[m];
+			newMaterial.transparency = TransparencyMode::Opaque;
+			for (unsigned int p = 0; p < material->mNumProperties; p++)
+			{
+				aiMaterialProperty* pt = material->mProperties[p];
+				switch (pt->mType)
+				{
+				case aiPTI_Float:
+				{
+
+					if (strcmp(pt->mKey.C_Str(), "$mat.opacity") == 0)
+					{
+						float num = *(float*)pt->mData;
+						if (num != 1.0)
+						{
+							newMaterial.transparency = TransparencyMode::Transparent;
+						}
+					}
+				}
+				break;
+				}
+			}
+
+			//check opacity
+			std::string texPath = "";
+			if (material->GetTextureCount(aiTextureType_DIFFUSE))
+			{
+				aiString assimppath;
+				material->GetTexture(aiTextureType_DIFFUSE, 0, &assimppath);
+
+				fs::path texturePath = &assimppath.data[0];
+				texPath = texturePath.string();
+			}
+			else if (material->GetTextureCount(aiTextureType_BASE_COLOR))
+			{
+				aiString assimppath;
+				material->GetTexture(aiTextureType_BASE_COLOR, 0, &assimppath);
+
+				fs::path texturePath = &assimppath.data[0];
+				texPath = texturePath.string();
+			}
+			//force a default texture
+			else 
+			{
+				texPath = "Default";
+			}
+			fs::path baseColorPath = outputFolder.parent_path() / texPath;
+
+			baseColorPath.replace_extension(".tx");
+			baseColorPath = RemoveRootDir(outputFolder.parent_path(), baseColorPath);
+
+			newMaterial.textures["baseColor"] = baseColorPath.string();
+
+			fs::path materialPath = outputFolder / (matname + ".mat");
+
+			AssetFile newFile = PackMaterial(&newMaterial);
+
+			//save to disk
+			SaveBinaryFile(materialPath.string().c_str(), newFile);
+		}
+		return true;
+	}
+
 	bool ConvertAssimpMesh(const aiScene* scene, const fs::path& input, const fs::path& outputFolder, const std::string& fileName)
 	{
 		for (unsigned int meshindex = 0; meshindex < scene->mNumMeshes; meshindex++) {
@@ -136,12 +213,15 @@ bool ConvertMesh(const fs::path& input, const fs::path& outputFolder, const std:
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(input.string().c_str(), aiProcessPreset_TargetRealtime_Quality | aiProcess_FlipUVs);
 
-	fs::path meshDir = outputFolder;
-	meshDir.replace_extension();
-	meshDir = meshDir.string() + "_meshes";
+	fs::path outputDir = outputFolder;
+	outputDir.replace_extension();
+	const fs::path meshDir = outputDir.string() + "_meshes";
+	const fs::path materialDir = outputDir.string() + "_materials";
 
 	fs::create_directories(meshDir);
+	fs::create_directories(materialDir);
 
 	bool success = ConvertAssimpMesh(scene, input, meshDir, fileName);
+	success = ConvertAssimpMaterials(scene, input, materialDir);
 	return success;
 }
