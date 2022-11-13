@@ -31,7 +31,7 @@ void MaterialLayer::OnAttach()
 	m_rotation = 0;
 
 	//create a pipeline layout with push constants
-	m_shaderEffect = SC::ShaderEffect::Builder("shaders/textured.vert.spv", "shaders/lit.frag.spv")
+	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/textured.vert.spv", "data/shaders/lit.frag.spv")
 		.AddPushConstant("modelPush", { {SC::ShaderStage::VERTEX}, sizeof(MeshPushConstants) })
 		.AddSet("cameraData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX} } })
 		.AddSet("textureData",
@@ -160,28 +160,86 @@ void MaterialLayer::OnEvent(SC::Event& event)
 
 }
 
+namespace
+{
+	void LoadMaterials(const Asset::ModelInfo::NodeMesh& modelInfo, std::unordered_map<std::string, Asset::MaterialInfo>& loadedMats,
+		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures)
+	{
+		const auto& matPath = modelInfo.material_path;
+		if (matPath.empty())
+			return;
+
+		if (loadedMats.find(matPath) != loadedMats.end())
+			return;
+
+
+		Asset::AssetFile materialAsset;
+		Asset::LoadBinaryFile(matPath.c_str(), materialAsset);
+		Asset::MaterialInfo matInfo = Asset::ReadMaterialInfo(&materialAsset);
+
+		loadedMats.emplace(matPath, matInfo);
+
+		//Just use the first diffuse for now, TODO add other texture types e.g specular
+		const std::string& diffusePath = matInfo.textures["baseColor"];
+		if (diffusePath.empty() || textures.find(diffusePath) != textures.end())
+			return;
+
+		Asset::AssetFile textureAsset;
+		Asset::LoadBinaryFile(diffusePath.c_str(), textureAsset);
+		if (textureAsset.json.empty())
+			return;
+
+		Asset::TextureInfo textureInfo = Asset::ReadTextureInfo(&textureAsset);
+
+		auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+		texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
+
+		std::vector<char> pixelData(textureInfo.textureSize);
+		Asset::UnpackTexture(&textureInfo, textureAsset.binaryBlob.data(), textureAsset.binaryBlob.size(), pixelData.data());
+
+		texture->CopyData(pixelData.data(), pixelData.size());
+		textures.emplace(diffusePath, std::move(texture));
+	}
+}
+
 void MaterialLayer::CreateScene()
 {
 	{
 		std::vector<SC::Mesh> meshes;
 		std::vector<std::string> names;
-		std::vector<SC::MaterialInfo> materialData;
-		SC::Mesh::LoadMeshesFromFile("models/sponza/sponza.obj", meshes, &names, &materialData, true);
 
-		for (const auto& matData : materialData)
+		Asset::AssetFile modelAsset;
+		Asset::LoadBinaryFile("data/models/sponza/sponza.modl", modelAsset);
+		Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
+
+		std::unordered_map<std::string, Asset::MaterialInfo> loadedMats;
+		std::unordered_map<std::string, Asset::MeshInfo> loadedMeshes;
+		for (const auto& modelInfo : modelInfo.node_meshes)
 		{
-			if (matData.textures.empty())
+			LoadMaterials(modelInfo.second, loadedMats, m_textures);
+
+
+			if(loadedMeshes.find(modelInfo.second.mesh_path) != loadedMeshes.end())
 				continue;
 
-			//Just use the first diffuse for now, TODO add other texture types e.g specular
-			const std::string& diffusePath = matData.textures[0];
-			if (diffusePath.empty() || m_textures.find(diffusePath) != m_textures.end())
-				continue;
+			Asset::AssetFile meshAsset;
+			Asset::LoadBinaryFile(modelInfo.second.mesh_path.c_str(), meshAsset);
+			Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
 
-			auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-			texture->LoadFromFile(string_format("models/sponza/%s", diffusePath.c_str()));
+			loadedMeshes.emplace(modelInfo.second.mesh_path, meshInfo);
 
-			m_textures.emplace(diffusePath, std::move(texture));
+			CORE_ASSERT(meshInfo.vertexSize == sizeof(SC::Vertex), "Vetex type size doesn't match");
+			CORE_ASSERT(meshInfo.indexSize == sizeof(SC::VertexIndexType), "Index type size doesn't match");
+
+			SC::Mesh mesh;
+			mesh.materialName = modelInfo.second.material_path;
+			mesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
+			mesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
+			Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
+				reinterpret_cast<char*>(mesh.vertices.data()), reinterpret_cast<char*>(mesh.indices.data()));
+
+			meshes.push_back(std::move(mesh));
+			names.push_back(modelInfo.second.mesh_path);
 		}
 
 		bool created = false;
@@ -193,17 +251,19 @@ void MaterialLayer::CreateScene()
 			renderObject.name = names[i];
 			renderObject.mesh = mesh;
 
-			auto matInfo = std::find_if(materialData.begin(), materialData.end(), [mesh](const SC::MaterialInfo& material)
-				{
-					return material.materialName == mesh->materialName;
-				});
-			CORE_ASSERT(matInfo, "Couldn't find material info");
+			auto materialIt = loadedMats.find(mesh->materialName);
+			CORE_ASSERT(materialIt != loadedMats.end(), "Couldn't find material info");
 
 			SC::MaterialData matData;
-			if (matInfo != materialData.end())
+			if (materialIt != loadedMats.end())
 			{
 				matData.baseTemplate = "default";
-				auto it = matInfo->textures.empty() ? m_textures.end() : m_textures.find(matInfo->textures[0]);
+				auto baseColourTexture = materialIt->second.textures.find("baseColor");
+				if(baseColourTexture == materialIt->second.textures.end())
+					matData.textures.push_back(SC::App::Instance()->GetRenderer()->WhiteTexture());
+
+
+				auto it = materialIt->second.textures.empty() ? m_textures.end() : m_textures.find(baseColourTexture->second);
 				SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
 				matData.textures.push_back(texture);
 			}

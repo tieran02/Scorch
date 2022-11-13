@@ -155,32 +155,6 @@ namespace
 				_indices[f * 3 + 0] = mesh->mFaces[f].mIndices[0];
 				_indices[f * 3 + 1] = mesh->mFaces[f].mIndices[1];
 				_indices[f * 3 + 2] = mesh->mFaces[f].mIndices[2];
-
-				//assimp fbx creates bad normals, just regen them
-				if (true)
-				{
-					int v0 = _indices[f * 3 + 0];
-					int v1 = _indices[f * 3 + 1];
-					int v2 = _indices[f * 3 + 2];
-					glm::vec3 p0{ _vertices[v0].position[0],
-						 _vertices[v0].position[1],
-						 _vertices[v0].position[2]
-					};
-					glm::vec3 p1{ _vertices[v1].position[0],
-						 _vertices[v1].position[1],
-						 _vertices[v1].position[2]
-					};
-					glm::vec3 p2{ _vertices[v2].position[0],
-						 _vertices[v2].position[1],
-						 _vertices[v2].position[2]
-					};
-
-					glm::vec3 normal = glm::normalize(glm::cross(p2 - p0, p1 - p0));
-
-					memcpy(_vertices[v0].normal.data(), &normal, sizeof(float) * 3);
-					memcpy(_vertices[v1].normal.data(), &normal, sizeof(float) * 3);
-					memcpy(_vertices[v2].normal.data(), &normal, sizeof(float) * 3);
-				}
 			}
 
 			MeshInfo meshinfo;

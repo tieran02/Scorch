@@ -26,7 +26,6 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
-
 	Asset::AssetFile modelAsset;
 	Asset::LoadBinaryFile("data/models/monkey_smooth.modl", modelAsset);
 	Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);

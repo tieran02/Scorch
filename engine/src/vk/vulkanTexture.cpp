@@ -84,6 +84,7 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 
 	//add to deletion queues
 	m_deletionQueue.push_function([=]() {
+		renderer->WaitOnFences();
 		vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
 		vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
 		});

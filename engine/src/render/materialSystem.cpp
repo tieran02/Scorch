@@ -10,8 +10,8 @@ using namespace SC;
 ShaderEffect ShaderEffect::Builder(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shaderModule = shaderBuilder.SetVertexModulePath("shaders/textured.vert.spv")
-		.SetFragmentModulePath("shaders/textured.frag.spv")
+	auto shaderModule = shaderBuilder.SetVertexModulePath(vertexShader)
+		.SetFragmentModulePath(fragmentShader)
 		.Build();
 
 	return ShaderEffect(std::move(shaderModule));;
