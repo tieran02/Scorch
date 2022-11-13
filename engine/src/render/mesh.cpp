@@ -78,11 +78,6 @@ namespace
 			}
 		}
 
-		if (scene->HasMaterials())
-		{
-			mesh.materialName = scene->mMaterials[aimesh->mMaterialIndex]->GetName().C_Str();
-		}
-
 		return mesh;
 	}
 

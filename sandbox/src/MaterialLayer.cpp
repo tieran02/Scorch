@@ -195,7 +195,7 @@ namespace
 		texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
 
 		std::vector<char> pixelData(textureInfo.textureSize);
-		Asset::UnpackTexture(&textureInfo, textureAsset.binaryBlob.data(), textureAsset.binaryBlob.size(), pixelData.data());
+		Asset::UnpackTexture(&textureInfo, textureAsset.binaryBlob.data(), static_cast<int>(textureAsset.binaryBlob.size()), pixelData.data());
 
 		texture->CopyData(pixelData.data(), pixelData.size());
 		textures.emplace(diffusePath, std::move(texture));
@@ -204,75 +204,63 @@ namespace
 
 void MaterialLayer::CreateScene()
 {
+	Asset::AssetFile modelAsset;
+	Asset::LoadBinaryFile("data/models/sponza/sponza.modl", modelAsset);
+	Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
+
+	std::unordered_map<std::string, Asset::MaterialInfo> loadedMats;
+	std::unordered_map<std::string, Asset::MeshInfo> loadedMeshes;
+	for (const auto& modelInfo : modelInfo.node_meshes)
 	{
-		std::vector<SC::Mesh> meshes;
-		std::vector<std::string> names;
+		LoadMaterials(modelInfo.second, loadedMats, m_textures);
 
-		Asset::AssetFile modelAsset;
-		Asset::LoadBinaryFile("data/models/sponza/sponza.modl", modelAsset);
-		Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
 
-		std::unordered_map<std::string, Asset::MaterialInfo> loadedMats;
-		std::unordered_map<std::string, Asset::MeshInfo> loadedMeshes;
-		for (const auto& modelInfo : modelInfo.node_meshes)
+		if (loadedMeshes.find(modelInfo.second.mesh_path) != loadedMeshes.end())
+			continue;
+
+		Asset::AssetFile meshAsset;
+		Asset::LoadBinaryFile(modelInfo.second.mesh_path.c_str(), meshAsset);
+		Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
+
+		loadedMeshes.emplace(modelInfo.second.mesh_path, meshInfo);
+
+		CORE_ASSERT(meshInfo.vertexSize == sizeof(SC::Vertex), "Vetex type size doesn't match");
+		CORE_ASSERT(meshInfo.indexSize == sizeof(SC::VertexIndexType), "Index type size doesn't match");
+
+		SC::Mesh tempMesh;
+		tempMesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
+		tempMesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
+		Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
+			reinterpret_cast<char*>(tempMesh.vertices.data()), reinterpret_cast<char*>(tempMesh.indices.data()));
+
+
+		SC::Mesh* mesh = m_scene.InsertMesh(modelInfo.second.mesh_path, std::move(tempMesh));
+
+		SC::RenderObject renderObject;
+		renderObject.name = modelInfo.second.mesh_path;
+		renderObject.mesh = mesh;
+
+		auto materialIt = loadedMats.find(modelInfo.second.material_path);
+		CORE_ASSERT(materialIt != loadedMats.end(), "Couldn't find material info");
+
+		SC::MaterialData matData;
+		if (materialIt != loadedMats.end())
 		{
-			LoadMaterials(modelInfo.second, loadedMats, m_textures);
+			matData.baseTemplate = "default";
+			auto baseColourTexture = materialIt->second.textures.find("baseColor");
+			if (baseColourTexture == materialIt->second.textures.end())
+				matData.textures.push_back(SC::App::Instance()->GetRenderer()->WhiteTexture());
 
 
-			if(loadedMeshes.find(modelInfo.second.mesh_path) != loadedMeshes.end())
-				continue;
-
-			Asset::AssetFile meshAsset;
-			Asset::LoadBinaryFile(modelInfo.second.mesh_path.c_str(), meshAsset);
-			Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
-
-			loadedMeshes.emplace(modelInfo.second.mesh_path, meshInfo);
-
-			CORE_ASSERT(meshInfo.vertexSize == sizeof(SC::Vertex), "Vetex type size doesn't match");
-			CORE_ASSERT(meshInfo.indexSize == sizeof(SC::VertexIndexType), "Index type size doesn't match");
-
-			SC::Mesh mesh;
-			mesh.materialName = modelInfo.second.material_path;
-			mesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
-			mesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
-			Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
-				reinterpret_cast<char*>(mesh.vertices.data()), reinterpret_cast<char*>(mesh.indices.data()));
-
-			meshes.push_back(std::move(mesh));
-			names.push_back(modelInfo.second.mesh_path);
+			auto it = materialIt->second.textures.empty() ? m_textures.end() : m_textures.find(baseColourTexture->second);
+			SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
+			matData.textures.push_back(texture);
 		}
 
-		bool created = false;
-		for (int i = 0; i < meshes.size(); ++i)
-		{
-			SC::Mesh* mesh = m_scene.InsertMesh(names[i], std::move(meshes[i]));
-
-			SC::RenderObject renderObject;
-			renderObject.name = names[i];
-			renderObject.mesh = mesh;
-
-			auto materialIt = loadedMats.find(mesh->materialName);
-			CORE_ASSERT(materialIt != loadedMats.end(), "Couldn't find material info");
-
-			SC::MaterialData matData;
-			if (materialIt != loadedMats.end())
-			{
-				matData.baseTemplate = "default";
-				auto baseColourTexture = materialIt->second.textures.find("baseColor");
-				if(baseColourTexture == materialIt->second.textures.end())
-					matData.textures.push_back(SC::App::Instance()->GetRenderer()->WhiteTexture());
-
-
-				auto it = materialIt->second.textures.empty() ? m_textures.end() : m_textures.find(baseColourTexture->second);
-				SC::Texture* texture = it != m_textures.end() ? it->second.get() : SC::App::Instance()->GetRenderer()->WhiteTexture();
-				matData.textures.push_back(texture);
-			}
-
-			SC::Material* material = m_materialSystem.BuildMaterial(mesh->materialName, matData);
-			CORE_ASSERT(material, "Failed to build material");
-			renderObject.material = material;
-			m_scene.CreateRenderObject(std::move(renderObject));
-		}
+		SC::Material* material = m_materialSystem.BuildMaterial(modelInfo.second.material_path, matData);
+		CORE_ASSERT(material, "Failed to build material");
+		renderObject.material = material;
+		m_scene.CreateRenderObject(std::move(renderObject));
 	}
 }
 

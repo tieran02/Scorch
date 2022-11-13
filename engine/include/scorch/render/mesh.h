@@ -24,7 +24,6 @@ namespace SC
 	{
 		std::vector<Vertex> vertices;
 		std::vector<VertexIndexType> indices;
-		std::string materialName;
 
 		uint32_t VertexCount() const;
 		uint32_t VertexSize() const;
