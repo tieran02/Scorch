@@ -217,7 +217,7 @@ void MaterialLayer::CreateScene()
 	//}
 
 	std::vector<SC::RenderObject> renderables = 
-		SC::LoadRenderObjectsFromModel("data/models/sponza/sponza.modl", m_materialSystem, m_textures,
+		SC::LoadRenderObjectsFromModel("data/models/sponza/sponza.modl", &m_materialSystem, m_textures,
 		[=](const std::string& name) -> SC::Mesh&
 		{
 			return m_scene.InsertMesh(name);

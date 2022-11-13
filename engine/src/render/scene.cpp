@@ -43,6 +43,10 @@ void Scene::DrawObjects(Renderer* renderer,
 		if(pipelineChanged)
 			renderer->BindPipeline(forwardEffect->GetPipeline());
 
+		CORE_ASSERT(renderable.mesh, "Mesh can't be null");
+		CORE_ASSERT(renderable.mesh->vertexBuffer, "Mesh vertex buffer can't be null, is it built?");
+		CORE_ASSERT(renderable.mesh->vertexBuffer, "Mesh index buffer can't be null, is it built?");
+
 		renderer->BindVertexBuffer(renderable.mesh->vertexBuffer.get());
 		renderer->BindIndexBuffer(renderable.mesh->indexBuffer.get());
 

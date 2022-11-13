@@ -33,12 +33,6 @@ namespace SC
 		uint32_t IndexSize() const;
 
 		bool Build();
-
-		static bool LoadMeshesFromFile(const std::string& path,
-			std::vector<Mesh>& meshes,
-			std::vector<std::string>* names,
-			std::vector<MaterialInfo>* materialData,
-			bool useIndexBuffer);
 	};
 
 	struct RenderObject
@@ -51,8 +45,7 @@ namespace SC
 		glm::mat4 transform;
 	};
 
-	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, std::vector<Mesh>& outMeshes, MaterialSystem& materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures);
-	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, MaterialSystem& materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
+	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, MaterialSystem* materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
 		std::function<Mesh&(const std::string& name)> func);
 
 }

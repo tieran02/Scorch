@@ -18,8 +18,6 @@ struct GPUCameraData
 
 
 DescriptorLayer::DescriptorLayer() : Layer("DescriptorLayer"),
-m_vertexBuffer(nullptr),
-m_indexBuffer(nullptr),
 m_rotation(0),
 m_pos( 0.f,-0.5f,-4.f )
 {
@@ -30,8 +28,8 @@ void DescriptorLayer::OnAttach()
 {
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("shaders/descriptorMesh.vert.spv")
-		.SetFragmentModulePath("shaders/descriptorMesh.frag.spv")
+	auto shader = shaderBuilder.SetVertexModulePath("data/shaders/descriptorMesh.vert.spv")
+		.SetFragmentModulePath("data/shaders/descriptorMesh.frag.spv")
 		.Build();
 
 
@@ -58,26 +56,13 @@ void DescriptorLayer::OnAttach()
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
 	std::vector<SC::Mesh> meshes;
-	std::vector<std::string> names;
-	std::vector<SC::MaterialInfo> materialData;
-	constexpr bool USE_INDEX_BUFFER = true;
-	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", meshes, &names, &materialData, USE_INDEX_BUFFER);
-	//m_monkeyMesh = meshes[0];
-
-
-	//test
-	SC::BufferUsageSet vertexBufferUsage;
-	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.vertices.data());
-
-	if (USE_INDEX_BUFFER)
-	{
-		SC::BufferUsageSet indexBufferUsage;
-		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
-	}
+	auto renderables = SC::LoadRenderObjectsFromModel("data/models/monkey_smooth.modl", nullptr, m_textures,
+		[&meshes](const std::string& name) -> SC::Mesh&
+		{
+			meshes.emplace_back();
+			return meshes.back();
+		});
+	m_monkeyMesh = std::move(meshes[0]);
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
@@ -191,18 +176,11 @@ void DescriptorLayer::Draw()
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindVertexBuffer(m_vertexBuffer.get());
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 	renderer->BindDescriptorSet(m_pipelineLayout.get(), m_globalDescriptorSet.GetFrameData(renderer->FrameDataIndex()));
 
-
-	if (!m_indexBuffer)
-		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
-	else
-	{
-		//using a index buffer
-		renderer->BindIndexBuffer(m_indexBuffer.get());
-		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
-	}
+	renderer->BindVertexBuffer(m_monkeyMesh.vertexBuffer.get());
+	renderer->BindIndexBuffer(m_monkeyMesh.indexBuffer.get());
+	renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
 	renderer->EndFrame();
 }

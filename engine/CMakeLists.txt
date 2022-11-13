@@ -21,4 +21,4 @@ target_compile_options(Engine PRIVATE
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 
-target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap assimp JAAMLib)
+target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap JAAMLib)

@@ -15,14 +15,14 @@ private:
 private:
 	std::unique_ptr<SC::PipelineLayout> m_pipelineLayout;
 	std::unique_ptr<SC::Pipeline> m_pipeline;
-	std::unique_ptr<SC::Buffer> m_vertexBuffer;
-	std::unique_ptr<SC::Buffer> m_indexBuffer;
 
 	SC::FrameData<SC::Buffer> m_cameraBuffer;
 
 	std::unique_ptr<SC::DescriptorSetLayout> m_setLayout;
 	SC::FrameData<SC::DescriptorSet> m_globalDescriptorSet;
 	
+	SC::MaterialSystem m_materialSystem;
+	std::unordered_map<std::string, std::unique_ptr<SC::Texture>> m_textures;
 
 	SC::Mesh m_monkeyMesh;
 	float m_rotation;

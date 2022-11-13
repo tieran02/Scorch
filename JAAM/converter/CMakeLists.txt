@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.12)
 
 project(JAAMConverter)
 
+# assimp settings
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "")
+set(ASSIMP_INSTALL OFF CACHE BOOL "")
+set(ASSIMP_INSTALL_PDB OFF CACHE BOOL "")
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "")
+add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/src/assimp assimp)
+
+
 SETUP_APP(JAAMConverter "JAAM")
 set_target_properties(JAAMConverter PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/jaam")
 
