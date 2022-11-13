@@ -62,7 +62,7 @@ void DescriptorLayer::OnAttach()
 	std::vector<SC::MaterialInfo> materialData;
 	constexpr bool USE_INDEX_BUFFER = true;
 	bool success = SC::Mesh::LoadMeshesFromFile("models/monkey_smooth.obj", meshes, &names, &materialData, USE_INDEX_BUFFER);
-	m_monkeyMesh = meshes[0];
+	//m_monkeyMesh = meshes[0];
 
 
 	//test

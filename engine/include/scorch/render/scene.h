@@ -16,7 +16,7 @@ namespace SC
 
 		RenderObject* CreateRenderObject(RenderObject&& object);
 
-		Mesh* InsertMesh(const std::string& name, Mesh&& mesh);
+		Mesh& InsertMesh(const std::string& name);
 		Mesh* GetMesh(const std::string& name);
 
 		Texture* CreateTexture(const std::string& path);

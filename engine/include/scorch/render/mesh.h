@@ -24,12 +24,15 @@ namespace SC
 	{
 		std::vector<Vertex> vertices;
 		std::vector<VertexIndexType> indices;
+		std::unique_ptr<Buffer> vertexBuffer, indexBuffer;
 
 		uint32_t VertexCount() const;
 		uint32_t VertexSize() const;
 
 		uint32_t IndexCount() const;
 		uint32_t IndexSize() const;
+
+		bool Build();
 
 		static bool LoadMeshesFromFile(const std::string& path,
 			std::vector<Mesh>& meshes,
@@ -47,5 +50,9 @@ namespace SC
 		Material* material;
 		glm::mat4 transform;
 	};
+
+	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, std::vector<Mesh>& outMeshes, MaterialSystem& materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures);
+	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, MaterialSystem& materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
+		std::function<Mesh&(const std::string& name)> func);
 
 }

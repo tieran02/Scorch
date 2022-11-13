@@ -15,34 +15,19 @@ RenderObject* Scene::CreateRenderObject(RenderObject&& object)
 	return &m_renderables.back();
 }
 
-Mesh* Scene::InsertMesh(const std::string& name, Mesh&& mesh)
+Mesh& Scene::InsertMesh(const std::string& name)
 {
 	auto foundIt = m_meshes.find(name);
 	if (foundIt != m_meshes.end())
 	{
-		return &foundIt->second;
+		return foundIt->second;
 	}
 
 	Mesh& insertedMesh = m_meshes.emplace(std::piecewise_construct,
 		std::forward_as_tuple(name),
-		std::forward_as_tuple(mesh)).first->second;
+		std::forward_as_tuple()).first->second;
 
-	//also create the gpu buffers for the mesh
-	SC::BufferUsageSet vertexBufferUsage;
-	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST); //Transfer this to gpu only memory
-
-	auto vertexBuffer = SC::Buffer::Create(insertedMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, insertedMesh.vertices.data());
-	m_vertexBuffers.emplace(name, std::move(vertexBuffer));
-
-	SC::BufferUsageSet indexBufferUsage;
-	indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-	indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-
-	auto indexBuffer = SC::Buffer::Create(insertedMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, insertedMesh.indices.data());
-	m_indexBuffers.emplace(name, std::move(indexBuffer));
-
-	return &insertedMesh;
+	return insertedMesh;
 }
 
 void Scene::DrawObjects(Renderer* renderer,
@@ -58,8 +43,8 @@ void Scene::DrawObjects(Renderer* renderer,
 		if(pipelineChanged)
 			renderer->BindPipeline(forwardEffect->GetPipeline());
 
-		renderer->BindVertexBuffer(m_vertexBuffers.at(renderable.name).get());
-		renderer->BindIndexBuffer(m_indexBuffers.at(renderable.name).get());
+		renderer->BindVertexBuffer(renderable.mesh->vertexBuffer.get());
+		renderer->BindIndexBuffer(renderable.mesh->indexBuffer.get());
 
 		PerRenderObjectFunc(renderable, pipelineChanged);
 		
