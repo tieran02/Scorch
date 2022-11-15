@@ -30,7 +30,7 @@ add_subdirectory(vendor/src/glfw)
 add_subdirectory(vendor/src/vkbootstrap)
 add_subdirectory(vendor/src/volk)
 
-add_subdirectory(JAAM)
+add_subdirectory(vendor/src/jaam)
 add_subdirectory(Engine)
 add_subdirectory(Sandbox)
 

@@ -9,7 +9,7 @@ set_target_properties(Sandbox PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_
 
 target_link_libraries(Sandbox Engine JAAMLib)
 target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/Engine/include)
-target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/JAAM/lib/include)
+target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/jaam/lib/include)
 
 
 get_target_property(ENGINE_BINARY_DIR Engine BINARY_DIR)

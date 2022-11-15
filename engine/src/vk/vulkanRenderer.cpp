@@ -294,7 +294,11 @@ void VulkanRenderer::InitVulkan()
 
 	//make the Vulkan instance, with basic debug features
 	auto inst_ret = builder.set_app_name("Example Vulkan Application")
+#ifdef SCORCH_DEBUG
 		.request_validation_layers(true)
+#else
+		.request_validation_layers(false)
+#endif
 		.require_api_version(1, 1, 0)
 		.use_default_debug_messenger()
 		.build();
