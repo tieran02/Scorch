@@ -351,10 +351,10 @@ bool VulkanPipeline::Build()
 	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
 
 	//load vertex input
+	std::vector<VkVertexInputBindingDescription> bindings;
+	std::vector<VkVertexInputAttributeDescription> attributes;
 	if (!vertexInputDescription.Attributes().empty())
 	{
-		std::vector<VkVertexInputBindingDescription> bindings;
-		std::vector<VkVertexInputAttributeDescription> attributes;
 		LoadVertexInputInfo(vertexInputDescription, bindings, attributes);
 		if (!bindings.empty())
 		{
