@@ -351,15 +351,18 @@ bool VulkanPipeline::Build()
 	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
 
 	//load vertex input
-	std::vector<VkVertexInputBindingDescription> bindings;
-	std::vector<VkVertexInputAttributeDescription> attributes;
-	LoadVertexInputInfo(vertexInputDescription, bindings, attributes);
-	if (!bindings.empty())
+	if (!vertexInputDescription.Attributes().empty())
 	{
-		pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindings.data();
-		pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
-		pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
-		pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+		std::vector<VkVertexInputBindingDescription> bindings;
+		std::vector<VkVertexInputAttributeDescription> attributes;
+		LoadVertexInputInfo(vertexInputDescription, bindings, attributes);
+		if (!bindings.empty())
+		{
+			pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+			pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+			pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
+			pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+		}
 	}
 
 	//default depthtesting
