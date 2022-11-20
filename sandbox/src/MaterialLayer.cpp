@@ -93,11 +93,18 @@ void MaterialLayer::OnAttach()
 
 void MaterialLayer::OnDetach()
 {
-
+	m_scene.Reset();
 }
 
 void MaterialLayer::OnUpdate(float deltaTime)
 {
+	if (SC::Input::IsKeyDown(KEY_F5))
+	{
+		OnDetach();
+		OnAttach();
+		return;
+	}
+
 	const SC::App* app = SC::App::Instance();
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	app->GetWindowExtent(windowWidth, windowHeight);

@@ -23,6 +23,8 @@ namespace SC
 
 		void DrawObjects(Renderer* renderer,
 			std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc);
+
+		void Reset();
 	private:
 		std::vector<RenderObject> m_renderables;
 		std::unordered_map<std::string, Mesh> m_meshes;

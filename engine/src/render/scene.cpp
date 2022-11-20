@@ -72,3 +72,12 @@ Texture* Scene::CreateTexture(const std::string& path)
 
 	return it.first->second.get();
 }
+
+void Scene::Reset()
+{
+	m_renderables.clear();
+	m_meshes.clear();
+	m_textures.clear();
+	m_vertexBuffers.clear();
+	m_indexBuffers.clear();
+}

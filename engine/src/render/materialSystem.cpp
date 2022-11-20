@@ -81,7 +81,9 @@ PipelineLayout* ShaderEffect::GetPipelineLayout() const
 
 void ShaderPass::Build(const ShaderEffect& effect)
 {
-	CORE_ASSERT(!m_pipeline, "Shader pass already built");
+	if(m_pipeline)
+		Log::PrintCore("ShaderPass::Build: Shader pass already built, overwriting", LogSeverity::LogWarning);
+
 	CORE_ASSERT(effect.GetPipelineLayout(), "Shader effect layout can't be null");
 	if (m_pipeline || !effect.GetPipelineLayout()) return;
 

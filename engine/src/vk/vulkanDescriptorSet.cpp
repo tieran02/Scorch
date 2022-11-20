@@ -122,6 +122,11 @@ m_descriptorSet(VK_NULL_HANDLE)
 	VK_CHECK(vkAllocateDescriptorSets(renderer->m_device, &allocInfo, &m_descriptorSet));
 	CORE_ASSERT(m_descriptorSet, "Failed to create descriptor set");
 
+	m_deletionQueue.push_function([=]() {
+		renderer->WaitOnFences();
+		vkFreeDescriptorSets(renderer->m_device, renderer->m_descriptorPool, 1, &m_descriptorSet);
+		});
+
 	CreateSamplers();
 }
 

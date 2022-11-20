@@ -67,8 +67,10 @@ uint32_t SC::Mesh::VertexSize() const
 
 bool Mesh::Build()
 {
-	CORE_ASSERT(!vertexBuffer, "Vertex buffer already created, this will overwrite the existing buffer");
-	CORE_ASSERT(!indexBuffer, "Index buffer already created, this will overwrite the existing buffer");
+	if(vertexBuffer)
+		Log::PrintCore("Mesh::Build: Vertex buffer already created, this will overwrite the existing buffer", LogSeverity::LogWarning);
+	if (indexBuffer)
+		Log::PrintCore("Mesh::Build: Index buffer already created, this will overwrite the existing buffer", LogSeverity::LogWarning);
 
 	SC::BufferUsageSet vertexBufferUsage;
 	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
