@@ -8,7 +8,7 @@
 
 using namespace SC;
 
-RenderObject::RenderObject() : transform(glm::mat4(1))
+RenderObject::RenderObject() : transform(glm::mat4(1)), mesh(nullptr), material(nullptr)
 {
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "mesh.h"
 #include "materialSystem.h"
+#include "scorch/core/sceneGraph.h"
 
 namespace SC
 {
@@ -25,8 +26,12 @@ namespace SC
 			std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc);
 
 		void Reset();
+
+		SceneNode& Root();
 	private:
-		std::vector<RenderObject> m_renderables;
+		//std::vector<RenderObject> m_renderables;
+		SceneNode m_root;
+
 		std::unordered_map<std::string, Mesh> m_meshes;
 		std::unordered_map<std::string, std::unique_ptr<Texture>> m_textures;
 

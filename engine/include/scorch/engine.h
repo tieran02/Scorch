@@ -5,6 +5,7 @@
 
 #include "core/app.h"
 #include "core/log.h"
+#include "core/sceneGraph.h"
 #include "render/renderer.h"
 #include "render/shaderModule.h"
 #include "render/pipeline.h"

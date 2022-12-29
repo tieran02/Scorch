@@ -10,9 +10,10 @@ using namespace SC;
 
 RenderObject* Scene::CreateRenderObject(RenderObject&& object)
 {
-	m_renderables.push_back(std::move(object));
+	auto node = m_root.AddChild();
+	node->GetRenderObject() = std::move(object);
 
-	return &m_renderables.back();
+	return &node->GetRenderObject();
 }
 
 Mesh& Scene::InsertMesh(const std::string& name)
@@ -36,11 +37,15 @@ void Scene::DrawObjects(Renderer* renderer,
 	CORE_ASSERT(renderer, "Renderer can't be null");
 
 	PipelineLayout* lastLayout{ nullptr };
-	for (RenderObject& renderable : m_renderables)
+	m_root.TraverseTree([=, &lastLayout](SceneNode& node)
 	{
+		RenderObject& renderable = node.GetRenderObject();
+
+		if (!renderable.mesh) return;
+
 		auto forwardEffect = renderable.material->original->passShaders[MeshpassType::Forward];
 		const bool pipelineChanged = !lastLayout || lastLayout != forwardEffect->GetShaderEffect()->GetPipelineLayout();
-		if(pipelineChanged)
+		if (pipelineChanged)
 			renderer->BindPipeline(forwardEffect->GetPipeline());
 
 		CORE_ASSERT(renderable.mesh, "Mesh can't be null");
@@ -51,11 +56,11 @@ void Scene::DrawObjects(Renderer* renderer,
 		renderer->BindIndexBuffer(renderable.mesh->indexBuffer.get());
 
 		PerRenderObjectFunc(renderable, pipelineChanged);
-		
+
 		renderer->DrawIndexed(renderable.mesh->IndexCount(), 1, 0, 0, 0);
 
 		lastLayout = forwardEffect->GetShaderEffect()->GetPipelineLayout();
-	}
+	});
 }
 
 Texture* Scene::CreateTexture(const std::string& path)
@@ -75,9 +80,15 @@ Texture* Scene::CreateTexture(const std::string& path)
 
 void Scene::Reset()
 {
-	m_renderables.clear();
+	m_root.Remove();
+
 	m_meshes.clear();
 	m_textures.clear();
 	m_vertexBuffers.clear();
 	m_indexBuffers.clear();
+}
+
+SceneNode& Scene::Root()
+{
+	return m_root;
 }
