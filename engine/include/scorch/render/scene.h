@@ -3,6 +3,8 @@
 #include "materialSystem.h"
 #include "scorch/core/sceneGraph.h"
 
+#include "jaam.h"
+
 namespace SC
 {
 	class Pipeline;
@@ -10,6 +12,7 @@ namespace SC
 	class Renderer;
 	class Buffer;
 	struct Texture;
+
 	class Scene
 	{
 	public:
@@ -28,6 +31,8 @@ namespace SC
 		void Reset();
 
 		SceneNode& Root();
+
+		bool LoadModel(const std::string& path, MaterialSystem* materialSystem);
 	private:
 		//std::vector<RenderObject> m_renderables;
 		SceneNode m_root;

@@ -55,14 +55,9 @@ void DescriptorLayer::OnAttach()
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
-	std::vector<SC::Mesh> meshes;
-	auto renderables = SC::LoadRenderObjectsFromModel("data/models/monkey_smooth.modl", nullptr, m_textures,
-		[&meshes](const std::string& name) -> SC::Mesh&
-		{
-			meshes.emplace_back();
-			return meshes.back();
-		});
-	m_monkeyMesh = std::move(meshes[0]);
+	std::unordered_map<std::string, SC::Mesh> meshes;
+	auto renderables = SC::LoadRenderObjectsFromModel("data/models/monkey_smooth.modl", nullptr, m_textures, meshes);
+	m_monkeyMesh = std::move(meshes.begin()->second);
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;

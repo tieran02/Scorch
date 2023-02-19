@@ -20,7 +20,7 @@
 		"source": {
 			"type": "git",
 			"url": "https://github.com/charles-lunarg/vk-bootstrap.git",
-			"revision": "v0.5"
+			"revision": "6bf3837"
 		}
 	},
 	{

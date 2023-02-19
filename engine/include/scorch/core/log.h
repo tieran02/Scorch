@@ -38,4 +38,10 @@ namespace SC
 #else
 #define CORE_ASSERT(x, ...)
 #endif
+
+#ifdef SCORCH_APP_DEBUG
+#define APP_ASSERT(x, msg) { if(!(x)) { SC::Log::PrintCore(msg, SC::LogSeverity::LogError); assert(x); } }	
+#else
+#define APP_ASSERT(x, ...)
+#endif
 }

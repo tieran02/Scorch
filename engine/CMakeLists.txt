@@ -12,7 +12,7 @@ target_include_directories(Engine PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/jaam/li
 
 target_precompile_headers(Engine PRIVATE include/scorch/pch.h)
 
-target_compile_definitions(Engine PRIVATE
+target_compile_definitions(Engine PUBLIC 
   $<$<CONFIG:Debug>:SCORCH_DEBUG=1>
 )
 

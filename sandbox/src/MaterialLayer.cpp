@@ -169,59 +169,57 @@ void MaterialLayer::OnEvent(SC::Event& event)
 
 namespace
 {
-	void LoadMaterials(const Asset::ModelInfo::NodeMesh& modelInfo, std::unordered_map<std::string, Asset::MaterialInfo>& loadedMats,
-		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures)
-	{
-		const auto& matPath = modelInfo.material_path;
-		if (matPath.empty())
-			return;
+	//void LoadMaterials(const Asset::ModelInfo::NodeMesh& modelInfo, std::unordered_map<std::string, Asset::MaterialInfo>& loadedMats,
+	//	std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures)
+	//{
+	//	const auto& matPath = modelInfo.material_path;
+	//	if (matPath.empty())
+	//		return;
 
-		if (loadedMats.find(matPath) != loadedMats.end())
-			return;
+	//	if (loadedMats.find(matPath) != loadedMats.end())
+	//		return;
 
 
-		Asset::AssetFile materialAsset;
-		Asset::LoadBinaryFile(matPath.c_str(), materialAsset);
-		Asset::MaterialInfo matInfo = Asset::ReadMaterialInfo(&materialAsset);
+	//	Asset::AssetFile materialAsset;
+	//	Asset::LoadBinaryFile(matPath.c_str(), materialAsset);
+	//	Asset::MaterialInfo matInfo = Asset::ReadMaterialInfo(&materialAsset);
 
-		loadedMats.emplace(matPath, matInfo);
+	//	loadedMats.emplace(matPath, matInfo);
 
-		//Just use the first diffuse for now, TODO add other texture types e.g specular
-		const std::string& diffusePath = matInfo.textures["baseColor"];
-		if (diffusePath.empty() || textures.find(diffusePath) != textures.end())
-			return;
+	//	//Just use the first diffuse for now, TODO add other texture types e.g specular
+	//	const std::string& diffusePath = matInfo.textures["baseColor"];
+	//	if (diffusePath.empty() || textures.find(diffusePath) != textures.end())
+	//		return;
 
-		Asset::AssetFile textureAsset;
-		Asset::LoadBinaryFile(diffusePath.c_str(), textureAsset);
-		if (textureAsset.json.empty())
-			return;
+	//	Asset::AssetFile textureAsset;
+	//	Asset::LoadBinaryFile(diffusePath.c_str(), textureAsset);
+	//	if (textureAsset.json.empty())
+	//		return;
 
-		Asset::TextureInfo textureInfo = Asset::ReadTextureInfo(&textureAsset);
+	//	Asset::TextureInfo textureInfo = Asset::ReadTextureInfo(&textureAsset);
 
-		auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-		texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
+	//	auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+	//	texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
 
-		std::vector<char> pixelData(textureInfo.textureSize);
-		Asset::UnpackTexture(&textureInfo, textureAsset.binaryBlob.data(), static_cast<int>(textureAsset.binaryBlob.size()), pixelData.data());
+	//	std::vector<char> pixelData(textureInfo.textureSize);
+	//	Asset::UnpackTexture(&textureInfo, textureAsset.binaryBlob.data(), static_cast<int>(textureAsset.binaryBlob.size()), pixelData.data());
 
-		texture->CopyData(pixelData.data(), pixelData.size());
-		textures.emplace(diffusePath, std::move(texture));
-	}
+	//	texture->CopyData(pixelData.data(), pixelData.size());
+	//	textures.emplace(diffusePath, std::move(texture));
+	//}
 }
 
 void MaterialLayer::CreateScene()
 {
-	std::vector<SC::RenderObject> renderables = 
-		SC::LoadRenderObjectsFromModel("data/models/sponza/sponza.modl", &m_materialSystem, m_textures,
-		[=](const std::string& name) -> SC::Mesh&
-		{
-			auto& mesh = m_scene.InsertMesh(name);
-		});
+	auto model = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
+
+	/*std::unordered_map<std::string, SC::Mesh> meshes;
+	std::vector<SC::RenderObject> renderables = SC::LoadRenderObjectsFromModel("data/models/sponza/sponza.modl", &m_materialSystem, m_textures, meshes);
 
 	for (auto renderable : renderables)
 	{
 		m_scene.CreateRenderObject(std::move(renderable));
-	}
+	}*/
 }
 
 void MaterialLayer::Draw()
@@ -244,7 +242,7 @@ void MaterialLayer::Draw()
 		[=](const SC::RenderObject& renderObject, bool pipelineChanged)
 		{	//Per object func gets called on each render object
 			MeshPushConstants constants;
-			constants.render_matrix = renderObject.transform;
+			constants.render_matrix = glm::mat4(1);
 
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
 			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].get();

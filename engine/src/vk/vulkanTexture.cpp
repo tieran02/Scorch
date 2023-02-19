@@ -5,8 +5,11 @@
 #include "vk/vulkanUtils.h"
 #include "vk/vulkanInitialiser.h"
 #include "vk/vulkanBuffer.h"
+#include "jaam.h"
 
 using namespace SC;
+
+//Asset::TextureManager<VulkanTexture> vulkanTextureManager;
 
 VulkanTexture::VulkanTexture(TextureType type, TextureUsage usage, Format format) : Texture(type, usage, format)
 {

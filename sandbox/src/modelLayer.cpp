@@ -1,6 +1,14 @@
 #include "modelLayer.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#include "scorch/core/log.h"
+#include "jaam.h"
+
+namespace
+{
+	Asset::TextureManagerBasic gTextureManager;
+	Asset::ModelManagerBasic gModelManager;
+}
 
 struct MeshPushConstants
 {
@@ -26,18 +34,17 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
-	Asset::AssetFile modelAsset;
-	Asset::LoadBinaryFile("data/models/monkey_smooth.modl", modelAsset);
-	Asset::ModelInfo modelInfo = Asset::ReadModelInfo(&modelAsset);
+	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/monkey_smooth.modl");
+	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
+	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
+	APP_ASSERT(modelInfo, "Failed to get model");
 
-	Asset::AssetFile meshAsset;
-	Asset::LoadBinaryFile(modelInfo.node_meshes[2].mesh_path.c_str(), meshAsset);
-	Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
+	auto& mesh = modelInfo->meshes.at(0);
+	m_monkeyMesh.vertices.resize(mesh.vertexBuffer.GetVertexCount());
+	memcpy(m_monkeyMesh.vertices.data(), mesh.vertexBuffer.data.data(), mesh.vertexBuffer.data.size());
 
-	m_monkeyMesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
-	m_monkeyMesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
-	Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
-		(char*)m_monkeyMesh.vertices.data(), (char*)m_monkeyMesh.indices.data());
+	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
+	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
 
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
@@ -56,7 +63,6 @@ void ModelLayer::OnAttach()
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT);	//UV
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
@@ -124,7 +130,7 @@ void ModelLayer::OnUpdate(float deltaTime)
 	constants.render_matrix = mesh_matrix;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	renderer->BeginFrame();
+	renderer->BeginFrame(.4f,.4f,.4f);
 
 	//upload camera data for this frame
 	{
@@ -157,5 +163,5 @@ void ModelLayer::OnUpdate(float deltaTime)
 
 void ModelLayer::OnEvent(SC::Event& event)
 {
-	SC::Log::Print(event.ToString());
+	//SC::Log::Print(event.ToString());
 }

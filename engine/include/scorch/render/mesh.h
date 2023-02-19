@@ -16,12 +16,12 @@ namespace SC
 	{
 		glm::vec3 position;
 		glm::vec3 normal;
-		glm::vec3 color;
 		glm::vec2 uv;
 	};
 
 	struct Mesh
 	{
+		Mesh();
 		std::vector<Vertex> vertices;
 		std::vector<VertexIndexType> indices;
 		std::unique_ptr<Buffer> vertexBuffer, indexBuffer;
@@ -42,10 +42,17 @@ namespace SC
 		std::string name;
 		Mesh* mesh;
 		Material* material;
-		glm::mat4 transform;
 	};
 
-	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, MaterialSystem* materialSystem, std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
-		std::function<Mesh&(const std::string& name)> func);
+	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, 
+		MaterialSystem* materialSystem, 
+		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
+		std::unordered_map<std::string, SC::Mesh>& meshes);
+
+	bool LoadRenderObjectFromModel(
+		const std::string& path, 
+		std::unordered_map<std::string, SC::Mesh>& meshes,
+		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>* textures,
+		MaterialSystem* materialSystem);
 
 }

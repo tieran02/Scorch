@@ -11,6 +11,10 @@ target_link_libraries(Sandbox Engine JAAMLib)
 target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/Engine/include)
 target_include_directories(Sandbox PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/jaam/lib/include)
 
+target_compile_definitions(Sandbox PUBLIC 
+  $<$<CONFIG:Debug>:SCORCH_APP_DEBUG=1>
+)
+
 
 get_target_property(ENGINE_BINARY_DIR Engine BINARY_DIR)
 get_target_property(SANDBOX_BINARY_DIR Sandbox BINARY_DIR)

@@ -70,7 +70,7 @@ namespace SC
 		uint8_t FrameCount() const { return static_cast<uint8_t>(data.size()); }
 		T* GetFrameData(uint8_t index)
 		{
-			CORE_ASSERT(index > 0 && index < data.size(), "Invalid frame index");
+			CORE_ASSERT(index >= 0 && index < data.size(), "Invalid frame index");
 			return data[index].get();
 		}
 
