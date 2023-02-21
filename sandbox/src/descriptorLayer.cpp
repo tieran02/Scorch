@@ -48,7 +48,6 @@ void DescriptorLayer::OnAttach()
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //UV
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
@@ -56,7 +55,7 @@ void DescriptorLayer::OnAttach()
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
 	std::unordered_map<std::string, SC::Mesh> meshes;
-	auto renderables = SC::LoadRenderObjectsFromModel("data/models/monkey_smooth.modl", nullptr, m_textures, meshes);
+	//auto renderables = SC::LoadRenderObjectsFromModel("data/models/monkey_smooth.modl", nullptr, m_textures, meshes);
 	m_monkeyMesh = std::move(meshes.begin()->second);
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData

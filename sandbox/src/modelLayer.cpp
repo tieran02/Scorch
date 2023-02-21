@@ -25,8 +25,10 @@ struct GPUCameraData
 
 
 ModelLayer::ModelLayer() : Layer("ModelLayer"),
+#ifndef ModelLayer_UseScene
 m_vertexBuffer(nullptr),
 m_indexBuffer(nullptr),
+#endif
 m_rotation(0)
 {
 
@@ -34,6 +36,7 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
+#ifndef ModelLayer_UseScene
 	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/monkey_smooth.modl");
 	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
 	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
@@ -45,6 +48,10 @@ void ModelLayer::OnAttach()
 
 	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
 	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
+#else
+	m_scene.LoadModel("data/models/monkey_smooth.modl", nullptr);
+#endif // !ModelLayer_UseScene	
+
 
 	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
@@ -69,6 +76,8 @@ void ModelLayer::OnAttach()
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
 
+
+#ifndef ModelLayer_UseScene
 	constexpr bool USE_INDEX_BUFFER = true;
 
 	//test
@@ -84,6 +93,7 @@ void ModelLayer::OnAttach()
 		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
 		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
 	}
+#endif
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
 	SC::BufferUsageSet cameraBufferUsage;
@@ -101,7 +111,7 @@ void ModelLayer::OnAttach()
 
 void ModelLayer::OnDetach()
 {
-
+	m_scene.Reset();
 }
 
 void ModelLayer::OnUpdate(float deltaTime)
@@ -146,10 +156,11 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindVertexBuffer(m_vertexBuffer.get());
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 
-
+#ifndef ModelLayer_UseScene
+	renderer->BindVertexBuffer(m_vertexBuffer.get());
+	
 	if(!m_indexBuffer)
 		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
 	else
@@ -158,6 +169,13 @@ void ModelLayer::OnUpdate(float deltaTime)
 		renderer->BindIndexBuffer(m_indexBuffer.get());
 		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
 	}
+#else
+	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
+		{	//Per object func gets called on each render object
+			
+		});
+#endif
+
 	renderer->EndFrame();
 }
 

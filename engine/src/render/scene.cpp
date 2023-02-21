@@ -12,30 +12,14 @@ using namespace SC;
 
 namespace
 {
-	Asset::ModelManagerBasic gModelManager;
-}
-
-RenderObject* Scene::CreateRenderObject(RenderObject&& object)
-{
-	auto node = m_root.AddChild();
-	node->GetRenderObject() = std::move(object);
-
-	return &node->GetRenderObject();
-}
-
-Mesh& Scene::InsertMesh(const std::string& name)
-{
-	auto foundIt = m_meshes.find(name);
-	if (foundIt != m_meshes.end())
+	struct ModelUserData
 	{
-		return foundIt->second;
-	}
+		std::vector<std::shared_ptr<Mesh>> meshes;
+	};
 
-	Mesh& insertedMesh = m_meshes.emplace(std::piecewise_construct,
-		std::forward_as_tuple(name),
-		std::forward_as_tuple()).first->second;
-
-	return insertedMesh;
+	//Asset::TextureManagerBasic gTextureManager;
+	Asset::ModelManager<ModelUserData> gModelManager;
+	//Asset::MaterialManagerBasic gMaterialManager;
 }
 
 void Scene::DrawObjects(Renderer* renderer,
@@ -50,10 +34,18 @@ void Scene::DrawObjects(Renderer* renderer,
 
 		if (!renderable.mesh) return;
 
-		auto forwardEffect = renderable.material->original->passShaders[MeshpassType::Forward];
-		const bool pipelineChanged = !lastLayout || lastLayout != forwardEffect->GetShaderEffect()->GetPipelineLayout();
-		if (pipelineChanged)
-			renderer->BindPipeline(forwardEffect->GetPipeline());
+		auto* material = renderable.material;
+		bool pipelineChanged = !lastLayout;
+		if (material)
+		{
+			auto forwardEffect = material->original->passShaders[MeshpassType::Forward];
+			pipelineChanged |= lastLayout != forwardEffect->GetShaderEffect()->GetPipelineLayout();
+
+			if (pipelineChanged)
+				renderer->BindPipeline(forwardEffect->GetPipeline());
+
+			lastLayout = forwardEffect->GetShaderEffect()->GetPipelineLayout();
+		}
 
 		CORE_ASSERT(renderable.mesh, "Mesh can't be null");
 		CORE_ASSERT(renderable.mesh->vertexBuffer, "Mesh vertex buffer can't be null, is it built?");
@@ -65,8 +57,6 @@ void Scene::DrawObjects(Renderer* renderer,
 		PerRenderObjectFunc(renderable, pipelineChanged);
 
 		renderer->DrawIndexed(renderable.mesh->IndexCount(), 1, 0, 0, 0);
-
-		lastLayout = forwardEffect->GetShaderEffect()->GetPipelineLayout();
 	});
 }
 
@@ -93,6 +83,8 @@ void Scene::Reset()
 	m_textures.clear();
 	m_vertexBuffers.clear();
 	m_indexBuffers.clear();
+
+	m_loadedModels.clear();
 }
 
 SceneNode& Scene::Root()
@@ -154,11 +146,60 @@ namespace
 bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 {
 	//SceneNode sceneNode;
+	std::shared_ptr<SceneNode> modelRoot = m_root.AddChild();
+
+	gModelManager.SetOnLoadCallback([=](Asset::ModelInfo& modelInfo, auto& userData)
+		{
+		const size_t meshCount = modelInfo.meshes.size();
+		userData.meshes.resize(meshCount);
+
+		for (size_t i = 0; i < meshCount; i++)
+		{
+			Asset::Mesh assetMesh = modelInfo.meshes[i];
+
+			//Check if mesh already exists in map using mesh name
+			auto meshIt = m_meshes.find(modelInfo.meshNames[i]);
+
+			std::shared_ptr<Mesh> mesh;
+			if (meshIt != m_meshes.end())
+			{
+				mesh = meshIt->second;
+			}
+			else
+			{
+				//Create new mesh
+				mesh = std::make_shared<Mesh>();
+				m_meshes.emplace(modelInfo.meshNames[i], mesh);
+
+				mesh->vertices.resize(assetMesh.vertexBuffer.GetVertexCount());
+				memcpy(mesh->vertices.data(), assetMesh.vertexBuffer.data.data(), assetMesh.vertexBuffer.data.size());
+
+				mesh->indices.resize(assetMesh.indexBuffer.size());
+				memcpy(mesh->indices.data(), assetMesh.indexBuffer.data(), assetMesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
+
+				mesh->Build();
+
+
+				modelRoot->GetRenderObject().mesh = mesh.get();
+			}
+
+		}
+		});
+
+	gModelManager.SetOnUnloadCallback([=](Asset::ModelInfo& modelInfo, auto& userData)
+		{
+			userData.meshes.clear();
+		});
 
 	Asset::AssetHandle modelHandle = gModelManager.Load(path.c_str());
 	CORE_ASSERT(modelHandle.IsValid(), "Failed to load file");
 	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
 	CORE_ASSERT(modelInfo, "Failed to get model");
+
+
+	if (m_loadedModels.find(modelHandle) == m_loadedModels.end())
+		m_loadedModels.insert(modelHandle);
+
 
 	std::map<uint64_t, std::vector<uint64_t>> nodeChildren;
 

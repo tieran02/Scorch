@@ -21,7 +21,11 @@ namespace SC
 
 	struct Mesh
 	{
+	public:
 		Mesh();
+		~Mesh();
+		Mesh(Mesh&& other);
+
 		std::vector<Vertex> vertices;
 		std::vector<VertexIndexType> indices;
 		std::unique_ptr<Buffer> vertexBuffer, indexBuffer;
@@ -33,6 +37,8 @@ namespace SC
 		uint32_t IndexSize() const;
 
 		bool Build();
+
+		Mesh& operator=(Mesh&& other);
 	};
 
 	struct RenderObject
@@ -43,16 +49,4 @@ namespace SC
 		Mesh* mesh;
 		Material* material;
 	};
-
-	std::vector<RenderObject> LoadRenderObjectsFromModel(const std::string& path, 
-		MaterialSystem* materialSystem, 
-		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>& textures,
-		std::unordered_map<std::string, SC::Mesh>& meshes);
-
-	bool LoadRenderObjectFromModel(
-		const std::string& path, 
-		std::unordered_map<std::string, SC::Mesh>& meshes,
-		std::unordered_map<std::string, std::unique_ptr<SC::Texture>>* textures,
-		MaterialSystem* materialSystem);
-
 }
