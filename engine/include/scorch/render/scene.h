@@ -17,6 +17,7 @@ namespace SC
 	{
 	public:
 		Scene() = default;
+		~Scene();
 
 		Mesh* GetMesh(const std::string& name);
 

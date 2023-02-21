@@ -22,6 +22,11 @@ namespace
 	//Asset::MaterialManagerBasic gMaterialManager;
 }
 
+Scene::~Scene()
+{
+	Reset();
+}
+
 void Scene::DrawObjects(Renderer* renderer,
 	std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc)
 {
@@ -164,12 +169,14 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 			if (meshIt != m_meshes.end())
 			{
 				mesh = meshIt->second;
+				userData.meshes[i] = mesh;
 			}
 			else
 			{
 				//Create new mesh
 				mesh = std::make_shared<Mesh>();
 				m_meshes.emplace(modelInfo.meshNames[i], mesh);
+				userData.meshes[i] = mesh;
 
 				mesh->vertices.resize(assetMesh.vertexBuffer.GetVertexCount());
 				memcpy(mesh->vertices.data(), assetMesh.vertexBuffer.data.data(), assetMesh.vertexBuffer.data.size());
@@ -178,10 +185,10 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 				memcpy(mesh->indices.data(), assetMesh.indexBuffer.data(), assetMesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
 
 				mesh->Build();
-
-
-				modelRoot->GetRenderObject().mesh = mesh.get();
 			}
+
+			std::shared_ptr<SceneNode> child = modelRoot->AddChild();
+			child->GetRenderObject().mesh = mesh.get();
 
 		}
 		});

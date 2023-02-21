@@ -49,7 +49,7 @@ void ModelLayer::OnAttach()
 	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
 	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
 #else
-	m_scene.LoadModel("data/models/monkey_smooth.modl", nullptr);
+	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
 #endif // !ModelLayer_UseScene	
 
 
@@ -127,7 +127,7 @@ void ModelLayer::OnUpdate(float deltaTime)
 
 	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
 	//camera projection
-	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(70.f),(float)windowWidth / (float)windowHeight, 0.1f, 1500.0f);
 	projection[1][1] *= -1;
 	//model rotation
 	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
