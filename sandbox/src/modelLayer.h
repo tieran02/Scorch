@@ -1,7 +1,7 @@
 #pragma once
 #include "scorch/engine.h"
 
-#define ModelLayer_UseScene
+//#define ModelLayer_UseScene
 
 class ModelLayer : public SC::Layer
 {

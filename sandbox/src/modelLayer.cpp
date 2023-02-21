@@ -111,7 +111,9 @@ void ModelLayer::OnAttach()
 
 void ModelLayer::OnDetach()
 {
+#ifdef ModelLayer_UseScene
 	m_scene.Reset();
+#endif
 }
 
 void ModelLayer::OnUpdate(float deltaTime)
