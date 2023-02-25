@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.24)
 
 project(Scorch CXX C)
 
@@ -44,6 +44,8 @@ target_include_directories(Engine SYSTEM PRIVATE vendor/src/glm)
 
 
 target_include_directories(Sandbox PRIVATE vendor/src/glm)
+target_include_directories(Sandbox SYSTEM PRIVATE vendor/src/spdlog/include)
+
 
 
 set(VK_BOOTSTRAP_VULKAN_HEADER_DIR vendor/src/vulkan/include)

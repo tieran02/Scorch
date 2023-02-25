@@ -3,16 +3,14 @@
 #include <string>
 #include <cassert>
 
-template< typename... Args >
-std::string string_format(const char* format, Args... args) {
-	int length = std::snprintf(nullptr, 0, format, args...);
-	assert(length >= 0);
+#include "spdlog/fmt/fmt.h"
 
-	std::string str(length, 1);
-	std::snprintf(str.data(), (size_t)length + 1, format, args...);
-
-	return str;
+template<typename ...Args>
+inline std::string string_format(fmt::format_string<Args...> fmt, Args && ...args)
+{
+	return fmt::format(fmt, std::forward<Args>(args)...);
 }
+
 
 
 namespace SC

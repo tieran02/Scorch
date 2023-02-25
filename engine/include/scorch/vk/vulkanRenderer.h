@@ -12,7 +12,7 @@
 		VkResult err = x;                                           \
 		if (err)                                                    \
 		{                                                           \
-			CORE_ASSERT(false, string_format("%s %i", "Detected Vulkan error:", err)); \
+			CORE_ASSERT(false, string_format("{0} {1}", "Detected Vulkan error:", err)); \
 			abort();                                                \
 		}                                                           \
 	} while (0)

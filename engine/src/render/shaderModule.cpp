@@ -24,11 +24,11 @@ std::unique_ptr<ShaderModule> ShaderModuleBuilder::Build()
 	bool result = false;
 	if (!m_vertexModulePath.empty())
 		result = shader->LoadModule(ShaderStage::VERTEX, m_vertexModulePath);
-	CORE_ASSERT(result, string_format("Failed to load vertex module: %s", m_vertexModulePath.c_str()));
+	CORE_ASSERT(result, string_format("Failed to load vertex module: {0}", m_vertexModulePath.c_str()));
 
 	if (!m_fragmentModulePath.empty())
 		result = shader->LoadModule(ShaderStage::FRAGMENT, m_fragmentModulePath);
-	CORE_ASSERT(result, string_format("Failed to load fragment module: %s", m_fragmentModulePath.c_str()));
+	CORE_ASSERT(result, string_format("Failed to load fragment module: {0}", m_fragmentModulePath.c_str()));
 
 	return std::move(shader);
 }

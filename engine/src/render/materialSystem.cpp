@@ -218,7 +218,7 @@ Material* MaterialSystem::BuildMaterial(const std::string& materialName, const M
 			}
 		}
 
-		Log::Print(string_format("Built New Material %s", materialName));
+		Log::Print(string_format("Built New Material {0}", materialName));
 		//add material to cache
 		m_materialCache[info] = (newMat);
 		mat = newMat;

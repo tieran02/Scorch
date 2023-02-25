@@ -33,7 +33,7 @@ const App* App::Instance()
 
 std::unique_ptr<App> App::Create(const std::string& title, int width, int height)
 {
-	Log::PrintCore(string_format("Creating App (width %i, height %i)", width, height));
+	Log::PrintCore(string_format("Creating App (width {0}, height {1})", width, height));
 
 	CORE_ASSERT(!g_instance, "Only one instance of app is currently supported");
 	if (g_instance)

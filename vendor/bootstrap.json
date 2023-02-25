@@ -20,7 +20,7 @@
 		"source": {
 			"type": "git",
 			"url": "https://github.com/charles-lunarg/vk-bootstrap.git",
-			"revision": "6bf3837"
+			"revision": "v0.7"
 		}
 	},
 	{
@@ -60,6 +60,14 @@
 		"source": {
 			"type": "git",
 			"url": "https://github.com/tieran02/JAAM.git"
+		}
+	},
+	{
+		"name": "fmt",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/fmtlib/fmt.git",
+			"revision": "9.1.0"
 		}
 	}
 ]
