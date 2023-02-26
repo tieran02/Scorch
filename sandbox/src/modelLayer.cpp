@@ -37,6 +37,45 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
+#ifndef ModelLayer_UseScene
+
+	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/helmet/DamagedHelmet.modl");
+	//Asset::AssetHandle modelHandle = gModelManager.Load("data/models/Suzanne.modl");
+	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
+	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
+	APP_ASSERT(modelInfo, "Failed to get model");
+
+	auto& mesh = modelInfo->meshes.at(0);
+	m_monkeyMesh.vertices.resize(mesh.vertexBuffer.GetVertexCount());
+	memcpy(m_monkeyMesh.vertices.data(), mesh.vertexBuffer.data.data(), mesh.vertexBuffer.data.size());
+
+	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
+	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
+#else
+	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
+#endif // !ModelLayer_UseScene	
+
+
+	m_rotation = 0;
+
+#ifndef ModelLayer_UseScene
+	constexpr bool USE_INDEX_BUFFER = true;
+
+	//test
+	SC::BufferUsageSet vertexBufferUsage;
+	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
+	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
+	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.vertices.data());
+
+	if (USE_INDEX_BUFFER)
+	{
+		SC::BufferUsageSet indexBufferUsage;
+		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
+		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
+		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
+	}
+#endif
+
 #ifdef ModelLayer_UseMaterialSystem
 	//create a pipeline layout with push constants
 	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/diffuse.vert.spv", "data/shaders/diffuse.frag.spv")
@@ -45,8 +84,8 @@ void ModelLayer::OnAttach()
 			{
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
 			})
-		.SetTextureSetIndex(0)
-			.Build();
+			.SetTextureSetIndex(0)
+		.Build();
 
 	m_shaderPass.Build(m_shaderEffect);
 
@@ -55,8 +94,8 @@ void ModelLayer::OnAttach()
 	m_materialSystem.AddEffectTemplate("default", effectTemplate);
 
 
-	//Load texture
-	Asset::AssetHandle matieralHandle = gMaterialManager.Load("data/models/Suzanne_materials/MAT_0_Suzanne.mat");
+	//Load 
+	Asset::AssetHandle matieralHandle = gMaterialManager.Load(modelInfo->meshMaterials[0]);
 	APP_ASSERT(matieralHandle.IsValid(), "Failed to load file");
 	Asset::MaterialInfo* matInfo = gMaterialManager.Get(matieralHandle);
 	APP_ASSERT(matInfo, "Failed to get material");
@@ -96,44 +135,6 @@ void ModelLayer::OnAttach()
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
-#endif
-
-#ifndef ModelLayer_UseScene
-
-	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/Suzanne.modl");
-	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
-	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
-	APP_ASSERT(modelInfo, "Failed to get model");
-
-	auto& mesh = modelInfo->meshes.at(0);
-	m_monkeyMesh.vertices.resize(mesh.vertexBuffer.GetVertexCount());
-	memcpy(m_monkeyMesh.vertices.data(), mesh.vertexBuffer.data.data(), mesh.vertexBuffer.data.size());
-
-	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
-	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
-#else
-	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
-#endif // !ModelLayer_UseScene	
-
-
-	m_rotation = 0;
-
-#ifndef ModelLayer_UseScene
-	constexpr bool USE_INDEX_BUFFER = true;
-
-	//test
-	SC::BufferUsageSet vertexBufferUsage;
-	vertexBufferUsage.set(SC::BufferUsage::VERTEX_BUFFER);
-	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.vertices.data());
-
-	if (USE_INDEX_BUFFER)
-	{
-		SC::BufferUsageSet indexBufferUsage;
-		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
-	}
 #endif
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
