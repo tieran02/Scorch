@@ -26,10 +26,6 @@ struct GPUCameraData
 
 
 ModelLayer::ModelLayer() : Layer("ModelLayer"),
-#ifndef ModelLayer_UseScene
-m_vertexBuffer(nullptr),
-m_indexBuffer(nullptr),
-#endif
 m_rotation(0)
 {
 
@@ -37,8 +33,6 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
-#ifndef ModelLayer_UseScene
-
 	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/helmet/DamagedHelmet.modl");
 	//Asset::AssetHandle modelHandle = gModelManager.Load("data/models/Suzanne.modl");
 	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
@@ -51,15 +45,8 @@ void ModelLayer::OnAttach()
 
 	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
 	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
-#else
-	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
-#endif // !ModelLayer_UseScene	
-
 
 	m_rotation = 0;
-
-#ifndef ModelLayer_UseScene
-	constexpr bool USE_INDEX_BUFFER = true;
 
 	//test
 	SC::BufferUsageSet vertexBufferUsage;
@@ -67,14 +54,10 @@ void ModelLayer::OnAttach()
 	vertexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
 	m_vertexBuffer = SC::Buffer::Create(m_monkeyMesh.VertexSize(), vertexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.vertices.data());
 
-	if (USE_INDEX_BUFFER)
-	{
-		SC::BufferUsageSet indexBufferUsage;
-		indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
-		indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
-		m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
-	}
-#endif
+	SC::BufferUsageSet indexBufferUsage;
+	indexBufferUsage.set(SC::BufferUsage::INDEX_BUFFER);
+	indexBufferUsage.set(SC::BufferUsage::TRANSFER_DST);
+	m_indexBuffer = SC::Buffer::Create(m_monkeyMesh.IndexSize(), indexBufferUsage, SC::AllocationUsage::DEVICE, m_monkeyMesh.indices.data());
 
 #ifdef ModelLayer_UseMaterialSystem
 	//create a pipeline layout with push constants
@@ -93,7 +76,6 @@ void ModelLayer::OnAttach()
 	effectTemplate.passShaders[SC::MeshpassType::Forward] = &m_shaderPass;
 	m_materialSystem.AddEffectTemplate("default", effectTemplate);
 
-
 	//Load 
 	Asset::AssetHandle matieralHandle = gMaterialManager.Load(modelInfo->meshMaterials[0]);
 	APP_ASSERT(matieralHandle.IsValid(), "Failed to load file");
@@ -108,6 +90,7 @@ void ModelLayer::OnAttach()
 	m_texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
 	m_texture->Build(textureInfo->pixelsize[0], textureInfo->pixelsize[1]);
 	m_texture->CopyData(textureInfo->data.data(), textureInfo->data.size());
+
 
 	SC::MaterialData matData;
 	matData.baseTemplate = "default";
@@ -133,8 +116,6 @@ void ModelLayer::OnAttach()
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT);	//UV
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build();
-
-	auto stride = m_pipeline->vertexInputDescription.GetStride();
 #endif
 
 	//Upload camera data to uniform buffer for each overlapping frame using FrameData
@@ -152,9 +133,7 @@ void ModelLayer::OnAttach()
 
 void ModelLayer::OnDetach()
 {
-#ifdef ModelLayer_UseScene
-	m_scene.Reset();
-#endif
+
 }
 
 void ModelLayer::OnUpdate(float deltaTime)
@@ -212,23 +191,9 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 #endif
 
-#ifndef ModelLayer_UseScene
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
-	
-	if(!m_indexBuffer)
-		renderer->Draw(m_monkeyMesh.VertexCount(), 1, 0, 0);
-	else
-	{
-		//using a index buffer
-		renderer->BindIndexBuffer(m_indexBuffer.get());
-		renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
-	}
-#else
-	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
-		{	//Per object func gets called on each render object
-			
-		});
-#endif
+	renderer->BindIndexBuffer(m_indexBuffer.get());
+	renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
 
 	renderer->EndFrame();
 }

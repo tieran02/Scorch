@@ -1,8 +1,7 @@
 #pragma once
 #include "scorch/engine.h"
 
-//#define ModelLayer_UseScene
-#define ModelLayer_UseMaterialSystem
+//#define ModelLayer_UseMaterialSystem
 
 class ModelLayer : public SC::Layer
 {
@@ -26,14 +25,10 @@ private:
 #endif // ModelLayer_UseMaterialSystem
 
 
-#ifdef ModelLayer_UseScene
-	SC::Scene m_scene;
-#else
 	std::unique_ptr<SC::Buffer> m_vertexBuffer;
 	std::unique_ptr<SC::Buffer> m_indexBuffer;
 	std::unique_ptr<SC::Texture> m_texture;
 	SC::Mesh m_monkeyMesh;
-#endif // ModelLayer_UseScene
 
 	float m_rotation;
 };
