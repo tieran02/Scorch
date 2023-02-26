@@ -7,6 +7,11 @@
 
 using namespace SC;
 
+ShaderEffect::ShaderEffect() : m_textureSetIndex(1)
+{
+
+}
+
 ShaderEffect ShaderEffect::Builder(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	SC::ShaderModuleBuilder shaderBuilder;
@@ -30,6 +35,12 @@ ShaderEffect&& ShaderEffect::AddSet(const std::string& name, std::vector<Descrip
 ShaderEffect&& ShaderEffect::AddPushConstant(const std::string& name, PushConstant&& pushConstant)
 {
 	m_pushConstants.push_back(std::move(pushConstant));
+	return std::move(*this);
+}
+
+ShaderEffect&& ShaderEffect::SetTextureSetIndex(uint8_t index)
+{
+	m_textureSetIndex = index;
 	return std::move(*this);
 }
 
@@ -79,6 +90,11 @@ PipelineLayout* ShaderEffect::GetPipelineLayout() const
 	return m_pipelineLayout.get();
 }
 
+uint8_t ShaderEffect::GetTextureSetIndex() const 
+{
+	return m_textureSetIndex;
+}
+
 void ShaderPass::Build(const ShaderEffect& effect)
 {
 	if(m_pipeline)
@@ -92,7 +108,6 @@ void ShaderPass::Build(const ShaderEffect& effect)
 	m_pipeline = SC::Pipeline::Create(*m_effect->GetShaderModule());
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //pos
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
-	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //color
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //uvS
 	m_pipeline->pipelineLayout = m_effect->GetPipelineLayout();
 	m_pipeline->Build();
@@ -179,12 +194,12 @@ Material* MaterialSystem::BuildMaterial(const std::string& materialName, const M
 			if (forwadPass)
 			{
 				if (auto effect = forwadPass->GetShaderEffect())
-					forwardLayout = effect->GetDescriptorSetLayout(1);
+					forwardLayout = effect->GetDescriptorSetLayout(effect->GetTextureSetIndex());
 			}
 			if (transparancyPass)
 			{
 				if (auto effect = transparancyPass->GetShaderEffect())
-					transparancyLayout = effect->GetDescriptorSetLayout(1);
+					transparancyLayout = effect->GetDescriptorSetLayout(effect->GetTextureSetIndex());
 			}
 
 

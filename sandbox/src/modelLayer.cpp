@@ -6,6 +6,7 @@
 
 namespace
 {
+	Asset::MaterialManagerBasic gMaterialManager;
 	Asset::TextureManagerBasic gTextureManager;
 	Asset::ModelManagerBasic gModelManager;
 }
@@ -36,24 +37,44 @@ m_rotation(0)
 
 void ModelLayer::OnAttach()
 {
-#ifndef ModelLayer_UseScene
-	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/monkey_smooth.modl");
-	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
-	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
-	APP_ASSERT(modelInfo, "Failed to get model");
+#ifdef ModelLayer_UseMaterialSystem
+	//create a pipeline layout with push constants
+	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/diffuse.vert.spv", "data/shaders/diffuse.frag.spv")
+		.AddPushConstant("modelPush", { {SC::ShaderStage::VERTEX}, sizeof(MeshPushConstants) })
+		.AddSet("textureData",
+			{
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
+			})
+		.SetTextureSetIndex(0)
+			.Build();
 
-	auto& mesh = modelInfo->meshes.at(0);
-	m_monkeyMesh.vertices.resize(mesh.vertexBuffer.GetVertexCount());
-	memcpy(m_monkeyMesh.vertices.data(), mesh.vertexBuffer.data.data(), mesh.vertexBuffer.data.size());
+	m_shaderPass.Build(m_shaderEffect);
 
-	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
-	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
+	SC::EffectTemplate effectTemplate;
+	effectTemplate.passShaders[SC::MeshpassType::Forward] = &m_shaderPass;
+	m_materialSystem.AddEffectTemplate("default", effectTemplate);
+
+
+	//Load texture
+	Asset::AssetHandle matieralHandle = gMaterialManager.Load("data/models/Suzanne_materials/MAT_0_Suzanne.mat");
+	APP_ASSERT(matieralHandle.IsValid(), "Failed to load file");
+	Asset::MaterialInfo* matInfo = gMaterialManager.Get(matieralHandle);
+	APP_ASSERT(matInfo, "Failed to get material");
+
+	Asset::AssetHandle textureHandle = gTextureManager.Load(matInfo->textures.at("baseColor"));
+	APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
+	Asset::TextureInfo* textureInfo = gTextureManager.Get(textureHandle);
+	APP_ASSERT(textureInfo, "Failed to get texture");
+
+	m_texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+	m_texture->Build(textureInfo->pixelsize[0], textureInfo->pixelsize[1]);
+	m_texture->CopyData(textureInfo->data.data(), textureInfo->data.size());
+
+	SC::MaterialData matData;
+	matData.baseTemplate = "default";
+	matData.textures.push_back(m_texture.get());
+	m_materialSystem.BuildMaterial("monkey", matData);
 #else
-	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
-#endif // !ModelLayer_UseScene	
-
-
-	m_rotation = 0;
 	SC::ShaderModuleBuilder shaderBuilder;
 	auto shader = shaderBuilder.SetVertexModulePath("data/shaders/normalMesh.vert.spv")
 		.SetFragmentModulePath("data/shaders/normalMesh.frag.spv")
@@ -75,7 +96,27 @@ void ModelLayer::OnAttach()
 	m_pipeline->Build();
 
 	auto stride = m_pipeline->vertexInputDescription.GetStride();
+#endif
 
+#ifndef ModelLayer_UseScene
+
+	Asset::AssetHandle modelHandle = gModelManager.Load("data/models/Suzanne.modl");
+	APP_ASSERT(modelHandle.IsValid(), "Failed to load file");
+	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
+	APP_ASSERT(modelInfo, "Failed to get model");
+
+	auto& mesh = modelInfo->meshes.at(0);
+	m_monkeyMesh.vertices.resize(mesh.vertexBuffer.GetVertexCount());
+	memcpy(m_monkeyMesh.vertices.data(), mesh.vertexBuffer.data.data(), mesh.vertexBuffer.data.size());
+
+	m_monkeyMesh.indices.resize(mesh.indexBuffer.size());
+	memcpy(m_monkeyMesh.indices.data(), mesh.indexBuffer.data(), mesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
+#else
+	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
+#endif // !ModelLayer_UseScene	
+
+
+	m_rotation = 0;
 
 #ifndef ModelLayer_UseScene
 	constexpr bool USE_INDEX_BUFFER = true;
@@ -106,7 +147,6 @@ void ModelLayer::OnAttach()
 		GPUCameraData cameraData{};
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
-
 }
 
 void ModelLayer::OnDetach()
@@ -152,13 +192,24 @@ void ModelLayer::OnUpdate(float deltaTime)
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
 
-	renderer->BindPipeline(m_pipeline.get());
-
 	//Not optimal as we create a viewport object each frame but will do for demo
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
+#ifdef ModelLayer_UseMaterialSystem
+	SC::Material* mat = m_materialSystem.GetMaterial("monkey");
+	auto forwardEffect = mat->original->passShaders[SC::MeshpassType::Forward];
+	auto shaderEffect = forwardEffect->GetShaderEffect();
+	auto textureDescriptorSet = mat->passSets[SC::MeshpassType::Forward].get();
+
+
+	renderer->BindPipeline(forwardEffect->GetPipeline());
+	renderer->PushConstants(shaderEffect->GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
+	renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
+#else
+	renderer->BindPipeline(m_pipeline.get());
 	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
+#endif
 
 #ifndef ModelLayer_UseScene
 	renderer->BindVertexBuffer(m_vertexBuffer.get());

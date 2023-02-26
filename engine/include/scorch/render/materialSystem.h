@@ -13,16 +13,18 @@ namespace SC
 	struct ShaderEffect
 	{
 	public:
-		ShaderEffect() = default;
+		ShaderEffect();
 
 		static ShaderEffect Builder(const std::string& vertexShader, const std::string& fragmentShader);
 		ShaderEffect&& AddSet(const std::string& name, std::vector<DescriptorBinding>&& bindings);
 		ShaderEffect&& AddPushConstant(const std::string& name, PushConstant&& pushConstant);
+		ShaderEffect&& SetTextureSetIndex(uint8_t index);
 		ShaderEffect&& Build();
 	public:
 		ShaderModule* GetShaderModule() const;
 		DescriptorSetLayout* GetDescriptorSetLayout(int index) const;
 		PipelineLayout* GetPipelineLayout() const;
+		uint8_t GetTextureSetIndex() const;
 	private:
 		ShaderEffect(std::unique_ptr<ShaderModule>&& shader);
 
@@ -33,6 +35,7 @@ namespace SC
 		std::vector<PushConstant> m_pushConstants;
 
 		uint8_t m_usedSetLayouts;
+		uint8_t m_textureSetIndex;
 	};
 
 	struct ShaderPass
