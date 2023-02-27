@@ -133,8 +133,8 @@ namespace SC
 	{
 	public:
 		EffectTemplate* AddEffectTemplate(const std::string& name, const EffectTemplate& effectTemplate);
-		Material* BuildMaterial(const std::string& materialName, const MaterialData& info);
-		Material* GetMaterial(const std::string& materialName);
+		std::shared_ptr<Material> BuildMaterial(const std::string& materialName, const MaterialData& info);
+		std::shared_ptr<Material> GetMaterial(const std::string& materialName);
 	private:
 		struct MaterialInfoHash
 		{

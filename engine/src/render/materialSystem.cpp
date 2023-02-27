@@ -67,7 +67,8 @@ ShaderEffect&& ShaderEffect::Build()
 
 ShaderEffect::ShaderEffect(std::unique_ptr<ShaderModule>&& shader) :
 	m_shaderModule(std::move(shader)),
-	m_usedSetLayouts(0)
+	m_usedSetLayouts(0),
+	m_textureSetIndex(0)
 {
 
 }
@@ -162,7 +163,7 @@ size_t MaterialData::hash() const
 	return result;
 }
 
-Material* MaterialSystem::BuildMaterial(const std::string& materialName, const MaterialData& info)
+std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& materialName, const MaterialData& info)
 {
 	std::shared_ptr<Material> mat;
 	//search material in the cache first in case its already built
@@ -181,7 +182,7 @@ Material* MaterialSystem::BuildMaterial(const std::string& materialName, const M
 		newMat->passSets[MeshpassType::DirectionalShadow] = nullptr;
 		newMat->textures = info.textures;
 
-		if (!info.textures.empty()) 
+		//if (!info.textures.empty()) 
 		{
 			ShaderPass* forwadPass = newMat->original->passShaders[MeshpassType::Forward];
 			ShaderPass* transparancyPass = newMat->original->passShaders[MeshpassType::Transparency];
@@ -240,15 +241,15 @@ Material* MaterialSystem::BuildMaterial(const std::string& materialName, const M
 		m_materials[materialName] = mat;
 	}
 
-	return mat.get();
+	return mat;
 }
 
-SC::Material* MaterialSystem::GetMaterial(const std::string& materialName)
+std::shared_ptr<SC::Material> MaterialSystem::GetMaterial(const std::string& materialName)
 {
 	auto it = m_materials.find(materialName);
 	if (it != m_materials.end())
 	{
-		return(*it).second.get();
+		return(*it).second;
 	}
 	else {
 		return nullptr;

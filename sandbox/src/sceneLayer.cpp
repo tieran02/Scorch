@@ -33,11 +33,15 @@ m_rotation(0)
 
 void SceneLayer::OnAttach()
 {
-	m_scene.LoadModel("data/models/sponza/sponza.modl", nullptr);
 	m_rotation = 0;
 
-	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/normalMesh.vert.spv", "data/shaders/normalMesh.frag.spv")
+	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/diffuse.vert.spv", "data/shaders/diffuse.frag.spv")
 		.AddPushConstant("modelPush", { {SC::ShaderStage::VERTEX}, sizeof(MeshPushConstants) })
+		.AddSet("textureData",
+			{
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
+			})
+			.SetTextureSetIndex(0)
 		.Build();
 
 	m_shaderPass.Build(m_shaderEffect);
@@ -57,6 +61,8 @@ void SceneLayer::OnAttach()
 		GPUCameraData cameraData{};
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
+
+	m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
 }
 
 void SceneLayer::OnDetach()
@@ -110,6 +116,10 @@ void SceneLayer::OnUpdate(float deltaTime)
 	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
 		{	//Per object func gets called on each render object
 
+			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
+			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].get();
+
+			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 		});
 
 	renderer->EndFrame();

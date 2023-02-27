@@ -38,6 +38,10 @@ namespace SC
 		std::unordered_set<Asset::AssetHandle> m_loadedModels;
 		std::unordered_map<std::string, std::shared_ptr<Mesh>> m_meshes;
 
+		std::unordered_set<Asset::AssetHandle> m_loadedMaterial;
+
+
+
 
 		std::unordered_map<std::string, std::unique_ptr<Texture>> m_textures;
 

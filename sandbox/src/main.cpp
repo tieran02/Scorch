@@ -10,22 +10,6 @@ int main()
 {
 	SC::Log::Print("Hello game!");
 
-	SC::SceneNode rootNode;
-
-	rootNode.AddChild();
-	rootNode.AddChild();
-	auto child = rootNode.AddChild();
-	child->AddChild();
-	auto subchild = child->AddChild();
-	subchild->AddChild();
-	subchild->AddChild();
-	subchild->AddChild();
-
-
-	subchild->SetParent(rootNode);
-
-
-
 	if (auto app = SC::App::Create("Hello Vulkan", 1280, 720))
 	{
 		//std::shared_ptr<SC::Layer> testLayer = std::make_shared<TestLayer>();

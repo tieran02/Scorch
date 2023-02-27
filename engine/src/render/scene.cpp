@@ -17,9 +17,14 @@ namespace
 		std::vector<std::shared_ptr<Mesh>> meshes;
 	};
 
-	//Asset::TextureManagerBasic gTextureManager;
+	struct MaterialUserData
+	{
+		std::shared_ptr<Material> material;
+	};
+
+	Asset::TextureManagerBasic gTextureManager;
 	Asset::ModelManager<ModelUserData> gModelManager;
-	//Asset::MaterialManagerBasic gMaterialManager;
+	Asset::MaterialManager<MaterialUserData> gMaterialManager;
 }
 
 Scene::~Scene()
@@ -90,6 +95,7 @@ void Scene::Reset()
 	m_indexBuffers.clear();
 
 	m_loadedModels.clear();
+	m_loadedMaterial.clear();
 }
 
 SceneNode& Scene::Root()
@@ -153,6 +159,46 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 	//SceneNode sceneNode;
 	std::shared_ptr<SceneNode> modelRoot = m_root.AddChild();
 
+	gMaterialManager.SetOnLoadCallback([=](Asset::MaterialInfo& matInfo, auto& userData)
+		{
+			SC::MaterialData matData;
+			matData.baseTemplate = "default";
+
+			auto textureIt = matInfo.textures.find("baseColor");
+			if (textureIt != matInfo.textures.end())
+			{
+				auto existingTextureit = m_textures.find(textureIt->second);
+				if (existingTextureit == m_textures.end())
+				{
+					Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second);
+					APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
+					Asset::TextureInfo* textureInfo = gTextureManager.Get(textureHandle);
+					APP_ASSERT(textureInfo, "Failed to get texture");
+
+					auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+					texture->Build(textureInfo->pixelsize[0], textureInfo->pixelsize[1]);
+					texture->CopyData(textureInfo->data.data(), textureInfo->data.size());
+
+					existingTextureit = m_textures.emplace(textureIt->second, std::move(texture)).first;
+				}
+				matData.textures.push_back(existingTextureit->second.get());
+			}
+			else
+			{
+				//use default white texture
+				matData.textures.push_back(App::Instance()->GetRenderer()->WhiteTexture());
+
+			}
+
+			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);
+			userData.material = mat;
+		});
+
+	gMaterialManager.SetOnUnloadCallback([=](Asset::MaterialInfo& matInfo, auto& userData)
+		{
+			userData.material = nullptr;
+		});
+
 	gModelManager.SetOnLoadCallback([=](Asset::ModelInfo& modelInfo, auto& userData)
 		{
 		const size_t meshCount = modelInfo.meshes.size();
@@ -190,6 +236,15 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 			std::shared_ptr<SceneNode> child = modelRoot->AddChild();
 			child->GetRenderObject().mesh = mesh.get();
 
+			//also load mat
+			auto matHandle = gMaterialManager.Load(modelInfo.meshMaterials.at(i));
+			CORE_ASSERT(matHandle.IsValid(), "Failed to load mat");
+			auto mat = gMaterialManager.GetUserData(matHandle);
+			CORE_ASSERT(mat, "Failed to get mat user data");
+			CORE_ASSERT(mat->material, "Material is null");
+
+			child->GetRenderObject().material = mat->material.get();
+			m_loadedMaterial.insert(matHandle);
 		}
 		});
 
