@@ -321,8 +321,12 @@ void VulkanRenderer::InitVulkan()
 		.set_minimum_version(1, 1)
 		.set_surface(m_surface)
 		.require_present()
+		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
+		.allow_any_gpu_device_type(false)
 		.select()
 		.value();
+
+	Log::PrintCore(string_format("Device: {0}", physicalDevice.name));
 
 	//create the final Vulkan device
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
@@ -364,7 +368,7 @@ void VulkanRenderer::InitSwapchain()
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
 		.use_default_format_selection()
 		//use vsync present mode
-		.set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
+		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
 		.set_desired_extent(windowWidth, windowHeight)
 		.build()
 		.value();
