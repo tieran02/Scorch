@@ -21,8 +21,6 @@ namespace SC
 
 		Mesh* GetMesh(const std::string& name);
 
-		Texture* CreateTexture(const std::string& path);
-
 		void DrawObjects(Renderer* renderer,
 			std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc);
 
@@ -40,10 +38,5 @@ namespace SC
 
 		std::unordered_set<Asset::AssetHandle> m_loadedMaterial;
 		std::unordered_set<Asset::AssetHandle> m_loadedTextures;
-
-		std::unordered_map<std::string, std::unique_ptr<Texture>> m_textures;
-
-		std::unordered_map<std::string, std::unique_ptr<Buffer>> m_vertexBuffers;
-		std::unordered_map<std::string, std::unique_ptr<Buffer>> m_indexBuffers;
 	};
 }

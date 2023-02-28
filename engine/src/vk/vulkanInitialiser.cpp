@@ -223,7 +223,7 @@ VkPipelineLayoutCreateInfo vkinit::PipelineLayoutCreateInfo()
 	return info;
 }
 
-VkImageCreateInfo vkinit::ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
+VkImageCreateInfo vkinit::ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, uint32_t mipLevels)
 {
 	VkImageCreateInfo info = { };
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -234,7 +234,7 @@ VkImageCreateInfo vkinit::ImageCreateInfo(VkFormat format, VkImageUsageFlags usa
 	info.format = format;
 	info.extent = extent;
 
-	info.mipLevels = 1;
+	info.mipLevels = mipLevels;
 	info.arrayLayers = 1;
 	info.samples = VK_SAMPLE_COUNT_1_BIT;
 	info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -243,7 +243,7 @@ VkImageCreateInfo vkinit::ImageCreateInfo(VkFormat format, VkImageUsageFlags usa
 	return info;
 }
 
-VkImageViewCreateInfo vkinit::ImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags)
+VkImageViewCreateInfo vkinit::ImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 {
 	//build a image-view for the depth image to use for rendering
 	VkImageViewCreateInfo info = {};
@@ -254,7 +254,7 @@ VkImageViewCreateInfo vkinit::ImageviewCreateInfo(VkFormat format, VkImage image
 	info.image = image;
 	info.format = format;
 	info.subresourceRange.baseMipLevel = 0;
-	info.subresourceRange.levelCount = 1;
+	info.subresourceRange.levelCount = mipLevels;
 	info.subresourceRange.baseArrayLayer = 0;
 	info.subresourceRange.layerCount = 1;
 	info.subresourceRange.aspectMask = aspectFlags;
@@ -284,6 +284,11 @@ VkSamplerCreateInfo vkinit::SamplerCreateInfo(VkFilter filters, VkSamplerAddress
 	VkSamplerCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	info.pNext = nullptr;
+
+	info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	info.minLod = 0.0f;
+	info.maxLod = 10;
+	info.mipLodBias = 0.0f;
 
 	info.magFilter = filters;
 	info.minFilter = filters;

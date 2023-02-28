@@ -30,7 +30,7 @@ namespace SC
 		static std::unique_ptr<Texture> Create(TextureType type, TextureUsage usage, Format format);
 		virtual ~Texture();
 
-		virtual bool Build(uint32_t width, uint32_t height) = 0;
+		virtual bool Build(uint32_t width, uint32_t height, bool generateMipmaps) = 0;
 		virtual bool LoadFromFile(const std::string& path) = 0;
 		virtual bool CopyData(const void* data, size_t size) = 0;
 

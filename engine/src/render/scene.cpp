@@ -75,88 +75,20 @@ void Scene::DrawObjects(Renderer* renderer,
 	});
 }
 
-Texture* Scene::CreateTexture(const std::string& path)
-{
-	auto foundIt = m_textures.find(path);
-	if (foundIt != m_textures.end())
-	{
-		return foundIt->second.get();
-	}
-
-	std::unique_ptr<Texture> texture = Texture::Create(TextureType::TEXTURE2D, TextureUsage::COLOUR, Format::R8G8B8A8_SRGB);
-	texture->LoadFromFile(path);
-	auto it = m_textures.insert(std::make_pair(path, std::move(texture)));
-
-	return it.first->second.get();
-}
-
 void Scene::Reset()
 {
 	m_root.Remove();
 
 	m_meshes.clear();
-	m_textures.clear();
-	m_vertexBuffers.clear();
-	m_indexBuffers.clear();
 
 	m_loadedModels.clear();
 	m_loadedMaterial.clear();
+	m_loadedTextures.clear();
 }
 
 SceneNode& Scene::Root()
 {
 	return m_root;
-}
-
-namespace
-{
-	void ProcessNode(Scene& scene, const Asset::ModelInfo& model, std::map<uint64_t, std::vector<uint64_t>>& nodes, uint64_t index, std::shared_ptr<SceneNode>& parentNode)
-	{
-		std::shared_ptr<SceneNode> childNode = parentNode->AddChild();
-
-		//const auto meshData = model.node_meshes.find(index);
-		//const auto meshName = model.node_names.find(index);
-		//if (meshData != model.node_meshes.end() && meshName != model.node_names.end())
-		//{
-		//	if (!meshData->second.mesh_path.empty()) 
-		//	{
-		//		Asset::AssetFile meshAsset;
-		//		bool success = Asset::LoadBinaryFile(meshData->second.mesh_path.c_str(), meshAsset);
-		//		CORE_ASSERT(success, "Failed to load file");
-		//		Asset::MeshInfo meshInfo = Asset::ReadMeshInfo(&meshAsset);
-
-
-		//		CORE_ASSERT(meshInfo.vertexSize == sizeof(SC::Vertex), "Vetex type size doesn't match");
-		//		CORE_ASSERT(meshInfo.indexSize == sizeof(SC::VertexIndexType), "Index type size doesn't match");
-
-		//		std::unique_ptr<Buffer> vertexBuffer, indexBuffer;
-
-		//		Mesh& mesh = scene.InsertMesh(meshName->second);
-		//		mesh.vertices.resize(meshInfo.vertexBuferSize / meshInfo.vertexSize);
-		//		mesh.indices.resize(meshInfo.indexBuferSize / meshInfo.indexSize);
-		//		Asset::UnpackMesh(&meshInfo, meshAsset.binaryBlob.data(), meshAsset.binaryBlob.size(),
-		//			reinterpret_cast<char*>(mesh.vertices.data()), reinterpret_cast<char*>(mesh.indices.data()));
-
-		//		mesh.Build();
-
-		//		childNode->GetRenderObject().mesh = &mesh;
-		//	}
-		//}
-
-
-
-		////Process the children of this node
-		//auto childrenIt = nodes.find(index);
-		//if (childrenIt == nodes.end())
-		//	return; //This node has no children 
-
-
-		//const auto& children = nodes.at(index);
-		//for (const auto& childIndex : children)
-		//{
-		//	ProcessNode(scene, model, nodes, childIndex, childNode);
-		//}
-	}
 }
 
 bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
@@ -167,8 +99,13 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 	gTextureManager.SetOnLoadCallback([=](const Asset::TextureInfo& textureInfo, auto& userData)
 		{
 			userData.texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-			userData.texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
+			userData.texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1], true);
 			userData.texture->CopyData(textureInfo.data.data(), textureInfo.data.size());
+		});
+
+	gTextureManager.SetOnUnloadCallback([=](auto& userData)
+		{
+			userData.texture.reset();
 		});
 
 	gMaterialManager.SetOnLoadCallback([=](const Asset::MaterialInfo& matInfo, auto& userData)
@@ -270,27 +207,6 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 
 
 	std::map<uint64_t, std::vector<uint64_t>> nodeChildren;
-
-	//Get a map of parents and their children to create the scene graph
-	/*for (const auto& currentNode : modelInfo.node_parents)
-	{
-		const auto nodeMeshIt = modelInfo.node_meshes.find(currentNode.first);
-		if(nodeMeshIt == modelInfo.node_meshes.end())
-			continue;
-
-		if(nodeMeshIt->second.mesh_path.empty())
-			continue;
-
-		nodeChildren[currentNode.second].push_back(currentNode.first);
-	}
-
-	std::shared_ptr<SceneNode> modelRoot = m_root.AddChild();
-	for (const auto& currentParent : nodeChildren)
-	{
-		ProcessNode(*this, modelInfo, nodeChildren, currentParent.first, modelRoot);
-	}*/
-
-
 
 	return false;
 }

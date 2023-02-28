@@ -12,7 +12,7 @@ namespace SC
 		VulkanTexture(TextureType type, TextureUsage usage, Format format);
 		~VulkanTexture();
 
-		bool Build(uint32_t width, uint32_t height) override;
+		bool Build(uint32_t width, uint32_t height, bool generateMipmaps) override;
 		bool LoadFromFile(const std::string& path) override;
 		bool CopyData(const void* data, size_t size) override;
 	public:

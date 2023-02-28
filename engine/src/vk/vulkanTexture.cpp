@@ -9,7 +9,102 @@
 
 using namespace SC;
 
-//Asset::TextureManager<VulkanTexture> vulkanTextureManager;
+namespace
+{
+	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) 
+	{
+
+		CORE_ASSERT(image != VK_NULL_HANDLE, "Image can't be null");
+		if (image == VK_NULL_HANDLE) return;
+
+		const App* app = App::Instance();
+		CORE_ASSERT(app, "App instance is null");
+		if (!app) return;
+
+		const VulkanRenderer* renderer = app->GetVulkanRenderer();
+		if (!renderer)
+			return;
+
+		renderer->ImmediateSubmit([&](VkCommandBuffer commandBuffer)
+			{
+
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.image = image;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.levelCount = 1;
+
+		int32_t mipWidth = texWidth;
+		int32_t mipHeight = texHeight;
+
+		for (uint32_t i = 1; i < mipLevels; i++) {
+			barrier.subresourceRange.baseMipLevel = i - 1;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+			vkCmdPipelineBarrier(commandBuffer,
+				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+
+			VkImageBlit blit{};
+			blit.srcOffsets[0] = { 0, 0, 0 };
+			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.srcSubresource.mipLevel = i - 1;
+			blit.srcSubresource.baseArrayLayer = 0;
+			blit.srcSubresource.layerCount = 1;
+			blit.dstOffsets[0] = { 0, 0, 0 };
+			blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.dstSubresource.mipLevel = i;
+			blit.dstSubresource.baseArrayLayer = 0;
+			blit.dstSubresource.layerCount = 1;
+
+			vkCmdBlitImage(commandBuffer,
+				image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1, &blit,
+				VK_FILTER_LINEAR);
+
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			vkCmdPipelineBarrier(commandBuffer,
+				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+
+			if (mipWidth > 1) mipWidth /= 2;
+			if (mipHeight > 1) mipHeight /= 2;
+		}
+
+		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+
+		});
+	}
+}
 
 VulkanTexture::VulkanTexture(TextureType type, TextureUsage usage, Format format) : Texture(type, usage, format)
 {
@@ -22,7 +117,7 @@ VulkanTexture::~VulkanTexture()
 }
 
 
-bool VulkanTexture::Build(uint32_t width, uint32_t height)
+bool VulkanTexture::Build(uint32_t width, uint32_t height, bool generateMipmaps)
 {
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
@@ -56,8 +151,12 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 		return false;
 	}
 
+	const uint32_t miplevels = generateMipmaps ?
+		static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 :
+		1;
+
 	//the image will be an image with the format we selected and Depth Attachment usage flag
-	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent);
+	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent, miplevels);
 
 	//we want to allocate it from GPU local memory
 	VmaAllocationCreateInfo img_allocinfo = {};
@@ -81,7 +180,7 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height)
 		CORE_ASSERT(false, "Usage flag not supported");
 		return false;
 	}
-	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags);
+	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags, miplevels);
 
 	VK_CHECK(vkCreateImageView(renderer->m_device, &dview_info, nullptr, &m_imageView));
 
@@ -114,17 +213,19 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 
 	VkFormat image_format = vkutils::ConvertFormat(m_format);
 	VkExtent3D imageExtent{m_width,m_height,1};
+	const uint32_t miplevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1;
 
-	VkImageCreateInfo dimg_info = vkinit::ImageCreateInfo(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent);
+	VkImageCreateInfo dimg_info = vkinit::ImageCreateInfo(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, imageExtent, miplevels);
 	VmaAllocationCreateInfo dimg_allocinfo = {};
 	dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
 
 	//allocate and create the image
 	vmaCreateImage(renderer->m_allocator, &dimg_info, &dimg_allocinfo, &m_image, &m_allocation, nullptr);
 
 	CopyData(imageData.pixels.data(), imageData.Size());
 
-	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(image_format, m_image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VkImageViewCreateInfo imageinfo = vkinit::ImageviewCreateInfo(image_format, m_image, VK_IMAGE_ASPECT_COLOR_BIT, miplevels);
 	vkCreateImageView(renderer->m_device, &imageinfo, nullptr, &m_imageView);
 
 	m_deletionQueue.push_function([=]() {
@@ -205,5 +306,8 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 		});
 
+	VkFormat imageFormat = vkutils::ConvertFormat(m_format);
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_width, m_height)))) + 1;
+	generateMipmaps(m_image, imageFormat, m_width, m_height, mipLevels);
 	return true;
 }

@@ -383,7 +383,7 @@ void VulkanRenderer::InitSwapchain()
 
 	//create depth image
 	m_depthTexture = std::make_unique<VulkanTexture>(TextureType::TEXTURE2D, TextureUsage::DEPTH, Format::D32_SFLOAT);
-	m_depthTexture->Build(windowWidth, windowHeight);
+	m_depthTexture->Build(windowWidth, windowHeight, false);
 }
 
 void VulkanRenderer::InitCommands()
