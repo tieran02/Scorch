@@ -62,7 +62,11 @@ void SceneLayer::OnAttach()
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
 
-	m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
+	auto helmetNode = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
+
+	auto sponzaNode = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
+
+
 }
 
 void SceneLayer::OnDetach()

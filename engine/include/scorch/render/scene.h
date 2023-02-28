@@ -19,8 +19,6 @@ namespace SC
 		Scene() = default;
 		~Scene();
 
-		Mesh* GetMesh(const std::string& name);
-
 		void DrawObjects(Renderer* renderer,
 			std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc);
 
@@ -28,7 +26,7 @@ namespace SC
 
 		SceneNode& Root();
 
-		bool LoadModel(const std::string& path, MaterialSystem* materialSystem);
+		SceneNode* LoadModel(const std::string& path, MaterialSystem* materialSystem);
 	private:
 		//std::vector<RenderObject> m_renderables;
 		SceneNode m_root;

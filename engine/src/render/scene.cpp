@@ -91,7 +91,7 @@ SceneNode& Scene::Root()
 	return m_root;
 }
 
-bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
+SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 {
 	//SceneNode sceneNode;
 	std::shared_ptr<SceneNode> modelRoot = m_root.AddChild();
@@ -208,5 +208,5 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 
 	std::map<uint64_t, std::vector<uint64_t>> nodeChildren;
 
-	return false;
+	return modelRoot.get();
 }
