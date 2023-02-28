@@ -106,7 +106,8 @@ namespace
 	}
 }
 
-VulkanTexture::VulkanTexture(TextureType type, TextureUsage usage, Format format) : Texture(type, usage, format)
+VulkanTexture::VulkanTexture(TextureType type, TextureUsage usage, Format format) : Texture(type, usage, format),
+m_mipLevels(0)
 {
 
 }
@@ -151,12 +152,15 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height, bool generateMipmaps)
 		return false;
 	}
 
-	const uint32_t miplevels = generateMipmaps ?
+	if (generateMipmaps)
+		usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	m_mipLevels = generateMipmaps ?
 		static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 :
 		1;
 
 	//the image will be an image with the format we selected and Depth Attachment usage flag
-	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent, miplevels);
+	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent, m_mipLevels);
 
 	//we want to allocate it from GPU local memory
 	VmaAllocationCreateInfo img_allocinfo = {};
@@ -180,7 +184,7 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height, bool generateMipmaps)
 		CORE_ASSERT(false, "Usage flag not supported");
 		return false;
 	}
-	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags, miplevels);
+	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags, m_mipLevels);
 
 	VK_CHECK(vkCreateImageView(renderer->m_device, &dview_info, nullptr, &m_imageView));
 
@@ -262,7 +266,7 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 		VkImageSubresourceRange range;
 		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		range.baseMipLevel = 0;
-		range.levelCount = 1;
+		range.levelCount = m_mipLevels;
 		range.baseArrayLayer = 0;
 		range.layerCount = 1;
 
@@ -294,16 +298,16 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 		//copy the buffer into the image
 		vkCmdCopyBufferToImage(cmd, *stagingBuffer.GetBuffer(), m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-		VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+		//VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
-		imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		//imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		//imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		//imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		//imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		//barrier the image into the shader readable layout
-		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+		////barrier the image into the shader readable layout
+		//vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 		});
 
 	VkFormat imageFormat = vkutils::ConvertFormat(m_format);

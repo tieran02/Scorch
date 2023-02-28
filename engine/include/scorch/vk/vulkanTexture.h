@@ -21,5 +21,6 @@ namespace SC
 		VkImageView  m_imageView;
 	private:
 		DeletionQueue m_deletionQueue;
+		uint32_t m_mipLevels;
 	};
 }
