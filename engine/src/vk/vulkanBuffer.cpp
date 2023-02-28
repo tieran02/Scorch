@@ -5,7 +5,7 @@
 
 using namespace SC;
 
-VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr) : Buffer(size, bufferUsage,allocationUsage),
+VulkanBuffer::VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, const void* dataPtr) : Buffer(size, bufferUsage,allocationUsage),
 m_buffer(VK_NULL_HANDLE),
 m_allocation(VK_NULL_HANDLE)
 {

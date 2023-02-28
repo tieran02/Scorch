@@ -32,7 +32,7 @@ namespace SC
 
 		virtual bool Build(uint32_t width, uint32_t height) = 0;
 		virtual bool LoadFromFile(const std::string& path) = 0;
-		virtual bool CopyData(void* data, size_t size) = 0;
+		virtual bool CopyData(const void* data, size_t size) = 0;
 
 		Format GetFormat() const;
 	protected:

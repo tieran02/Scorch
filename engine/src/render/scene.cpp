@@ -22,7 +22,12 @@ namespace
 		std::shared_ptr<Material> material;
 	};
 
-	Asset::TextureManagerBasic gTextureManager;
+	struct TextureUserData
+	{
+		std::unique_ptr<Texture> texture;
+	};
+
+	Asset::TextureManager<TextureUserData> gTextureManager;
 	Asset::ModelManager<ModelUserData> gModelManager;
 	Asset::MaterialManager<MaterialUserData> gMaterialManager;
 }
@@ -159,7 +164,14 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 	//SceneNode sceneNode;
 	std::shared_ptr<SceneNode> modelRoot = m_root.AddChild();
 
-	gMaterialManager.SetOnLoadCallback([=](Asset::MaterialInfo& matInfo, auto& userData)
+	gTextureManager.SetOnLoadCallback([=](const Asset::TextureInfo& textureInfo, auto& userData)
+		{
+			userData.texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
+			userData.texture->Build(textureInfo.pixelsize[0], textureInfo.pixelsize[1]);
+			userData.texture->CopyData(textureInfo.data.data(), textureInfo.data.size());
+		});
+
+	gMaterialManager.SetOnLoadCallback([=](const Asset::MaterialInfo& matInfo, auto& userData)
 		{
 			SC::MaterialData matData;
 			matData.baseTemplate = "default";
@@ -167,21 +179,15 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 			auto textureIt = matInfo.textures.find("baseColor");
 			if (textureIt != matInfo.textures.end())
 			{
-				auto existingTextureit = m_textures.find(textureIt->second);
-				if (existingTextureit == m_textures.end())
-				{
-					Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second);
-					APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
-					Asset::TextureInfo* textureInfo = gTextureManager.Get(textureHandle);
-					APP_ASSERT(textureInfo, "Failed to get texture");
+				Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second, false);
+				APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
+				auto textureInfo = gTextureManager.GetUserData(textureHandle);
+				APP_ASSERT(textureInfo, "Failed to get texture");
 
-					auto texture = SC::Texture::Create(SC::TextureType::TEXTURE2D, SC::TextureUsage::COLOUR, SC::Format::R8G8B8A8_SRGB);
-					texture->Build(textureInfo->pixelsize[0], textureInfo->pixelsize[1]);
-					texture->CopyData(textureInfo->data.data(), textureInfo->data.size());
+				matData.textures.push_back(textureInfo->texture.get());
 
-					existingTextureit = m_textures.emplace(textureIt->second, std::move(texture)).first;
-				}
-				matData.textures.push_back(existingTextureit->second.get());
+				if(m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
+					m_loadedTextures.insert(textureHandle);
 			}
 			else
 			{
@@ -194,12 +200,12 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 			userData.material = mat;
 		});
 
-	gMaterialManager.SetOnUnloadCallback([=](Asset::MaterialInfo& matInfo, auto& userData)
+	gMaterialManager.SetOnUnloadCallback([=](auto& userData)
 		{
 			userData.material = nullptr;
 		});
 
-	gModelManager.SetOnLoadCallback([=](Asset::ModelInfo& modelInfo, auto& userData)
+	gModelManager.SetOnLoadCallback([=](const Asset::ModelInfo& modelInfo, auto& userData)
 		{
 		const size_t meshCount = modelInfo.meshes.size();
 		userData.meshes.resize(meshCount);
@@ -248,14 +254,14 @@ bool Scene::LoadModel(const std::string& path, MaterialSystem* materialSystem)
 		}
 		});
 
-	gModelManager.SetOnUnloadCallback([=](Asset::ModelInfo& modelInfo, auto& userData)
+	gModelManager.SetOnUnloadCallback([=](auto& userData)
 		{
 			userData.meshes.clear();
 		});
 
-	Asset::AssetHandle modelHandle = gModelManager.Load(path.c_str());
+	Asset::AssetHandle modelHandle = gModelManager.Load(path.c_str(), false);
 	CORE_ASSERT(modelHandle.IsValid(), "Failed to load file");
-	Asset::ModelInfo* modelInfo = gModelManager.Get(modelHandle);
+	auto modelInfo = gModelManager.GetUserData(modelHandle);
 	CORE_ASSERT(modelInfo, "Failed to get model");
 
 

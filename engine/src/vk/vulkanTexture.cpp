@@ -136,7 +136,7 @@ bool VulkanTexture::LoadFromFile(const std::string& path)
 	return m_image != VK_NULL_HANDLE;
 }
 
-bool VulkanTexture::CopyData(void* data, size_t size)
+bool VulkanTexture::CopyData(const void* data, size_t size)
 {
 	//TODO check if texture has dst flag
 

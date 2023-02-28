@@ -6,7 +6,7 @@
 
 using namespace SC;
 
-std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr)
+std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, const void* dataPtr)
 {
 	CORE_ASSERT(size > 0, "Size must be greater than 0");
 	CORE_ASSERT(bufferUsage.any(), "Buffer usaage must be set");

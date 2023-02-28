@@ -8,7 +8,7 @@ namespace SC
 	class VulkanBuffer : public Buffer
 	{
 	public:
-		VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr);
+		VulkanBuffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, const void* dataPtr);
 		~VulkanBuffer();
 		ScopedMapData Map() override;
 		void CopyFrom(Buffer* src) override;

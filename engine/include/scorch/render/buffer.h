@@ -37,7 +37,7 @@ namespace SC
 	class Buffer
 	{
 	public:
-		static std::unique_ptr<Buffer> Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, void* dataPtr = nullptr);
+		static std::unique_ptr<Buffer> Create(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage, const void* dataPtr = nullptr);
 		virtual ~Buffer();
 		virtual void Destroy() = 0;
 
