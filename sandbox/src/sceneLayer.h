@@ -17,6 +17,8 @@ private:
 	SC::ShaderPass m_shaderPass;
 	SC::Scene m_scene;
 
+	SC::FrameData<SC::DescriptorSet> m_sceneDescriptorSet;
+
 	SC::SceneNode* helmetRoot;
 	SC::SceneNode* sponzaRoot;
 

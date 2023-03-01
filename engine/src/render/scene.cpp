@@ -32,6 +32,15 @@ namespace
 	Asset::MaterialManager<MaterialUserData> gMaterialManager;
 }
 
+Scene::Scene()
+{
+	m_sceneUbo.DirectionalLightDir = glm::vec4(0.44f, -0.89f,0, 0);
+	m_sceneUbo.DirectionalLightColor = glm::vec4(1, 1, 1, 1.2f);
+	m_sceneUbo.ViewMatrix = glm::mat4(1.0);
+
+	CreateSceneUniformBuffers();
+}
+
 Scene::~Scene()
 {
 	Reset();
@@ -41,6 +50,9 @@ void Scene::DrawObjects(Renderer* renderer,
 	std::function<void(const RenderObject& renderObject, bool pipelineChanged)> PerRenderObjectFunc)
 {
 	CORE_ASSERT(renderer, "Renderer can't be null");
+
+	//update current frames scene ubo
+	UpdateSceneUniformBuffers(renderer->FrameDataIndex());
 
 	PipelineLayout* lastLayout{ nullptr };
 	m_root.TraverseTree([=, &lastLayout](SceneNode& node)
@@ -212,4 +224,28 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 	std::map<uint64_t, std::vector<uint64_t>> nodeChildren;
 
 	return modelRoot.get();
+}
+
+void Scene::CreateSceneUniformBuffers()
+{
+	SC::BufferUsageSet uboUsage;
+	uboUsage.set(SC::BufferUsage::UNIFORM_BUFFER);
+	uboUsage.set(SC::BufferUsage::MAP);
+	m_sceneUniformBuffers = SC::FrameData<SC::Buffer>::Create(sizeof(SceneUbo), uboUsage, SC::AllocationUsage::HOST);
+}
+
+void Scene::UpdateSceneUniformBuffers(uint8_t frameDataIndex)
+{
+	auto mappedData = m_sceneUniformBuffers.GetFrameData(frameDataIndex)->Map();
+	memcpy(mappedData.Data(), &m_sceneUbo, sizeof(SceneUbo));
+}
+
+Buffer* Scene::GetSceneUniformBuffer(uint8_t frameDataIndex)
+{
+	return m_sceneUniformBuffers.GetFrameData(frameDataIndex);
+}
+
+SceneUbo& Scene::GetSceneData()
+{
+	return m_sceneUbo;
 }

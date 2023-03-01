@@ -4,19 +4,27 @@
 #include "scorch/core/sceneGraph.h"
 
 #include "jaam.h"
+#include "glm/glm.hpp"
+#include "renderer.h"
 
 namespace SC
 {
 	class Pipeline;
 	class PipelineLayout;
-	class Renderer;
 	class Buffer;
 	struct Texture;
+
+	struct SceneUbo
+	{
+		glm::vec4 DirectionalLightDir;
+		glm::vec4 DirectionalLightColor; //w is intensity
+		glm::mat4 ViewMatrix;
+	};
 
 	class Scene
 	{
 	public:
-		Scene() = default;
+		Scene();
 		~Scene();
 
 		void DrawObjects(Renderer* renderer,
@@ -27,9 +35,18 @@ namespace SC
 		SceneNode& Root();
 
 		SceneNode* LoadModel(const std::string& path, MaterialSystem* materialSystem);
+
+		SceneUbo& GetSceneData();
+		Buffer* GetSceneUniformBuffer(uint8_t frameDataIndex);
 	private:
-		//std::vector<RenderObject> m_renderables;
+		void CreateSceneUniformBuffers();
+		void UpdateSceneUniformBuffers(uint8_t frameDataIndex);
+
+	private:
 		SceneNode m_root;
+
+		SceneUbo m_sceneUbo;
+		FrameData<Buffer> m_sceneUniformBuffers;
 
 		std::unordered_set<Asset::AssetHandle> m_loadedModels;
 		std::unordered_map<std::string, std::shared_ptr<Mesh>> m_meshes;

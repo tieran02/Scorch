@@ -9,6 +9,8 @@ namespace
 	Asset::MaterialManagerBasic gMaterialManager;
 	Asset::TextureManagerBasic gTextureManager;
 	Asset::ModelManagerBasic gModelManager;
+
+	float gTime;
 }
 
 struct MeshPushConstants
@@ -42,9 +44,19 @@ void SceneLayer::OnAttach()
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
 			})
 			.SetTextureSetIndex(0)
+		.AddSet("sceneData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX, SC::ShaderStage::FRAGMENT} } })
 		.Build();
 
 	m_shaderPass.Build(m_shaderEffect);
+
+	m_sceneDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_shaderEffect.GetDescriptorSetLayout(1));
+	for (uint8_t i = 0; i < m_sceneDescriptorSet.FrameCount(); ++i)
+	{
+		SC::Buffer* buffer = m_scene.GetSceneUniformBuffer(i);
+		SC::DescriptorSet* descriptorSet = m_sceneDescriptorSet.GetFrameData(i);
+
+		descriptorSet->SetBuffer(buffer, 0);
+	}
 
 	SC::EffectTemplate effectTemplate;
 	effectTemplate.passShaders[SC::MeshpassType::Forward] = &m_shaderPass;
@@ -63,7 +75,7 @@ void SceneLayer::OnAttach()
 	}
 
 	helmetRoot = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
-	helmetRoot->Children().front()->GetTransform().SetRotation(glm::vec3(1, 0, 0), glm::radians(90.0f));
+	helmetRoot->GetTransform().SetRotation(glm::vec3(1, 0, 0), glm::radians(90.0f));
 
 	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
 
@@ -94,8 +106,10 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	helmetRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime);
 
-	sponzaRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime * 0.15f);
-
+	//sponzaRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime * 0.15f);
+	auto lightDir = glm::vec4(sinf(gTime) * 2, -1, cosf(gTime) * 2, 0);
+	m_scene.GetSceneData().DirectionalLightDir = glm::normalize(lightDir);
+	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame(.4f, .4f, .4f);
@@ -128,6 +142,9 @@ void SceneLayer::OnUpdate(float deltaTime)
 			constants.render_matrix = projViewMatrix * (*renderObject.transform);
 			renderer->PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
 
+			if (pipelineChanged) { //only bind camera descriptors if pipeline changed
+				renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), m_sceneDescriptorSet.GetFrameData(renderer->FrameDataIndex()), 1);
+			}
 		});
 
 	renderer->EndFrame();
