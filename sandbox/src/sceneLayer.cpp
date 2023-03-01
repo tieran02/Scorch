@@ -62,9 +62,10 @@ void SceneLayer::OnAttach()
 		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
 	}
 
-	auto helmetNode = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
+	helmetRoot = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
+	helmetRoot->Children().front()->GetTransform().SetRotation(glm::vec3(1, 0, 0), glm::radians(90.0f));
 
-	auto sponzaNode = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
+	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
 
 
 }
@@ -89,15 +90,9 @@ void SceneLayer::OnUpdate(float deltaTime)
 	//camera projection
 	glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 1500.0f);
 	projection[1][1] *= -1;
-	//model rotation
-	glm::mat4 model = glm::rotate(glm::radians(m_rotation), glm::vec3(0, 1, 0));
-	m_rotation += deltaTime * 20.0f;
+	glm::mat4 projViewMatrix = projection * view;
 
-	//calculate final mesh matrix
-	glm::mat4 mesh_matrix = projection * view * model;
-
-	MeshPushConstants constants;
-	constants.render_matrix = mesh_matrix;
+	helmetRoot->Children().front()->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime);
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame(.4f, .4f, .4f);
@@ -115,15 +110,19 @@ void SceneLayer::OnUpdate(float deltaTime)
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
 	renderer->BindPipeline(m_shaderPass.GetPipeline());
-	renderer->PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
 
-	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
+	m_scene.DrawObjects(renderer, [=, &projViewMatrix](const SC::RenderObject& renderObject, bool pipelineChanged)
 		{	//Per object func gets called on each render object
 
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
 			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].get();
 
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
+
+			MeshPushConstants constants;
+			constants.render_matrix = projViewMatrix * renderObject.transform->ModelMatrix();
+			renderer->PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
+
 		});
 
 	renderer->EndFrame();

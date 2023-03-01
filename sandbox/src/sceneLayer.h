@@ -17,6 +17,9 @@ private:
 	SC::ShaderPass m_shaderPass;
 	SC::Scene m_scene;
 
+	SC::SceneNode* helmetRoot;
+	SC::SceneNode* sponzaRoot;
+
 	float m_rotation;
 };
 

@@ -3,13 +3,60 @@
 
 using namespace SC;
 
-
-Transform::Transform() :
-	m_position(0, 0, 0),
-	m_rotation(glm::vec3(0, 0, 0)),
-	m_scale(1, 1, 1)
+Transform::Transform() : position(0), scale(1), rotation(glm::vec3(0))
 {
 
+}
+
+void Transform::Translate(const glm::vec3& t)
+{
+	position += t;
+}
+
+void Transform::SetPosition(const glm::vec3& p)
+{
+	position = p;
+}
+
+const glm::vec3& Transform::GetPosition() const
+{
+	return position;
+}
+
+void Transform::SetScale(const glm::vec3& s)
+{
+	scale = s;
+}
+
+const glm::vec3& Transform::GetScale() const
+{
+	return scale;
+}
+
+void Transform::Rotate(const glm::vec3& axis, float radians)
+{
+	rotation = glm::angleAxis(radians, axis) * rotation;
+
+}
+
+void Transform::SetRotation(const glm::vec3& axis, float radians)
+{
+	rotation = glm::angleAxis(radians, axis);
+}
+
+const glm::quat& Transform::GetRotation() const
+{
+	return rotation;
+}
+
+glm::mat4 Transform::ModelMatrix() const
+{
+	glm::mat4 transform(1.0f);
+	transform = glm::translate(transform, position);
+	transform *= glm::toMat4(rotation);
+	transform = glm::scale(transform, scale);
+
+	return std::move(transform);
 }
 
 
@@ -92,5 +139,15 @@ void SceneNode::TraverseTree(std::function<void(SceneNode& node)> func)
 		// do any processing for this node here
 		func(*currentNode);
 	}
+}
+
+Transform& SceneNode::GetTransform()
+{
+	return m_transform;
+}
+
+const std::list<std::shared_ptr<SC::SceneNode>>& SceneNode::Children() const
+{
+	return m_children;
 }
 

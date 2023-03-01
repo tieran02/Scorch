@@ -11,6 +11,7 @@ namespace SC
 	using VertexIndexType = uint32_t;
 	struct Material;
 	struct MaterialInfo;
+	struct Transform;
 
 	struct Vertex
 	{
@@ -48,5 +49,6 @@ namespace SC
 		std::string name;
 		Mesh* mesh;
 		Material* material;
+		Transform* transform;
 	};
 }

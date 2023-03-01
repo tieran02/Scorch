@@ -6,11 +6,26 @@ namespace SC
 {
 	struct Transform
 	{
+	public:
 		Transform();
 
-		glm::vec3 m_position;
-		glm::quat m_rotation;
-		glm::vec3 m_scale;
+		void Translate(const glm::vec3& translate);
+		void SetPosition(const glm::vec3& position);
+		const glm::vec3& GetPosition() const;
+
+		void SetScale(const glm::vec3& scale);
+		const glm::vec3& GetScale() const;
+
+
+		void Rotate(const glm::vec3& axis, float radians);
+		void SetRotation(const glm::vec3& axis, float radians);
+		const glm::quat& GetRotation() const;
+
+		glm::mat4 ModelMatrix() const;
+	private:
+		glm::vec3 position;
+		glm::vec3 scale;
+		glm::quat rotation;
 	};
 
 	struct SceneNode
@@ -25,9 +40,13 @@ namespace SC
 		void Remove();
 		void SetParent(SceneNode& parent);
 
+		const std::list<std::shared_ptr<SceneNode>>& Children() const;
+
 		RenderObject& GetRenderObject();
 
 		void TraverseTree(std::function<void(SceneNode& node)> func);
+
+		Transform& GetTransform();
 
 	private:
 		std::list<std::shared_ptr<SceneNode>> m_children;

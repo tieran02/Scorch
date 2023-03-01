@@ -123,7 +123,7 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 
 				matData.textures.push_back(textureInfo->texture.get());
 
-				if(m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
+				if (m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
 					m_loadedTextures.insert(textureHandle);
 			}
 			else
@@ -174,10 +174,13 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 				memcpy(mesh->indices.data(), assetMesh.indexBuffer.data(), assetMesh.indexBuffer.size() * sizeof(SC::VertexIndexType));
 
 				mesh->Build();
+
+				mesh->vertices.resize(0);
 			}
 
 			std::shared_ptr<SceneNode> child = modelRoot->AddChild();
 			child->GetRenderObject().mesh = mesh.get();
+			child->GetRenderObject().transform = &child->GetTransform();
 
 			//also load mat
 			auto matHandle = gMaterialManager.Load(modelInfo.meshMaterials.at(i));
