@@ -10,8 +10,6 @@ public:
 	void OnDetach() override;
 	void OnUpdate(float deltaTime) override;
 private:
-	SC::FrameData<SC::Buffer> m_cameraBuffer;
-
 	SC::MaterialSystem m_materialSystem;
 	SC::ShaderEffect m_shaderEffect;
 	SC::ShaderPass m_shaderPass;

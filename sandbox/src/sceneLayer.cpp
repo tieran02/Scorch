@@ -62,24 +62,10 @@ void SceneLayer::OnAttach()
 	effectTemplate.passShaders[SC::MeshpassType::Forward] = &m_shaderPass;
 	m_materialSystem.AddEffectTemplate("default", effectTemplate);
 
-	//Upload camera data to uniform buffer for each overlapping frame using FrameData
-	SC::BufferUsageSet cameraBufferUsage;
-	cameraBufferUsage.set(SC::BufferUsage::UNIFORM_BUFFER);
-	cameraBufferUsage.set(SC::BufferUsage::MAP);
-	m_cameraBuffer = SC::FrameData<SC::Buffer>::Create(sizeof(GPUCameraData), cameraBufferUsage, SC::AllocationUsage::HOST);
-	for (const auto& val : m_cameraBuffer)
-	{
-		auto mappedData = val->Map();
-		GPUCameraData cameraData{};
-		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
-	}
-
 	helmetRoot = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
 	helmetRoot->GetTransform().SetRotation(glm::vec3(1, 0, 0), glm::radians(90.0f));
 
 	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
-
-
 }
 
 void SceneLayer::OnDetach()
@@ -113,14 +99,6 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
 	renderer->BeginFrame(.4f, .4f, .4f);
-
-	//upload camera data for this frame
-	{
-		auto frameIndex = renderer->FrameDataIndex();
-		auto mappedData = m_cameraBuffer.GetFrameData(frameIndex)->Map();
-		GPUCameraData cameraData{};
-		memcpy(mappedData.Data(), &cameraData, sizeof(GPUCameraData));
-	}
 
 	//Not optimal as we create a viewport object each frame but will do for demo
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
