@@ -49,6 +49,6 @@ namespace SC
 		std::string name;
 		Mesh* mesh;
 		Material* material;
-		Transform* transform;
+		const glm::mat4* transform;
 	};
 }

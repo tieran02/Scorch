@@ -44,14 +44,20 @@ namespace SC
 
 		RenderObject& GetRenderObject();
 
+		void UpdateSelfAndChildren();
+
 		void TraverseTree(std::function<void(SceneNode& node)> func);
 
 		Transform& GetTransform();
+
+		//Cached model matrix, call UpdateSelfAndChildren to ensure is updated
+		const glm::mat4& ModelMatrix() const;
 
 	private:
 		std::list<std::shared_ptr<SceneNode>> m_children;
 		SceneNode* m_parent;
 		Transform m_transform;
+		glm::mat4 modelMatrix;
 
 		RenderObject m_renderObject;
 	};

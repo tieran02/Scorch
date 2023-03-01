@@ -180,7 +180,7 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 
 			std::shared_ptr<SceneNode> child = modelRoot->AddChild();
 			child->GetRenderObject().mesh = mesh.get();
-			child->GetRenderObject().transform = &child->GetTransform();
+			child->GetRenderObject().transform = &child->ModelMatrix();
 
 			//also load mat
 			auto matHandle = gMaterialManager.Load(modelInfo.meshMaterials.at(i));

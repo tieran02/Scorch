@@ -151,3 +151,21 @@ const std::list<std::shared_ptr<SC::SceneNode>>& SceneNode::Children() const
 	return m_children;
 }
 
+void SceneNode::UpdateSelfAndChildren()
+{
+	if (m_parent)
+		modelMatrix = m_parent->modelMatrix * m_transform.ModelMatrix();
+	else
+		modelMatrix = m_transform.ModelMatrix();
+
+	for (auto& child : m_children)
+	{
+		child->UpdateSelfAndChildren();
+	}
+}
+
+const glm::mat4& SceneNode::ModelMatrix() const
+{
+	return modelMatrix;
+}
+
