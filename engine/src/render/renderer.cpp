@@ -7,6 +7,8 @@ using namespace SC;
 namespace
 {
 	std::unique_ptr<Texture> gWhiteTexture;
+	std::unique_ptr<Texture> gBlackTexture;
+
 }
 
 
@@ -68,14 +70,29 @@ void Renderer::Init()
 		std::array<uint8_t,4> pixel{ 255,255,255,255 };
 		gWhiteTexture->CopyData(pixel.data(), pixel.size() * sizeof(uint8_t));
 	}
+
+	if (!gBlackTexture)
+	{
+		gBlackTexture = Texture::Create(TextureType::TEXTURE2D, TextureUsage::COLOUR, Format::R8G8B8A8_SRGB);
+		gBlackTexture->Build(1, 1, false);
+
+		std::array<uint8_t, 4> pixel{ 0,0,0,255 };
+		gBlackTexture->CopyData(pixel.data(), pixel.size() * sizeof(uint8_t));
+	}
 }
 
 void Renderer::Cleanup()
 {
 	gWhiteTexture.reset();
+	gBlackTexture.reset();
 }
 
 SC::Texture* Renderer::WhiteTexture() const
 {
 	return gWhiteTexture.get();
+}
+
+SC::Texture* Renderer::BlackTexture() const
+{
+	return gBlackTexture.get();
 }

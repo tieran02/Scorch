@@ -142,7 +142,25 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 			{
 				//use default white texture
 				matData.textures.push_back(App::Instance()->GetRenderer()->WhiteTexture());
+			}
 
+			textureIt = matInfo.textures.find("alpha");
+			if (textureIt != matInfo.textures.end())
+			{
+				Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second, false);
+				APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
+				auto textureInfo = gTextureManager.GetUserData(textureHandle);
+				APP_ASSERT(textureInfo, "Failed to get texture");
+
+				matData.textures.push_back(textureInfo->texture.get());
+
+				if (m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
+					m_loadedTextures.insert(textureHandle);
+			}
+			else
+			{
+				//use default white texture
+				matData.textures.push_back(App::Instance()->GetRenderer()->BlackTexture());
 			}
 
 			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);

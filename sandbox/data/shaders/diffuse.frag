@@ -9,6 +9,8 @@ layout (location = 1) in vec3 inNormal;
 layout (location = 0) out vec4 outFragColor;
 
 layout(set = 0, binding = 0) uniform sampler2D diffuseTex;
+layout(set = 0, binding = 1) uniform sampler2D alphaTex;
+
 
 layout(set = 1, binding = 0) uniform  SceneBuffer{
 	vec4 directionalLightDir;
@@ -18,6 +20,9 @@ layout(set = 1, binding = 0) uniform  SceneBuffer{
 
 void main()
 {
+	if(texture(alphaTex,texCoord).r > 0.2)
+		discard;
+
 	float ambientStrength = 0.1;
     vec3 ambient = ambientStrength * sceneBuffer.directionalLightColor.rgb;
 

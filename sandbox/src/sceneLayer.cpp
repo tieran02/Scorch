@@ -42,6 +42,7 @@ void SceneLayer::OnAttach()
 		.AddSet("textureData",
 			{
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Alpha
 			})
 			.SetTextureSetIndex(0)
 		.AddSet("sceneData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX, SC::ShaderStage::FRAGMENT} } })

@@ -46,6 +46,7 @@ namespace SC
 		uint8_t FrameDataIndexCount() const;
 
 		Texture* WhiteTexture() const;
+		Texture* BlackTexture() const;
 	protected:
 		Renderer(GraphicsAPI api);
 
