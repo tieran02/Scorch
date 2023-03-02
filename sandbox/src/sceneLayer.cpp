@@ -42,6 +42,7 @@ void SceneLayer::OnAttach()
 		.AddSet("textureData",
 			{
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
+				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Spec
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Alpha
 			})
 			.SetTextureSetIndex(0)
@@ -87,6 +88,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 		return;
 
 	glm::vec3 camPos = { sinf(gTime) * 10,-0.05f,cosf(gTime) * 10 };
+	m_scene.GetSceneData().EyePos = glm::vec4(camPos,1.0f);
 
 	glm::mat4 view = glm::lookAt(camPos, glm::vec3(0), glm::vec3(0, 1, 0)); //glm::translate(glm::mat4(1.f), camPos);
 	//camera projection

@@ -19,6 +19,7 @@ namespace SC
 		glm::vec4 DirectionalLightDir;
 		glm::vec4 DirectionalLightColor; //w is intensity
 		glm::mat4 ViewMatrix;
+		glm::vec4 EyePos;
 	};
 
 	class Scene

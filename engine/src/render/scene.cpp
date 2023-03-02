@@ -36,7 +36,8 @@ Scene::Scene()
 {
 	m_sceneUbo.DirectionalLightDir = glm::vec4(0.44f, 0.89f,0.22f, 0);
 	m_sceneUbo.DirectionalLightColor = glm::vec4(1, 1, 1, 1.2f);
-	m_sceneUbo.ViewMatrix = glm::mat4(1.0);
+	m_sceneUbo.ViewMatrix = glm::mat4(1.0f);
+	m_sceneUbo.EyePos = glm::vec4(0.0f);
 
 	CreateSceneUniformBuffers();
 }
@@ -125,42 +126,33 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 			SC::MaterialData matData;
 			matData.baseTemplate = "default";
 
-			auto textureIt = matInfo.textures.find("baseColor");
-			if (textureIt != matInfo.textures.end())
+			std::vector<std::pair<std::string, Texture*>> texturesToBind //texture is the fallback default texture
 			{
-				Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second, false);
-				APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
-				auto textureInfo = gTextureManager.GetUserData(textureHandle);
-				APP_ASSERT(textureInfo, "Failed to get texture");
+				{"baseColor", App::Instance()->GetRenderer()->WhiteTexture()},
+				{"spec",App::Instance()->GetRenderer()->WhiteTexture()},
+				{"alpha",App::Instance()->GetRenderer()->BlackTexture()},
+			};
 
-				matData.textures.push_back(textureInfo->texture.get());
-
-				if (m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
-					m_loadedTextures.insert(textureHandle);
-			}
-			else
+			for (const auto& textureType : texturesToBind)
 			{
-				//use default white texture
-				matData.textures.push_back(App::Instance()->GetRenderer()->WhiteTexture());
-			}
+				auto textureIt = matInfo.textures.find(textureType.first);
+				if (textureIt != matInfo.textures.end())
+				{
+					Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second, false);
+					APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
+					auto textureInfo = gTextureManager.GetUserData(textureHandle);
+					APP_ASSERT(textureInfo, "Failed to get texture");
 
-			textureIt = matInfo.textures.find("alpha");
-			if (textureIt != matInfo.textures.end())
-			{
-				Asset::AssetHandle textureHandle = gTextureManager.Load(textureIt->second, false);
-				APP_ASSERT(textureHandle.IsValid(), "Failed to load file");
-				auto textureInfo = gTextureManager.GetUserData(textureHandle);
-				APP_ASSERT(textureInfo, "Failed to get texture");
+					matData.textures.push_back(textureInfo->texture.get());
 
-				matData.textures.push_back(textureInfo->texture.get());
-
-				if (m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
-					m_loadedTextures.insert(textureHandle);
-			}
-			else
-			{
-				//use default white texture
-				matData.textures.push_back(App::Instance()->GetRenderer()->BlackTexture());
+					if (m_loadedTextures.find(textureHandle) == m_loadedTextures.end())
+						m_loadedTextures.insert(textureHandle);
+				}
+				else
+				{
+					//use default white texture
+					matData.textures.push_back(textureType.second);
+				}
 			}
 
 			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);
