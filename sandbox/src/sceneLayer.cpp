@@ -64,8 +64,11 @@ void SceneLayer::OnAttach()
 
 	helmetRoot = m_scene.LoadModel("data/models/helmet/DamagedHelmet.modl", &m_materialSystem);
 	helmetRoot->GetTransform().SetRotation(glm::vec3(1, 0, 0), glm::radians(90.0f));
+	helmetRoot->GetTransform().SetScale(glm::vec3(3.0f));
 
 	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
+
+	m_scene.GetSceneData().DirectionalLightColor = glm::vec4(0.9f, 0.6f, 0.4f, 1.0f);
 }
 
 void SceneLayer::OnDetach()
@@ -82,19 +85,19 @@ void SceneLayer::OnUpdate(float deltaTime)
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
-	glm::vec3 camPos = { 0.f,-0.05f,-2.2f };
+	glm::vec3 camPos = { sinf(gTime) * 10,-0.05f,cosf(gTime) * 10 };
 
-	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+	glm::mat4 view = glm::lookAt(camPos, glm::vec3(0), glm::vec3(0, 1, 0)); //glm::translate(glm::mat4(1.f), camPos);
 	//camera projection
 	glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)windowWidth / (float)windowHeight, 0.1f, 1500.0f);
 	projection[1][1] *= -1;
-	const glm::mat4 projViewMatrix = projection * view;
+	m_scene.GetSceneData().ViewMatrix = projection * view;
 
-	helmetRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime);
+	//helmetRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime);
 
 	//sponzaRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime * 0.15f);
 	auto lightDir = glm::vec4(sinf(gTime) * 2, -1, cosf(gTime) * 2, 0);
-	m_scene.GetSceneData().DirectionalLightDir = glm::normalize(lightDir);
+	//m_scene.GetSceneData().DirectionalLightDir = glm::normalize(lightDir);
 	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
@@ -108,7 +111,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_scene.Root().UpdateSelfAndChildren();
 
-	m_scene.DrawObjects(renderer, [=, &projViewMatrix](const SC::RenderObject& renderObject, bool pipelineChanged)
+	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
 		{	//Per object func gets called on each render object
 
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
@@ -117,7 +120,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 
 			MeshPushConstants constants;
-			constants.render_matrix = projViewMatrix * (*renderObject.transform);
+			constants.render_matrix = (*renderObject.transform);
 			renderer->PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
 
 			if (pipelineChanged) { //only bind camera descriptors if pipeline changed

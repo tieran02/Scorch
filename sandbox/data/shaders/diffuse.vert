@@ -23,7 +23,7 @@ layout(set = 1, binding = 0) uniform  SceneBuffer{
 
 void main()
 {
-	gl_Position = PushConstants.render_matrix * vec4(vPosition, 1.0f);
+	gl_Position = sceneBuffer.view * PushConstants.render_matrix * vec4(vPosition, 1.0f);
 	outTexCoord = vTexCoord;
 	outNormal = mat3(transpose(inverse(PushConstants.render_matrix))) * vNormal;  
 }
