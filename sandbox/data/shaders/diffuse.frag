@@ -11,6 +11,9 @@ layout (location = 0) out vec4 outFragColor;
 layout(set = 0, binding = 0) uniform sampler2D diffuseTex;
 layout(set = 0, binding = 1) uniform sampler2D specTex;
 layout(set = 0, binding = 2) uniform sampler2D alphaTex;
+layout(set = 0, binding = 3) uniform  ShaderData{
+	float shininess;
+} shaderData;
 
 
 layout(set = 1, binding = 0) uniform  SceneBuffer{
@@ -37,7 +40,7 @@ void main()
 	float specularStrength = 0.5;
 	vec3 viewDir = normalize(sceneBuffer.eyePos.xyz - inFragPos);
 	vec3 reflectDir = reflect(-sceneBuffer.directionalLightDir.xyz, norm); 
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 256);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), shaderData.shininess);
 	vec3 specular = specularStrength * spec * sceneBuffer.directionalLightColor.rgb;  
 
 

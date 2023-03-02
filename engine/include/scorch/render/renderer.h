@@ -79,6 +79,21 @@ namespace SC
 		std::vector<std::unique_ptr<T>>::iterator end() { return data.end(); }
 		std::vector<std::unique_ptr<T>>::const_iterator cbegin() { return data.cbegin(); }
 		std::vector<std::unique_ptr<T>>::const_iterator cend() { return data.cend(); }
+
+		void ForEach(std::function<void(T*, uint8_t index)> func)
+		{
+			uint8_t index = 0;
+			std::for_each(begin(), end(), [=,&index](std::unique_ptr<T>& ptr)
+				{
+					func(ptr.get(), index++);
+				});
+		}
+
+		void reset()
+		{
+			for (auto& ptr : data)
+				ptr.reset();
+		}
 	private:
 		std::vector<std::unique_ptr<T>> data;
 	};

@@ -4,6 +4,7 @@
 #include "render/texture.h"
 #include "core/app.h"
 #include "render/renderer.h"
+#include "render/buffer.h"
 
 using namespace SC;
 
@@ -173,14 +174,33 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 		mat = (*it).second;
 		m_materials[materialName] = mat;
 	}
-	else {
+	else 
+	{
 
 		//need to build the material
 		auto newMat = std::make_shared<Material>();
 		newMat->original = &m_templateCache[info.baseTemplate];
 		//not handled yet
-		newMat->passSets[MeshpassType::DirectionalShadow] = nullptr;
+		newMat->passSets[MeshpassType::DirectionalShadow].reset();
 		newMat->textures = info.textures;
+
+		//Also build ubos for the user data params
+		if (info.parameters.userData)
+		{
+			newMat->parameters = info.parameters;
+
+			CORE_ASSERT(info.parameters.userDataSize > 0, "Material paramter size must be greater than 0");
+			BufferUsageSet uboUsage;
+			uboUsage.set(BufferUsage::UNIFORM_BUFFER);
+			uboUsage.set(BufferUsage::MAP);
+			newMat->parameterBuffers = SC::FrameData<SC::Buffer>::Create(newMat->parameters.userDataSize, uboUsage, SC::AllocationUsage::HOST);
+		
+			newMat->parameterBuffers.ForEach([&newMat](Buffer* buffer, uint8_t index)
+				{
+					auto mapped = buffer->Map();
+					memcpy(mapped.Data(), newMat->parameters.userData.get(), newMat->parameters.userDataSize);
+				});
+		}
 
 		//if (!info.textures.empty()) 
 		{
@@ -207,14 +227,25 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 			if (forwardLayout)
 			{
 				auto& forwardDescriptor = newMat->passSets[MeshpassType::Forward];
-				forwardDescriptor = std::move(DescriptorSet::Create(forwardLayout));
+				forwardDescriptor = forwardDescriptor.Create(forwardLayout);
 
 				for (int i = 0; i < forwardLayout->Bindings().size(); ++i)
 				{
+					//Only set texture if the type is a sampler
+					if (forwardLayout->Bindings()[i].type != DescriptorBindingType::SAMPLER)
+					{
+						forwardDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
+							{ set->SetBuffer(newMat->parameterBuffers.GetFrameData(index), i); });
+
+						continue;
+					}
+
 					if (i < info.textures.size())
-						forwardDescriptor->SetTexture(info.textures[i], i);
+						forwardDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
+							{ set->SetTexture(info.textures[i], i); });
 					else
-						forwardDescriptor->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); //Fill empty textures 
+						forwardDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
+							{ set->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); });
 				}
 
 			}
@@ -222,14 +253,16 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 			if (transparancyLayout)
 			{
 				auto& transparancyDescriptor = newMat->passSets[MeshpassType::Transparency];
-				transparancyDescriptor = std::move(DescriptorSet::Create(transparancyLayout));
+				transparancyDescriptor = transparancyDescriptor.Create(transparancyLayout); 
 
 				for (int i = 0; i < transparancyLayout->Bindings().size(); ++i)
 				{
 					if (i < info.textures.size())
-						transparancyDescriptor->SetTexture(info.textures[i], i);
+						transparancyDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
+							{ set->SetTexture(info.textures[i], i); });
 					else
-						transparancyDescriptor->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); //Fill empty textures 
+						transparancyDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
+							{ set->SetTexture(App::Instance()->GetRenderer()->WhiteTexture(), i); });
 				}
 			}
 		}

@@ -44,6 +44,7 @@ void SceneLayer::OnAttach()
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Diffuse
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Spec
 				{ SC::DescriptorBindingType::SAMPLER, {SC::ShaderStage::FRAGMENT}}, //Alpha
+				{ SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::FRAGMENT}}, //Shader Data
 			})
 			.SetTextureSetIndex(0)
 		.AddSet("sceneData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX, SC::ShaderStage::FRAGMENT} } })
@@ -118,7 +119,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 		{	//Per object func gets called on each render object
 
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
-			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].get();
+			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].GetFrameData(renderer->FrameDataIndex());
 
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 

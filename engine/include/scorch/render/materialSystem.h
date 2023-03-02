@@ -4,11 +4,23 @@
 #include "descriptorSet.h"
 #include "shaderModule.h"
 #include "pipeline.h"
+#include "renderer.h"
 
 namespace SC
 {
 	class Pipeline;
 	class PipelineLayout;
+	class Buffer;
+
+	struct ShaderUserData
+	{
+
+	};
+	struct ShaderParameters
+	{
+		std::shared_ptr<ShaderUserData> userData{ nullptr };
+		size_t userDataSize{ 0 };
+	};
 
 	struct ShaderEffect
 	{
@@ -106,15 +118,20 @@ namespace SC
 		TransparencyMode transparency;
 	};
 
-	struct Material {
+	struct Material
+	{
 		EffectTemplate* original;
-		PerPassData<std::unique_ptr<DescriptorSet>> passSets;
+		PerPassData<FrameData<DescriptorSet>> passSets;
 		std::vector<Texture*> textures; //Material doesn't own textures
+
+		ShaderParameters parameters;
+		FrameData<Buffer> parameterBuffers;
 	};
 
 	struct MaterialData 
 	{
 		std::vector<Texture*> textures; //Material doesn't own textures
+		ShaderParameters parameters;
 		std::string baseTemplate;
 
 		bool operator==(const MaterialData& other) const;
