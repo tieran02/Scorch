@@ -112,14 +112,6 @@ namespace SC
 		std::vector<Texture*> textures; //Material doesn't own textures
 	};
 
-	struct MaterialInfo
-	{
-		std::string baseEffect;
-		std::string materialName;
-		std::vector<std::string> textures; //path
-		TransparencyMode transparency;
-	};
-
 	struct MaterialData 
 	{
 		std::vector<Texture*> textures; //Material doesn't own textures
