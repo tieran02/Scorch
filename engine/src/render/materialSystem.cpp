@@ -193,22 +193,11 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 				{
 				case ShaderParamterTypes::FLOAT:
 					//Todo pass in default values from mat info
-					newMat->parameters.Register(param.first, 512.0f);
+					newMat->parameters.Register(param.first, 0.0f);
 					break;
 				}
 			}
-
-			BufferUsageSet uboUsage;
-			uboUsage.set(BufferUsage::UNIFORM_BUFFER);
-			uboUsage.set(BufferUsage::MAP);
-			const auto& matData = newMat->parameters.Buffer();
-			newMat->parameterBuffers = SC::FrameData<SC::Buffer>::Create(matData.size(), uboUsage, SC::AllocationUsage::HOST);
-
-			newMat->parameterBuffers.ForEach([&newMat,&matData](Buffer* buffer, uint8_t index)
-				{
-					auto mapped = buffer->Map();
-					memcpy(mapped.Data(), matData.data(), matData.size());
-				});
+			newMat->parameters.CreateBuffers();
 		}
 
 		//if (!info.textures.empty()) 
@@ -244,7 +233,7 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 					if (forwardLayout->Bindings()[i].type != DescriptorBindingType::SAMPLER)
 					{
 						forwardDescriptor.ForEach([=](DescriptorSet* set, uint8_t index)
-							{ set->SetBuffer(newMat->parameterBuffers.GetFrameData(index), i); });
+							{ set->SetBuffer(newMat->parameters.GetBuffer(index), i); });
 
 						continue;
 					}
@@ -312,8 +301,16 @@ SC::EffectTemplate* MaterialSystem::AddEffectTemplate(const std::string& name, c
 	}
 }
 
+ShaderParameters::ShaderParameters() : m_created(false)
+{
+
+}
+
 void ShaderParameters::Register(const std::string& key, float value /*= 0.0f*/)
 {
+	CORE_ASSERT(!m_created, "Can't register if already created");
+	if (m_created) return;
+
 	auto it = m_register.find(key);
 	const bool registered = it != m_register.end();
 	CORE_ASSERT(!registered, "Float already registered");
@@ -349,7 +346,54 @@ float ShaderParameters::GetFloat(const std::string& key)
 	return registered ? *reinterpret_cast<float*>(it->second.second) : 0.0f;
 }
 
-const std::vector<uint8_t>& ShaderParameters::Buffer() const
+const std::vector<uint8_t>& ShaderParameters::GetData() const
 {
 	return m_data;
+}
+
+void ShaderParameters::CreateBuffers()
+{
+	CORE_ASSERT(!m_created, "Already created");
+	if (m_created) return;
+
+	BufferUsageSet uboUsage;
+	uboUsage.set(BufferUsage::UNIFORM_BUFFER);
+	uboUsage.set(BufferUsage::MAP);
+	const auto& matData = m_data;
+	m_parameterBuffers = SC::FrameData<SC::Buffer>::Create(matData.size(), uboUsage, SC::AllocationUsage::HOST);
+
+	m_parameterBuffers.ForEach([&matData](Buffer* buffer, uint8_t index)
+		{
+			auto mapped = buffer->Map();
+			memcpy(mapped.Data(), matData.data(), matData.size());
+		});
+
+	m_created = true;
+}
+
+void ShaderParameters::Update(uint8_t frameIndex)
+{
+	CORE_ASSERT(m_created, "Can't update if not created");
+	if (!m_created) return;
+
+	auto mapped = m_parameterBuffers.GetFrameData(frameIndex)->Map();
+	memcpy(mapped.Data(), m_data.data(), m_data.size());
+}
+
+void ShaderParameters::UpdateAll()
+{
+	CORE_ASSERT(m_created, "Can't update if not created");
+	if (!m_created) return;
+
+	const auto& matData = m_data;
+	m_parameterBuffers.ForEach([&matData](Buffer* buffer, uint8_t index)
+		{
+			auto mapped = buffer->Map();
+			memcpy(mapped.Data(), matData.data(), matData.size());
+		});
+}
+
+Buffer* ShaderParameters::GetBuffer(uint8_t frameIndex)
+{
+	return m_parameterBuffers.GetFrameData(frameIndex);
 }

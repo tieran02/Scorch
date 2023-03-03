@@ -26,16 +26,26 @@ namespace SC
 	//This can then be uploaded to the GPU as a uniform
 	struct ShaderParameters
 	{
+		ShaderParameters();
+
 		void Register(const std::string& key, float value = 0.0f);
+		void CreateBuffers();
+		void Update(uint8_t frameIndex);
+		void UpdateAll(); //Caution: This may update a buffer that is in flight
+
 
 		void Set(const std::string& key, float value);
 
 		float GetFloat(const std::string& key);
 
-		const std::vector<uint8_t>& Buffer() const;
+		const std::vector<uint8_t>& GetData() const;
+		Buffer* GetBuffer(uint8_t frameIndex);
 	private:
 		std::unordered_map<std::string, std::pair<ShaderParamterTypes, void*>> m_register;
 		std::vector<uint8_t> m_data;
+		bool m_created;
+
+		FrameData<Buffer> m_parameterBuffers;
 	};
 
 	struct ShaderEffect
@@ -141,7 +151,6 @@ namespace SC
 		std::vector<Texture*> textures; //Material doesn't own textures
 
 		ShaderParameters parameters;
-		FrameData<Buffer> parameterBuffers;
 	};
 
 	struct MaterialData 
