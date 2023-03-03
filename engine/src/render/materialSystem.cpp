@@ -308,28 +308,20 @@ ShaderParameters::ShaderParameters() : m_created(false)
 
 void ShaderParameters::Register(const std::string& key, float value /*= 0.0f*/)
 {
-	CORE_ASSERT(!m_created, "Can't register if already created");
-	if (m_created) return;
+	if (!IsValid(false, true, "", key)) return;
+	
+	m_data.resize(m_data.size() + sizeof(float));
+	uint8_t* src = &m_data[m_data.size() - sizeof(float)];
 
-	auto it = m_register.find(key);
-	const bool registered = it != m_register.end();
-	CORE_ASSERT(!registered, "Float already registered");
-
-	if (!registered)
-	{
-		m_data.resize(m_data.size() + sizeof(float));
-		uint8_t* src = &m_data[m_data.size() - sizeof(float)];
-
-		m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
-		*reinterpret_cast<float*>(m_register[key].second) = value;
-	}
+	m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
+	*reinterpret_cast<float*>(m_register[key].second) = value;
 }
 
 void ShaderParameters::Set(const std::string& key, float value)
 {
+	if (!IsValid(true, false, key)) return;
+
 	auto it = m_register.find(key);
-	const bool registered = it != m_register.end();
-	CORE_ASSERT(registered, "Float not registered");
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
 
 	*reinterpret_cast<float*>(it->second.second) = value;
@@ -337,13 +329,11 @@ void ShaderParameters::Set(const std::string& key, float value)
 
 float ShaderParameters::GetFloat(const std::string& key)
 {
-	auto it = m_register.find(key);
-	const bool registered = it != m_register.end();
-	CORE_ASSERT(registered, "Float not registered");
-	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
+	if (!IsValid(true, false, key)) return 0.0f;
 
-	
-	return registered ? *reinterpret_cast<float*>(it->second.second) : 0.0f;
+	auto it = m_register.find(key);
+	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
+	return *reinterpret_cast<float*>(it->second.second);
 }
 
 const std::vector<uint8_t>& ShaderParameters::GetData() const
@@ -353,8 +343,7 @@ const std::vector<uint8_t>& ShaderParameters::GetData() const
 
 void ShaderParameters::CreateBuffers()
 {
-	CORE_ASSERT(!m_created, "Already created");
-	if (m_created) return;
+	if (!IsValid(false, true)) return;
 
 	BufferUsageSet uboUsage;
 	uboUsage.set(BufferUsage::UNIFORM_BUFFER);
@@ -373,8 +362,7 @@ void ShaderParameters::CreateBuffers()
 
 void ShaderParameters::Update(uint8_t frameIndex)
 {
-	CORE_ASSERT(m_created, "Can't update if not created");
-	if (!m_created) return;
+	if (!IsValid(true, false)) return;
 
 	auto mapped = m_parameterBuffers.GetFrameData(frameIndex)->Map();
 	memcpy(mapped.Data(), m_data.data(), m_data.size());
@@ -382,8 +370,7 @@ void ShaderParameters::Update(uint8_t frameIndex)
 
 void ShaderParameters::UpdateAll()
 {
-	CORE_ASSERT(m_created, "Can't update if not created");
-	if (!m_created) return;
+	if (!IsValid(true, false)) return;
 
 	const auto& matData = m_data;
 	m_parameterBuffers.ForEach([&matData](Buffer* buffer, uint8_t index)
@@ -396,4 +383,38 @@ void ShaderParameters::UpdateAll()
 Buffer* ShaderParameters::GetBuffer(uint8_t frameIndex)
 {
 	return m_parameterBuffers.GetFrameData(frameIndex);
+}
+
+bool ShaderParameters::IsValid(bool validateCreated, bool validateNotCreated,
+	const std::string& checkRegistered, const std::string& checkNotRegistered)
+{
+	if (validateCreated)
+	{
+		CORE_ASSERT(m_created, "ShaderParameters not created");
+		if (!m_created) return false;
+	}
+
+	if (validateNotCreated)
+	{
+		CORE_ASSERT(!m_created, "ShaderParameters already created");
+		if (m_created) return false;
+	}
+
+	if (!checkRegistered.empty())
+	{
+		auto it = m_register.find(checkRegistered);
+		const bool registered = it != m_register.end();
+		CORE_ASSERT(registered, "not registered");
+		if (!registered) return false;
+	}
+
+	if (!checkNotRegistered.empty())
+	{
+		auto it = m_register.find(checkNotRegistered);
+		const bool registered = it != m_register.end();
+		CORE_ASSERT(!registered, "already registered");
+		if (registered) return false;
+	}
+
+	return true;
 }

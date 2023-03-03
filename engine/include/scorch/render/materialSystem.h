@@ -45,6 +45,9 @@ namespace SC
 		std::vector<uint8_t> m_data;
 		bool m_created;
 
+		bool IsValid(bool validateCreated, bool validateNotCreated,
+			const std::string& checkRegistered = "", const std::string& checkNotRegistered = "");
+
 		FrameData<Buffer> m_parameterBuffers;
 	};
 
