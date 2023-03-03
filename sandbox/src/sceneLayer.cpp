@@ -121,6 +121,10 @@ void SceneLayer::OnUpdate(float deltaTime)
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
 			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].GetFrameData(renderer->FrameDataIndex());
 
+			//Test set shininess
+			renderObject.material->parameters.Set("shininess", ((sinf(gTime) + 1) * 0.5f) * 512);
+			renderObject.material->parameters.Update(renderer->FrameDataIndex());
+
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 
 			MeshPushConstants constants;

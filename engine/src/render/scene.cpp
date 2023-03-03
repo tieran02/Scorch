@@ -159,11 +159,6 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 			matData.shaderParameters.emplace_back(std::make_pair("shininess", ShaderParamterTypes::FLOAT));
 
 			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);
-
-			//Test set shininess
-			mat->parameters.Set("shininess", 128);
-			mat->parameters.UpdateAll();
-
 			userData.material = mat;
 		});
 
