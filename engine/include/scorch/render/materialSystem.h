@@ -14,7 +14,10 @@ namespace SC
 
 	enum class ShaderParamterTypes
 	{
-		FLOAT
+		FLOAT,
+		INT,
+		VEC3,
+		VEC4,
 	};
 
 	//ShaderParameters creates a contiguous memory block from the register data in the order it was registered
@@ -28,15 +31,24 @@ namespace SC
 	{
 		ShaderParameters();
 
-		void Register(const std::string& key, float value = 0.0f);
 		void CreateBuffers();
 		void Update(uint8_t frameIndex);
 		void UpdateAll(); //Caution: This may update a buffer that is in flight
 
+		void Register(const std::string& key, float value = 0.0f);
+		void Register(const std::string& key, int value = 0);
+		void Register(const std::string& key, const glm::vec3& value = glm::vec3(0));
+		void Register(const std::string& key, const glm::vec4& value = glm::vec4(0));
 
 		void Set(const std::string& key, float value);
+		void Set(const std::string& key, int value);
+		void Set(const std::string& key, const glm::vec3& value = glm::vec3(0));
+		void Set(const std::string& key, const glm::vec4& value = glm::vec4(0));
 
 		float GetFloat(const std::string& key);
+		int GetInt(const std::string& key);
+		glm::vec3 GetVec3(const std::string& key);
+		glm::vec4 GetVec4(const std::string& key);
 
 		const std::vector<uint8_t>& GetData() const;
 		Buffer* GetBuffer(uint8_t frameIndex);
