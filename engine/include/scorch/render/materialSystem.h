@@ -12,14 +12,30 @@ namespace SC
 	class PipelineLayout;
 	class Buffer;
 
-	struct ShaderUserData
+	enum class ShaderParamterTypes
 	{
-
+		FLOAT
 	};
+
+	//ShaderParameters creates a contiguous memory block from the register data in the order it was registered
+	//E.G 
+	//	Register Float
+	//	Register Int
+	//	Register Vec3
+	//Will result in a packed memory block of a float->int->Vec3
+	//This can then be uploaded to the GPU as a uniform
 	struct ShaderParameters
 	{
-		std::shared_ptr<ShaderUserData> userData{ nullptr };
-		size_t userDataSize{ 0 };
+		void Register(const std::string& key, float value = 0.0f);
+
+		void Set(const std::string& key, float value);
+
+		float GetFloat(const std::string& key);
+
+		const std::vector<uint8_t>& Buffer() const;
+	private:
+		std::unordered_map<std::string, std::pair<ShaderParamterTypes, void*>> m_register;
+		std::vector<uint8_t> m_data;
 	};
 
 	struct ShaderEffect
@@ -131,7 +147,7 @@ namespace SC
 	struct MaterialData 
 	{
 		std::vector<Texture*> textures; //Material doesn't own textures
-		ShaderParameters parameters;
+		std::vector<std::pair<std::string, ShaderParamterTypes>> shaderParameters;
 		std::string baseTemplate;
 
 		bool operator==(const MaterialData& other) const;

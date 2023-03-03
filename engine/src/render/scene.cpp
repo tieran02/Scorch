@@ -30,11 +30,6 @@ namespace
 	Asset::TextureManager<TextureUserData> gTextureManager;
 	Asset::ModelManager<ModelUserData> gModelManager;
 	Asset::MaterialManager<MaterialUserData> gMaterialManager;
-
-	struct BaseShaderUserData : ShaderUserData
-	{
-		float shininess{ 128 };
-	};
 }
 
 Scene::Scene()
@@ -161,8 +156,7 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 			}
 
 			//Add base shader data
-			matData.parameters.userData = std::make_shared<BaseShaderUserData>();
-			matData.parameters.userDataSize = sizeof(BaseShaderUserData);
+			matData.shaderParameters.emplace_back(std::make_pair("shininess", ShaderParamterTypes::FLOAT));
 
 			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);
 			userData.material = mat;

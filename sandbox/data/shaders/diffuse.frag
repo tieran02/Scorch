@@ -40,7 +40,7 @@ void main()
 	float specularStrength = 0.5;
 	vec3 viewDir = normalize(sceneBuffer.eyePos.xyz - inFragPos);
 	vec3 reflectDir = reflect(-sceneBuffer.directionalLightDir.xyz, norm); 
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), shaderData.shininess);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(shaderData.shininess,1.0));
 	vec3 specular = specularStrength * spec * sceneBuffer.directionalLightColor.rgb;  
 
 

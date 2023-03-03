@@ -185,20 +185,29 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 		newMat->textures = info.textures;
 
 		//Also build ubos for the user data params
-		if (info.parameters.userData)
+		if (!info.shaderParameters.empty()) 
 		{
-			newMat->parameters = info.parameters;
+			for (const auto& param : info.shaderParameters)
+			{
+				switch (param.second)
+				{
+				case ShaderParamterTypes::FLOAT:
+					//Todo pass in default values from mat info
+					newMat->parameters.Register(param.first, 512.0f);
+					break;
+				}
+			}
 
-			CORE_ASSERT(info.parameters.userDataSize > 0, "Material paramter size must be greater than 0");
 			BufferUsageSet uboUsage;
 			uboUsage.set(BufferUsage::UNIFORM_BUFFER);
 			uboUsage.set(BufferUsage::MAP);
-			newMat->parameterBuffers = SC::FrameData<SC::Buffer>::Create(newMat->parameters.userDataSize, uboUsage, SC::AllocationUsage::HOST);
-		
-			newMat->parameterBuffers.ForEach([&newMat](Buffer* buffer, uint8_t index)
+			const auto& matData = newMat->parameters.Buffer();
+			newMat->parameterBuffers = SC::FrameData<SC::Buffer>::Create(matData.size(), uboUsage, SC::AllocationUsage::HOST);
+
+			newMat->parameterBuffers.ForEach([&newMat,&matData](Buffer* buffer, uint8_t index)
 				{
 					auto mapped = buffer->Map();
-					memcpy(mapped.Data(), newMat->parameters.userData.get(), newMat->parameters.userDataSize);
+					memcpy(mapped.Data(), matData.data(), matData.size());
 				});
 		}
 
@@ -303,3 +312,44 @@ SC::EffectTemplate* MaterialSystem::AddEffectTemplate(const std::string& name, c
 	}
 }
 
+void ShaderParameters::Register(const std::string& key, float value /*= 0.0f*/)
+{
+	auto it = m_register.find(key);
+	const bool registered = it != m_register.end();
+	CORE_ASSERT(!registered, "Float already registered");
+
+	if (!registered)
+	{
+		m_data.resize(m_data.size() + sizeof(float));
+		uint8_t* src = &m_data[m_data.size() - sizeof(float)];
+
+		m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
+		*reinterpret_cast<float*>(m_register[key].second) = value;
+	}
+}
+
+void ShaderParameters::Set(const std::string& key, float value)
+{
+	auto it = m_register.find(key);
+	const bool registered = it != m_register.end();
+	CORE_ASSERT(registered, "Float not registered");
+	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
+
+	*reinterpret_cast<float*>(it->second.second) = value;
+}
+
+float ShaderParameters::GetFloat(const std::string& key)
+{
+	auto it = m_register.find(key);
+	const bool registered = it != m_register.end();
+	CORE_ASSERT(registered, "Float not registered");
+	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
+
+	
+	return registered ? *reinterpret_cast<float*>(it->second.second) : 0.0f;
+}
+
+const std::vector<uint8_t>& ShaderParameters::Buffer() const
+{
+	return m_data;
+}
