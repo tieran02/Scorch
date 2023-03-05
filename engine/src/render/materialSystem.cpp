@@ -350,6 +350,12 @@ void ShaderParameters::Register(const std::string& key, const glm::vec4& value /
 	*reinterpret_cast<glm::vec4*>(m_register[key].second) = value;
 }
 
+void* ShaderParameters::GetAddress(const std::string& key)
+{
+	if (!IsValid(true, false, key)) return nullptr;
+	return m_register.at(key).second;	
+}
+
 void ShaderParameters::Set(const std::string& key, float value)
 {
 	if (!IsValid(true, false, key)) return;

@@ -28,7 +28,8 @@ struct GPUCameraData
 
 
 SceneLayer::SceneLayer() : Layer("SceneLayer"),
-m_rotation(0)
+m_rotation(0),
+m_globalShiniess(1.0f)
 {
 
 }
@@ -100,9 +101,6 @@ void SceneLayer::OnUpdate(float deltaTime)
 	projection[1][1] *= -1;
 	m_scene.GetSceneData().ViewMatrix = projection * view;
 
-	//helmetRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime);
-
-	//sponzaRoot->GetTransform().Rotate(glm::vec3(0, 1, 0), deltaTime * 0.15f);
 	auto lightDir = glm::vec4(sinf(gTime) * 2, -1, cosf(gTime) * 2, 0);
 	//m_scene.GetSceneData().DirectionalLightDir = glm::normalize(lightDir);
 	gTime += deltaTime * 0.5f;
@@ -125,7 +123,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].GetFrameData(renderer->FrameDataIndex());
 
 			//Test set shininess
-			renderObject.material->parameters.Set("shininess", ((sinf(gTime) + 1) * 0.5f) * 512);
+			renderObject.material->parameters.Set("shininess", m_globalShiniess);
 			renderObject.material->parameters.Update(renderer->FrameDataIndex());
 
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
@@ -142,7 +140,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->BeginFrame();
 
-	ImGui::ShowDemoWindow();
+	ImGui::SliderFloat("Shininess", &m_globalShiniess, 1.0f, 512.0f);
 
 	m_gui->EndFrame();
 

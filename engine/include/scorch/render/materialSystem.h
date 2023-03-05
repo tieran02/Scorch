@@ -40,6 +40,8 @@ namespace SC
 		void Register(const std::string& key, const glm::vec3& value = glm::vec3(0));
 		void Register(const std::string& key, const glm::vec4& value = glm::vec4(0));
 
+		void* GetAddress(const std::string& key);
+
 		void Set(const std::string& key, float value);
 		void Set(const std::string& key, int value);
 		void Set(const std::string& key, const glm::vec3& value = glm::vec3(0));

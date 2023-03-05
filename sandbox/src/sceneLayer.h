@@ -22,6 +22,7 @@ private:
 	SC::SceneNode* helmetRoot;
 	SC::SceneNode* sponzaRoot;
 
+	float m_globalShiniess;
 	float m_rotation;
 };
 
