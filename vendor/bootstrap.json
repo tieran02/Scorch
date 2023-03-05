@@ -63,11 +63,11 @@
 		}
 	},
 	{
-		"name": "fmt",
+		"name": "imgui",
 		"source": {
 			"type": "git",
-			"url": "https://github.com/fmtlib/fmt.git",
-			"revision": "9.1.0"
+			"url": "https://github.com/ocornut/imgui.git",
+			"revision": "v1.89.3"
 		}
 	}
 ]

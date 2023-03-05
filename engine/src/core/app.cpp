@@ -144,7 +144,7 @@ bool App::InitWindow(const std::string& title)
 	if (!m_window)
 		return false;
 
-	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	// Set GLFW callbacks
 	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
 		{

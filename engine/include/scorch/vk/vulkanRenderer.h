@@ -65,6 +65,9 @@ namespace SC
 		void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) const;
 
 		void WaitOnFences() const;
+
+		VulkanFrameData& GetCurrentFrame();
+		const VulkanFrameData& GetCurrentFrame() const;
 	private:
 		void InitVulkan();
 		void InitSwapchain();
@@ -76,9 +79,6 @@ namespace SC
 		void InitSyncStructures();
 
 		void InitDescriptors();
-
-		VulkanFrameData& GetCurrentFrame();
-		const VulkanFrameData& GetCurrentFrame() const;
 	public:
 		VkInstance m_instance;
 		VkDebugUtilsMessengerEXT m_debug_messenger; // Vulkan debug output handle

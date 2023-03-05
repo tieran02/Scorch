@@ -10,18 +10,12 @@ target_include_directories(Engine PRIVATE vendor/src/vulkan/include)
 target_include_directories(Engine PRIVATE include/scorch)
 target_include_directories(Engine PRIVATE ${CMAKE_SOURCE_DIR}/vendor/src/jaam/lib/include)
 
-
 target_precompile_headers(Engine PRIVATE include/scorch/pch.h)
 
 target_compile_definitions(Engine PUBLIC 
   $<$<CONFIG:Debug>:SCORCH_DEBUG=1>
 )
 
-#target_compile_options(Engine PRIVATE
-  #$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /wd4100 /wd4201>
-  #$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
-#)
-
 set_property(TARGET Engine PROPERTY COMPILE_WARNING_AS_ERROR ON)
 
-target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap JAAMLib)
+target_link_libraries(Engine PRIVATE glfw volk vk-bootstrap JAAMLib imgui)

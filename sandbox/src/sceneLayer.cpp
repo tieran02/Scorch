@@ -35,6 +35,9 @@ m_rotation(0)
 
 void SceneLayer::OnAttach()
 {
+	const SC::App* app = SC::App::Instance();
+	m_gui = SC::GUI::Create(app->GetRenderer(), app->GetWindowHandle());
+
 	m_rotation = 0;
 
 	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/diffuse.vert.spv", "data/shaders/diffuse.frag.spv")
@@ -135,6 +138,14 @@ void SceneLayer::OnUpdate(float deltaTime)
 				renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), m_sceneDescriptorSet.GetFrameData(renderer->FrameDataIndex()), 1);
 			}
 		});
+
+
+	m_gui->BeginFrame();
+
+	ImGui::ShowDemoWindow();
+
+	m_gui->EndFrame();
+
 
 	renderer->EndFrame();
 }

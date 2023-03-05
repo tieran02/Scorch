@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "core/sceneGraph.h"
 #include "render/renderer.h"
+#include "render/gui.h"
 #include "render/shaderModule.h"
 #include "render/pipeline.h"
 #include "render/buffer.h"

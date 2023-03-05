@@ -15,6 +15,8 @@ private:
 	SC::ShaderPass m_shaderPass;
 	SC::Scene m_scene;
 
+	std::unique_ptr<SC::GUI> m_gui;
+
 	SC::FrameData<SC::DescriptorSet> m_sceneDescriptorSet;
 
 	SC::SceneNode* helmetRoot;

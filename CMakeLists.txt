@@ -21,6 +21,25 @@ if((NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/.bootstrap.json") OR ("${CMAKE_
 	endif()
 endif()
 
+add_library(imgui STATIC)
+target_include_directories(imgui SYSTEM PRIVATE vendor/src/imgui)
+target_include_directories(imgui SYSTEM PRIVATE vendor/src/vulkan/include)
+target_include_directories(imgui SYSTEM PRIVATE vendor/src/glfw/include)
+target_sources(imgui PRIVATE
+"vendor/src/imgui/imgui.h"
+"vendor/src/imgui/imgui.cpp"
+"vendor/src/imgui/imgui_demo.cpp"
+"vendor/src/imgui/imgui_draw.cpp"
+"vendor/src/imgui/imgui_widgets.cpp"
+"vendor/src/imgui/imgui_tables.cpp"
+"vendor/src/imgui/backends/imgui_impl_vulkan.cpp"
+"vendor/src/imgui/backends/imgui_impl_glfw.cpp"
+)
+target_compile_definitions(imgui PUBLIC 
+  IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+)
+
+
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
@@ -29,6 +48,7 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(vendor/src/glfw)
 add_subdirectory(vendor/src/vkbootstrap)
 add_subdirectory(vendor/src/volk)
+
 
 add_subdirectory(vendor/src/jaam)
 add_subdirectory(Engine)
@@ -41,10 +61,13 @@ target_include_directories(Engine SYSTEM PRIVATE vendor/src/spdlog/include)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/vkbootstrap/src)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/vma/include)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/glm)
+target_include_directories(Engine SYSTEM PRIVATE vendor/src/imgui)
+
 
 
 target_include_directories(Sandbox PRIVATE vendor/src/glm)
 target_include_directories(Sandbox SYSTEM PRIVATE vendor/src/spdlog/include)
+target_include_directories(Sandbox SYSTEM PRIVATE vendor/src/imgui)
 
 
 
