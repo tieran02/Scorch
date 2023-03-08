@@ -23,6 +23,7 @@ private:
 	SC::SceneNode* sponzaRoot;
 
 	float m_globalShiniess;
+	float m_zoom;
 	float m_rotation;
 };
 

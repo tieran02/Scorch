@@ -29,7 +29,8 @@ struct GPUCameraData
 
 SceneLayer::SceneLayer() : Layer("SceneLayer"),
 m_rotation(0),
-m_globalShiniess(1.0f)
+m_globalShiniess(1.0f),
+m_zoom(10.0f)
 {
 
 }
@@ -92,7 +93,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
-	glm::vec3 camPos = { sinf(gTime) * 10,-0.05f,cosf(gTime) * 10 };
+	glm::vec3 camPos = { sinf(gTime) * m_zoom, -0.05f, cosf(gTime) * m_zoom };
 	m_scene.GetSceneData().EyePos = glm::vec4(camPos,1.0f);
 
 	glm::mat4 view = glm::lookAt(camPos, glm::vec3(0), glm::vec3(0, 1, 0)); //glm::translate(glm::mat4(1.f), camPos);
@@ -140,7 +141,13 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->BeginFrame();
 
+	ImGui::Begin("Material");
 	ImGui::SliderFloat("Shininess", &m_globalShiniess, 1.0f, 512.0f);
+	ImGui::End();
+
+	ImGui::Begin("Camera");
+	ImGui::SliderFloat("Zoom", &m_zoom, 1.0f, 100.0f);
+	ImGui::End();
 
 	m_gui->EndFrame();
 
