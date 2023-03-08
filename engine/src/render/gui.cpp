@@ -6,8 +6,12 @@
 
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
+#include "imgui.h"
 
 using namespace SC;
+
+
+#define ENABLE_VIEWPORTS
 
 std::unique_ptr<GUI> GUI::Create(Renderer* renderer, GLFWwindow* window)
 {
@@ -70,11 +74,35 @@ void GUI::Init()
 	//this initializes the core structures of imgui
 	ImGui::CreateContext();
 
+	//docking
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+	io.ConfigFlags |= ImGuiConfigFlags_IsSRGB;
+
+    //io.ConfigViewportsNoAutoMerge = true;
+    //io.ConfigViewportsNoTaskBarIcon = true;
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+
+#ifdef ENABLE_VIEWPORTS
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+#endif
+
 	ImGui_ImplVulkan_LoadFunctions([](const char* function_name, void* vulkan_instance) {
 		return vkGetInstanceProcAddr(*(reinterpret_cast<VkInstance*>(vulkan_instance)), function_name);
 		}, &vulanRenderer->m_instance);
 
-	//this initializes imgui for SDL
+	//this initializes imgui for Glfw
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
 
 	//this initializes imgui for Vulkan
@@ -87,6 +115,13 @@ void GUI::Init()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.CheckVkResultFn = [](VkResult err)
+		{
+		if (err)
+		{
+			CORE_ASSERT(false, string_format("{0} {1}", "Detected Vulkan error:", err));
+		}
+		};
 
 	ImGui_ImplVulkan_Init(&init_info, vulanRenderer->m_renderPass);
 
@@ -124,4 +159,9 @@ void GUI::EndFrame()
 
 	VulkanRenderer* vulanRenderer = static_cast<VulkanRenderer*>(m_renderer);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulanRenderer->GetCurrentFrame().m_mainCommandBuffer);
+
+#ifdef ENABLE_VIEWPORTS
+	ImGui::UpdatePlatformWindows();
+	ImGui::RenderPlatformWindowsDefault();
+#endif
 }

@@ -66,8 +66,8 @@
 		"name": "imgui",
 		"source": {
 			"type": "git",
-			"url": "https://github.com/ocornut/imgui.git",
-			"revision": "v1.89.3"
+			"url": "https://github.com/tieran02/imgui.git",
+			"revision": "f5c5a710aa38b91be39b1c219f3bb90e2e15df80"
 		}
 	}
 ]
