@@ -28,8 +28,9 @@ struct GPUCameraData
 
 
 SceneLayer::SceneLayer() : Layer("SceneLayer"),
-m_rotation(0),
+m_lightDir(glm::vec4(0.44f, 0.89f, 0.22f, 0)),
 m_globalShiniess(1.0f),
+m_globalSpecStrength(0.5f),
 m_zoom(10.0f)
 {
 
@@ -39,8 +40,6 @@ void SceneLayer::OnAttach()
 {
 	const SC::App* app = SC::App::Instance();
 	m_gui = SC::GUI::Create(app->GetRenderer(), app->GetWindowHandle());
-
-	m_rotation = 0;
 
 	m_shaderEffect = SC::ShaderEffect::Builder("data/shaders/diffuse.vert.spv", "data/shaders/diffuse.frag.spv")
 		.AddPushConstant("modelPush", { {SC::ShaderStage::VERTEX}, sizeof(MeshPushConstants) })
@@ -102,8 +101,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 	projection[1][1] *= -1;
 	m_scene.GetSceneData().ViewMatrix = projection * view;
 
-	auto lightDir = glm::vec4(sinf(gTime) * 2, -1, cosf(gTime) * 2, 0);
-	//m_scene.GetSceneData().DirectionalLightDir = glm::normalize(lightDir);
+	m_scene.GetSceneData().DirectionalLightDir = glm::normalize(m_lightDir);
 	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
@@ -125,6 +123,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 			//Test set shininess
 			renderObject.material->parameters.Set("shininess", m_globalShiniess);
+			renderObject.material->parameters.Set("specularStrength", m_globalSpecStrength);
 			renderObject.material->parameters.Update(renderer->FrameDataIndex());
 
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
@@ -141,8 +140,12 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->BeginFrame();
 
+	ImGui::ShowMetricsWindow();
+
 	ImGui::Begin("Material");
 	ImGui::SliderFloat("Shininess", &m_globalShiniess, 1.0f, 512.0f);
+	ImGui::SliderFloat("specularStrength", &m_globalSpecStrength, 0.0f, 32.0f);
+	ImGui::SliderFloat4("Light Dir", (float*)&m_lightDir.x, -1, 1);
 	ImGui::End();
 
 	ImGui::Begin("Camera");

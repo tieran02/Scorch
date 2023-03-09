@@ -31,14 +31,14 @@ namespace SC
 	{
 		ShaderParameters();
 
-		void CreateBuffers();
 		void Update(uint8_t frameIndex);
 		void UpdateAll(); //Caution: This may update a buffer that is in flight
 
-		void Register(const std::string& key, float value = 0.0f);
-		void Register(const std::string& key, int value = 0);
-		void Register(const std::string& key, const glm::vec3& value = glm::vec3(0));
-		void Register(const std::string& key, const glm::vec4& value = glm::vec4(0));
+		void Register(const std::string& key, float defaultValue = 0.0f);
+		void Register(const std::string& key, int defaultValue = 0);
+		void Register(const std::string& key, const glm::vec3& defaultValue = glm::vec3(0));
+		void Register(const std::string& key, const glm::vec4& defaultValue = glm::vec4(0));
+		void Finalise();
 
 		void* GetAddress(const std::string& key);
 
@@ -57,8 +57,12 @@ namespace SC
 	private:
 		std::unordered_map<std::string, std::pair<ShaderParamterTypes, void*>> m_register;
 		std::vector<uint8_t> m_data;
+		std::unordered_map<std::string,std::vector<uint8_t>> m_defaultData;
+
+		size_t m_size;
 		bool m_created;
 
+		void CreateBuffers();
 		bool IsValid(bool validateCreated, bool validateNotCreated,
 			const std::string& checkRegistered = "", const std::string& checkNotRegistered = "");
 

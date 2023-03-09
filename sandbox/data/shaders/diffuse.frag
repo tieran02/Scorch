@@ -13,6 +13,7 @@ layout(set = 0, binding = 1) uniform sampler2D specTex;
 layout(set = 0, binding = 2) uniform sampler2D alphaTex;
 layout(set = 0, binding = 3) uniform  ShaderData{
 	float shininess;
+	float specularStrength;
 } shaderData;
 
 
@@ -37,7 +38,7 @@ void main()
 	float diff = max(dot(norm, sceneBuffer.directionalLightDir.xyz), 0.0);
 	vec3 diffuse = diff * sceneBuffer.directionalLightColor.rgb * sceneBuffer.directionalLightColor.w;
 
-	float specularStrength = 0.5;
+	float specularStrength = shaderData.specularStrength;
 	vec3 viewDir = normalize(sceneBuffer.eyePos.xyz - inFragPos);
 	vec3 reflectDir = reflect(-sceneBuffer.directionalLightDir.xyz, norm); 
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(shaderData.shininess,1.0));

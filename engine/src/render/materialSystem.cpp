@@ -197,7 +197,7 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 					break;
 				}
 			}
-			newMat->parameters.CreateBuffers();
+			newMat->parameters.Finalise();
 		}
 
 		//if (!info.textures.empty()) 
@@ -306,15 +306,31 @@ ShaderParameters::ShaderParameters() : m_created(false)
 
 }
 
+namespace
+{
+	template <typename T>
+	inline std::vector<uint8_t> DataToVector(T value)
+	{
+		std::vector<uint8_t> data(sizeof(T));
+		memcpy(&value, data.data(), sizeof(T));
+		return std::move(data);
+	}
+}
+
 void ShaderParameters::Register(const std::string& key, float value /*= 0.0f*/)
 {
 	if (!IsValid(false, true, "", key)) return;
 	
-	m_data.resize(m_data.size() + sizeof(float));
-	uint8_t* src = &m_data[m_data.size() - sizeof(float)];
+	m_defaultData.emplace(key, DataToVector(value));
+	m_size += sizeof(value);
 
-	m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
-	*reinterpret_cast<float*>(m_register[key].second) = value;
+	//m_data.resize(m_data.size() + sizeof(float));
+	//uint8_t* src = &m_data[m_data.size() - sizeof(float)];
+
+	//m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
+
+	//float& ref = *static_cast<float*>(m_register[key].second);
+	//ref = value;
 }
 
 void ShaderParameters::Register(const std::string& key, int value /*= 0*/)
@@ -363,7 +379,8 @@ void ShaderParameters::Set(const std::string& key, float value)
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
 
-	*reinterpret_cast<float*>(it->second.second) = value;
+	float& ref = *static_cast<float*>(it->second.second);
+	ref = value;
 }
 
 void ShaderParameters::Set(const std::string& key, int value)
@@ -373,7 +390,8 @@ void ShaderParameters::Set(const std::string& key, int value)
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::INT, "Type is not a int");
 
-	*reinterpret_cast<int*>(it->second.second) = value;
+	int& ref = *static_cast<int*>(it->second.second);
+	ref = value;
 }
 
 void ShaderParameters::Set(const std::string& key, const glm::vec3& value /*= glm::vec3(0)*/)
@@ -383,7 +401,8 @@ void ShaderParameters::Set(const std::string& key, const glm::vec3& value /*= gl
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::VEC3, "Type is not a vec3");
 
-	*reinterpret_cast<glm::vec3*>(it->second.second) = value;
+	glm::vec3& ref = *static_cast<glm::vec3*>(it->second.second);
+	ref = value;
 }
 
 void ShaderParameters::Set(const std::string& key, const glm::vec4& value /*= glm::vec4(0)*/)
@@ -393,7 +412,8 @@ void ShaderParameters::Set(const std::string& key, const glm::vec4& value /*= gl
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::VEC4, "Type is not a vec4");
 
-	*reinterpret_cast<glm::vec4*>(it->second.second) = value;
+	glm::vec4& ref = *static_cast<glm::vec4*>(it->second.second);
+	ref = value;
 }
 
 float ShaderParameters::GetFloat(const std::string& key)
@@ -402,7 +422,7 @@ float ShaderParameters::GetFloat(const std::string& key)
 
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::FLOAT, "Type is not a float");
-	return *reinterpret_cast<float*>(it->second.second);
+	return *static_cast<float*>(it->second.second);
 }
 
 int ShaderParameters::GetInt(const std::string& key)
@@ -411,7 +431,7 @@ int ShaderParameters::GetInt(const std::string& key)
 
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::INT, "Type is not a int");
-	return *reinterpret_cast<int*>(it->second.second);
+	return *static_cast<int*>(it->second.second);
 }
 
 glm::vec3 ShaderParameters::GetVec3(const std::string& key)
@@ -420,7 +440,7 @@ glm::vec3 ShaderParameters::GetVec3(const std::string& key)
 
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::VEC3, "Type is not a int");
-	return *reinterpret_cast<glm::vec3*>(it->second.second);
+	return *static_cast<glm::vec3*>(it->second.second);
 }
 
 glm::vec4 ShaderParameters::GetVec4(const std::string& key)
@@ -429,7 +449,7 @@ glm::vec4 ShaderParameters::GetVec4(const std::string& key)
 
 	auto it = m_register.find(key);
 	CORE_ASSERT(it->second.first == ShaderParamterTypes::VEC4, "Type is not a int");
-	return *reinterpret_cast<glm::vec4*>(it->second.second);
+	return *static_cast<glm::vec4*>(it->second.second);
 }
 
 const std::vector<uint8_t>& ShaderParameters::GetData() const
@@ -513,4 +533,24 @@ bool ShaderParameters::IsValid(bool validateCreated, bool validateNotCreated,
 	}
 
 	return true;
+}
+
+//Need to call finalize after adding all the shader parameters.
+//This ensures the data vector is resized and all pointers are valid
+void ShaderParameters::Finalise()
+{
+	if (!IsValid(false, true)) return;
+
+	m_data.resize(m_size);
+
+	//Copy default data into the data vector
+	uint8_t* dst = m_data.data();
+	for (const auto& defaultData : m_defaultData)
+	{
+		memcpy(dst, defaultData.second.data(), defaultData.second.size());
+		m_register[defaultData.first] = std::make_pair(ShaderParamterTypes::FLOAT, dst);
+		dst += defaultData.second.size();
+	}
+
+	CreateBuffers();
 }
