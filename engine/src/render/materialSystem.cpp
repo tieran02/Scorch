@@ -185,20 +185,22 @@ std::shared_ptr<SC::Material> MaterialSystem::BuildMaterial(const std::string& m
 		newMat->textures = info.textures;
 
 		//Also build ubos for the user data params
-		if (!info.shaderParameters.empty()) 
-		{
-			for (const auto& param : info.shaderParameters)
-			{
-				switch (param.second)
-				{
-				case ShaderParamterTypes::FLOAT:
-					//Todo pass in default values from mat info
-					newMat->parameters.Register(param.first, 0.0f);
-					break;
-				}
-			}
-			newMat->parameters.Finalise();
-		}
+		newMat->parameters = info.shaderParameters;
+		newMat->parameters.Finalise();
+		//if (!info.shaderParameters.GetRegister()) 
+		//{
+		//	for (const auto& param : info.shaderParameters)
+		//	{
+		//		switch (param.second)
+		//		{
+		//		case ShaderParamterTypes::FLOAT:
+		//			//Todo pass in default values from mat info
+		//			newMat->parameters.Register(param.first, 0.0f);
+		//			break;
+		//		}
+		//	}
+		//	newMat->parameters.Finalise();
+		//}
 
 		//if (!info.textures.empty()) 
 		{
@@ -306,10 +308,28 @@ const std::unordered_map<std::string, std::shared_ptr<SC::Material>>& MaterialSy
 	return m_materials;
 }
 
-ShaderParameters::ShaderParameters() : m_created(false)
+ShaderParameters::ShaderParameters() : m_created(false), m_size(0)
 {
 
 }
+
+ShaderParameters::ShaderParameters(const ShaderParameters& other)
+{
+	m_register = other.m_register;
+	m_defaultData = other.m_defaultData;
+	m_size = other.m_size;
+	m_created = false;
+}
+
+ShaderParameters& ShaderParameters::operator=(const ShaderParameters& other)
+{
+	m_register = other.m_register;
+	m_defaultData = other.m_defaultData;
+	m_size = other.m_size;
+	m_created = false;
+	return *this;
+}
+
 
 namespace
 {
@@ -317,7 +337,7 @@ namespace
 	inline std::vector<uint8_t> DataToVector(T value)
 	{
 		std::vector<uint8_t> data(sizeof(T));
-		memcpy(&value, data.data(), sizeof(T));
+		memcpy(data.data(), &value, sizeof(T));
 		return std::move(data);
 	}
 }
@@ -328,47 +348,30 @@ void ShaderParameters::Register(const std::string& key, float value /*= 0.0f*/)
 	
 	m_defaultData.emplace(key, DataToVector(value));
 	m_size += sizeof(value);
-
-	//m_data.resize(m_data.size() + sizeof(float));
-	//uint8_t* src = &m_data[m_data.size() - sizeof(float)];
-
-	//m_register[key] = std::make_pair(ShaderParamterTypes::FLOAT, src);
-
-	//float& ref = *static_cast<float*>(m_register[key].second);
-	//ref = value;
 }
 
 void ShaderParameters::Register(const std::string& key, int value /*= 0*/)
 {
 	if (!IsValid(false, true, "", key)) return;
 
-	m_data.resize(m_data.size() + sizeof(int));
-	uint8_t* src = &m_data[m_data.size() - sizeof(int)];
-
-	m_register[key] = std::make_pair(ShaderParamterTypes::INT, src);
-	*reinterpret_cast<int*>(m_register[key].second) = value;
+	m_defaultData.emplace(key, DataToVector(value));
+	m_size += sizeof(value);
 }
 
 void ShaderParameters::Register(const std::string& key, const glm::vec3& value /*= glm::vec3(0)*/)
 {
 	if (!IsValid(false, true, "", key)) return;
 
-	m_data.resize(m_data.size() + sizeof(glm::vec3));
-	uint8_t* src = &m_data[m_data.size() - sizeof(glm::vec3)];
-
-	m_register[key] = std::make_pair(ShaderParamterTypes::VEC3, src);
-	*reinterpret_cast<glm::vec3*>(m_register[key].second) = value;
+	m_defaultData.emplace(key, DataToVector(value));
+	m_size += sizeof(value);
 }
 
 void ShaderParameters::Register(const std::string& key, const glm::vec4& value /*= glm::vec4(0)*/)
 {
-	if(!IsValid(false, true, "", key)) return;
+	if (!IsValid(false, true, "", key)) return;
 
-	m_data.resize(m_data.size() + sizeof(glm::vec4));
-	uint8_t* src = &m_data[m_data.size() - sizeof(glm::vec4)];
-
-	m_register[key] = std::make_pair(ShaderParamterTypes::VEC4, src);
-	*reinterpret_cast<glm::vec4*>(m_register[key].second) = value;
+	m_defaultData.emplace(key, DataToVector(value));
+	m_size += sizeof(value);
 }
 
 void* ShaderParameters::GetAddress(const std::string& key)

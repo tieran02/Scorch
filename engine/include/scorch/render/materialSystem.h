@@ -30,6 +30,8 @@ namespace SC
 	struct ShaderParameters
 	{
 		ShaderParameters();
+		ShaderParameters(const ShaderParameters& other);
+		ShaderParameters& operator=(const ShaderParameters& other);
 
 		void Update(uint8_t frameIndex);
 		void UpdateAll(); //Caution: This may update a buffer that is in flight
@@ -179,7 +181,8 @@ namespace SC
 	struct MaterialData 
 	{
 		std::vector<Texture*> textures; //Material doesn't own textures
-		std::vector<std::pair<std::string, ShaderParamterTypes>> shaderParameters;
+		ShaderParameters shaderParameters;
+		//std::vector<std::pair<std::string, ShaderParamterTypes>> shaderParameters;
 		std::string baseTemplate;
 
 		bool operator==(const MaterialData& other) const;

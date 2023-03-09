@@ -156,8 +156,8 @@ SceneNode* Scene::LoadModel(const std::string& path, MaterialSystem* materialSys
 			}
 
 			//Add base shader data
-			matData.shaderParameters.emplace_back(std::make_pair("shininess", ShaderParamterTypes::FLOAT));
-			matData.shaderParameters.emplace_back(std::make_pair("specularStrength", ShaderParamterTypes::FLOAT));
+			matData.shaderParameters.Register("shininess", 32.0f);
+			matData.shaderParameters.Register("specularStrength", 0.5f);
 
 
 			auto mat = materialSystem->BuildMaterial(matInfo.name, matData);
