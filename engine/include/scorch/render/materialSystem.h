@@ -54,6 +54,8 @@ namespace SC
 
 		const std::vector<uint8_t>& GetData() const;
 		Buffer* GetBuffer(uint8_t frameIndex);
+
+		const std::unordered_map<std::string, std::pair<ShaderParamterTypes, void*>>& GetRegister() const;
 	private:
 		std::unordered_map<std::string, std::pair<ShaderParamterTypes, void*>> m_register;
 		std::vector<uint8_t> m_data;
@@ -190,6 +192,8 @@ namespace SC
 		EffectTemplate* AddEffectTemplate(const std::string& name, const EffectTemplate& effectTemplate);
 		std::shared_ptr<Material> BuildMaterial(const std::string& materialName, const MaterialData& info);
 		std::shared_ptr<Material> GetMaterial(const std::string& materialName);
+
+		const std::unordered_map<std::string, std::shared_ptr<Material>>& Materials() const;
 	private:
 		struct MaterialInfoHash
 		{

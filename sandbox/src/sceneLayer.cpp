@@ -121,9 +121,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
 			auto textureDescriptorSet = renderObject.material->passSets[SC::MeshpassType::Forward].GetFrameData(renderer->FrameDataIndex());
 
-			//Test set shininess
-			renderObject.material->parameters.Set("shininess", m_globalShiniess);
-			renderObject.material->parameters.Set("specularStrength", m_globalSpecStrength);
+			//Update matieral paramter buffers
 			renderObject.material->parameters.Update(renderer->FrameDataIndex());
 
 			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
@@ -140,11 +138,33 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->BeginFrame();
 
-	ImGui::ShowMetricsWindow();
-
 	ImGui::Begin("Material");
-	ImGui::SliderFloat("Shininess", &m_globalShiniess, 1.0f, 512.0f);
-	ImGui::SliderFloat("specularStrength", &m_globalSpecStrength, 0.0f, 32.0f);
+	for (const auto& mat : m_materialSystem.Materials())
+	{
+		if (ImGui::CollapsingHeader(mat.first.c_str(), ImGuiTreeNodeFlags_None))
+		{
+			for (auto& paramters : mat.second->parameters.GetRegister())
+			{
+				switch (paramters.second.first)
+				{
+				case SC::ShaderParamterTypes::FLOAT:
+					ImGui::InputFloat(paramters.first.c_str(), (float*)paramters.second.second);
+					break;
+				case SC::ShaderParamterTypes::INT:
+					ImGui::InputInt(paramters.first.c_str(), (int*)paramters.second.second);
+					break;
+				case SC::ShaderParamterTypes::VEC3:
+					ImGui::InputFloat3(paramters.first.c_str(), (float*)paramters.second.second);
+					break;
+				case SC::ShaderParamterTypes::VEC4:
+					ImGui::InputFloat4(paramters.first.c_str(), (float*)paramters.second.second);
+					break;
+				}
+			}	
+		}
+	}
+	ImGui::End();
+	ImGui::Begin("Global Material");
 	ImGui::SliderFloat4("Light Dir", (float*)&m_lightDir.x, -1, 1);
 	ImGui::End();
 

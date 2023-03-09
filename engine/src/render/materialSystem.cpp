@@ -301,6 +301,11 @@ SC::EffectTemplate* MaterialSystem::AddEffectTemplate(const std::string& name, c
 	}
 }
 
+const std::unordered_map<std::string, std::shared_ptr<SC::Material>>& MaterialSystem::Materials() const
+{
+	return m_materials;
+}
+
 ShaderParameters::ShaderParameters() : m_created(false)
 {
 
@@ -553,4 +558,9 @@ void ShaderParameters::Finalise()
 	}
 
 	CreateBuffers();
+}
+
+const std::unordered_map<std::string, std::pair<SC::ShaderParamterTypes, void*>>& ShaderParameters::GetRegister() const
+{
+	return m_register;
 }
