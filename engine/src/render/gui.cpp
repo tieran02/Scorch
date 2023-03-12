@@ -123,7 +123,7 @@ void GUI::Init()
 		}
 		};
 
-	ImGui_ImplVulkan_Init(&init_info, vulanRenderer->m_renderPass);
+	ImGui_ImplVulkan_Init(&init_info, vulanRenderer->GetDefaultRenderPass());
 
 	//execute a gpu command to upload imgui font textures
 	vulanRenderer->ImmediateSubmit([&](VkCommandBuffer cmd) 

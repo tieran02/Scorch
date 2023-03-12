@@ -20,6 +20,8 @@
 
 namespace SC
 {
+	class VulkanRenderpass;
+
 	struct VulkanFrameData
 	{
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
@@ -68,6 +70,8 @@ namespace SC
 
 		VulkanFrameData& GetCurrentFrame();
 		const VulkanFrameData& GetCurrentFrame() const;
+
+		VkRenderPass GetDefaultRenderPass() const;
 	private:
 		void InitVulkan();
 		void InitSwapchain();
@@ -94,7 +98,7 @@ namespace SC
 		VkQueue m_graphicsQueue; //queue we will submit to
 		uint32_t m_graphicsQueueFamily; //family of that queue
 
-		VkRenderPass m_renderPass;
+		std::unique_ptr<VulkanRenderpass> m_vulkanRenderPass;
 		std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 		VmaAllocator m_allocator; //vma lib allocator

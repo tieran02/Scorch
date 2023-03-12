@@ -19,6 +19,7 @@
 #include "vk/vulkanTexture.h"
 #include "render/mesh.h"
 #include "vk/vulkanDescriptorSet.h"
+#include "vk/vulkanRenderpass.h"
 
 using namespace SC;
 
@@ -123,7 +124,7 @@ void VulkanRenderer::BeginFrame(float r, float g, float b)
 
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[m_swapchainImageIndex]);
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[m_swapchainImageIndex]);
 
 	//connect clear values
 	rpInfo.clearValueCount = 2;
@@ -421,93 +422,40 @@ void VulkanRenderer::InitCommands()
 
 void VulkanRenderer::InitDefaultRenderpass()
 {
-	// the renderpass will use this color attachment.
-	VkAttachmentDescription color_attachment = {};
-	//the attachment will have the format needed by the swapchain
-	color_attachment.format = m_swapchainImageFormat;
-	//1 sample, we won't be doing MSAA
-	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	// we Clear when this attachment is loaded
-	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	// we keep the attachment stored when the renderpass ends
-	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	//we don't care about stencil
-	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-	//we don't know or care about the starting layout of the attachment
-	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-	//after the renderpass ends, the image has to be on a layout ready for display
-	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentDescription depth_attachment = {};
-	// Depth attachment
-	depth_attachment.flags = 0;
-	depth_attachment.format = VK_FORMAT_D32_SFLOAT;
-	depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depth_attachment_ref = {};
-	depth_attachment_ref.attachment = 1;
-	depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	//subpass
-	VkAttachmentReference color_attachment_ref = {};
-	//attachment number will index into the pAttachments array in the parent renderpass itself
-	color_attachment_ref.attachment = 0;
-	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	//we are going to create 1 subpass, which is the minimum you can do
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &color_attachment_ref;
-	//hook the depth attachment into the subpass
-	subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
-	//now create the renderpass
-	VkRenderPassCreateInfo render_pass_info = {};
-	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-
-	//array of 2 attachments, one for the color, and other for depth
-	std::vector<VkAttachmentDescription> attachments = { color_attachment,depth_attachment };
-	render_pass_info.attachmentCount = static_cast<uint32_t>(attachments.size());
-	render_pass_info.pAttachments = attachments.data();
-	//connect the subpass to the info
-	render_pass_info.subpassCount = 1;
-	render_pass_info.pSubpasses = &subpass;
-
-	VkSubpassDependency dependency = {};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-	VkSubpassDependency depth_dependency = {};
-	depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	depth_dependency.dstSubpass = 0;
-	depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	depth_dependency.srcAccessMask = 0;
-	depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-	std::vector<VkSubpassDependency> dependencies = { dependency,depth_dependency };
-	render_pass_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
-	render_pass_info.pDependencies = dependencies.data();
+	m_vulkanRenderPass = std::make_unique<VulkanRenderpass>();
 
 
-	VK_CHECK(vkCreateRenderPass(m_device, &render_pass_info, nullptr, &m_renderPass));
+	RenderpassAttachment colourAttachment;
+	colourAttachment.format = Format::B8G8R8A8_SRGB;
+	colourAttachment.loadOp = AttachmentLoadOp::CLEAR; // we Clear when this attachment is loaded
+	colourAttachment.storeOp = AttachmentStoreOp::STORE;// we keep the attachment stored when the renderpass ends
+	colourAttachment.stencilLoadOp = AttachmentLoadOp::DONT_CARE; 	//we don't care about stencil
+	colourAttachment.stencilStoreOp = AttachmentStoreOp::DONT_CARE;
+	colourAttachment.initialLayout = ImageLayout::UNDEFINED;
+	colourAttachment.finalLayout = ImageLayout::PRESENT_SRC_KHR;
+	m_vulkanRenderPass->AddAttachment(std::move(colourAttachment));
 
-	m_mainDeletionQueue.push_function([=]() {
-		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+	m_vulkanRenderPass->AddColourReference(0, ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+
+
+	RenderpassAttachment depthAttachment;
+	depthAttachment.format = Format::D32_SFLOAT;
+	depthAttachment.loadOp = AttachmentLoadOp::CLEAR; // we Clear when this attachment is loaded
+	depthAttachment.storeOp = AttachmentStoreOp::STORE;// we keep the attachment stored when the renderpass ends
+	depthAttachment.stencilLoadOp = AttachmentLoadOp::CLEAR; 	//we don't care about stencil
+	depthAttachment.stencilStoreOp = AttachmentStoreOp::STORE;
+	depthAttachment.initialLayout = ImageLayout::UNDEFINED;
+	depthAttachment.finalLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	m_vulkanRenderPass->AddAttachment(std::move(depthAttachment));
+
+	m_vulkanRenderPass->AddDepthReference(1, ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+	m_vulkanRenderPass->Build();
+
+
+	m_mainDeletionQueue.push_function([=]() 
+		{
+			m_vulkanRenderPass.reset();
 		});
 }
 
@@ -523,7 +471,7 @@ void VulkanRenderer::InitFramebuffers()
 	app->GetWindowExtent(windowWidth, windowHeight);
 
 	//create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
-	VkFramebufferCreateInfo fb_info = vkinit::FramebufferCreateInfo(m_renderPass, VkExtent2D(windowWidth, windowHeight));
+	VkFramebufferCreateInfo fb_info = vkinit::FramebufferCreateInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight));
 
 	//grab how many images we have in the swapchain
 	const uint32_t swapchain_imagecount = static_cast<uint32_t>(m_swapchainImages.size());
@@ -650,5 +598,11 @@ void VulkanRenderer::ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& 
 
 	// reset the command buffers inside the command pool
 	vkResetCommandPool(m_device, m_uploadContext.m_commandPool, 0);
+}
+
+VkRenderPass VulkanRenderer::GetDefaultRenderPass() const
+{
+	CORE_ASSERT(m_vulkanRenderPass, "Render pass not created");
+	return m_vulkanRenderPass->GetRenderPass();
 }
 

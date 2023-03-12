@@ -369,7 +369,7 @@ bool VulkanPipeline::Build()
 	pipelineBuilder._depthStencil = vkinit::DepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	//finally build the pipeline
-	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, renderer->m_renderPass);
+	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, renderer->GetDefaultRenderPass());
 
 
 
