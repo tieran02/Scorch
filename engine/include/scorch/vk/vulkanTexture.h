@@ -23,4 +23,20 @@ namespace SC
 		DeletionQueue m_deletionQueue;
 		uint32_t m_mipLevels;
 	};
+
+	struct VulkanRenderTarget : RenderTarget
+	{
+	public:
+		VulkanRenderTarget(Format format);
+		~VulkanRenderTarget();
+
+		bool Build(uint32_t width, uint32_t height) override;
+
+		VkImage m_image;
+		VmaAllocation m_allocation;
+		VkImageView  m_imageView;
+		VkFramebuffer m_framebuffer;
+	private:
+		DeletionQueue m_deletionQueue;
+	};
 }

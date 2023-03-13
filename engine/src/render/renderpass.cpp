@@ -42,13 +42,13 @@ void Renderpass::AddAttachment(RenderpassAttachment&& attachment)
 	m_attachments.emplace_back(std::move(attachment));
 }
 
-void Renderpass::AddColourReference(uint32_t index, ImageLayout format)
+void Renderpass::AddColourReference(uint32_t attachmentIndex, ImageLayout format)
 {
-	m_colourReferences.emplace_back(index, format);
+	m_colourReferences.emplace_back(attachmentIndex, format);
 }
 
-void Renderpass::AddDepthReference(uint32_t index, ImageLayout format)
+void Renderpass::AddDepthReference(uint32_t attachmentIndex, ImageLayout format)
 {
 	CORE_ASSERT(!m_depthReference.has_value(), "depth ref already exists");
-	m_depthReference.emplace(index, format);
+	m_depthReference.emplace(attachmentIndex, format);
 }

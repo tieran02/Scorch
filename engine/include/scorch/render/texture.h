@@ -45,14 +45,19 @@ namespace SC
 		uint32_t m_width, m_height;
 	};
 
-	//struct Sampler
-	//{
-	//	static std::unique_ptr<Texture> Create(TextureType type, Texture* boundTexture = nullptr);
-	//	void BindTexture(Texture* boundTexture);
-	//protected:
-	//	Sampler(TextureType type, Texture* boundTexture);
 
-	//	Texture* m_boundTexture;
-	//	TextureType m_type;
-	//};
+	struct RenderTarget
+	{
+	public:
+		static std::unique_ptr<RenderTarget> Create(Format format);
+		virtual ~RenderTarget();
+
+		virtual bool Build(uint32_t width, uint32_t height) = 0;
+
+	protected:
+		RenderTarget(Format format);
+	protected:
+		Format m_format;
+		uint32_t m_width, m_height;
+	};
 }

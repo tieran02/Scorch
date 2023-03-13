@@ -56,8 +56,8 @@ namespace SC
 		virtual bool Build() = 0;
 
 		void AddAttachment(RenderpassAttachment&& _layoutattachment);
-		void AddColourReference(uint32_t index, ImageLayout format);
-		void AddDepthReference(uint32_t index, ImageLayout format);
+		void AddColourReference(uint32_t attachmentIndex, ImageLayout format);
+		void AddDepthReference(uint32_t attachmentIndex, ImageLayout format);
 	protected:
 		Renderpass();
 

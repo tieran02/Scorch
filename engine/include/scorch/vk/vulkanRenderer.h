@@ -92,6 +92,8 @@ namespace SC
 
 		VkSwapchainKHR m_swapchain; // from other articles
 		VkFormat m_swapchainImageFormat; // image format expected by the windowing system
+		std::vector<std::unique_ptr<VulkanRenderTarget>> m_swapChainRenderTargets;
+
 		std::vector<VkImage> m_swapchainImages; //array of images from the swapchain
 		std::vector<VkImageView> m_swapchainImageViews; //array of image-views from the swapchain
 
@@ -99,12 +101,11 @@ namespace SC
 		uint32_t m_graphicsQueueFamily; //family of that queue
 
 		std::unique_ptr<VulkanRenderpass> m_vulkanRenderPass;
+		std::unique_ptr<VulkanRenderTarget> m_depthRenderTarget;
+
 		std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 		VmaAllocator m_allocator; //vma lib allocator
-
-		std::unique_ptr<VulkanTexture> m_depthTexture;
-
 		VkDescriptorPool m_descriptorPool;
 	private:
 		DeletionQueue m_mainDeletionQueue;

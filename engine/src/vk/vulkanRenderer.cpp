@@ -60,7 +60,7 @@ void VulkanRenderer::Cleanup()
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
-	m_depthTexture.reset();
+	m_depthRenderTarget.reset();
 	m_swapChainDeletionQueue.flush();
 	m_mainDeletionQueue.flush();
 
@@ -77,7 +77,7 @@ void VulkanRenderer::CreateSwapchain()
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
-	m_depthTexture.reset();
+	m_depthRenderTarget.reset();
 	m_swapChainDeletionQueue.flush();
 
 	InitSwapchain();
@@ -381,14 +381,24 @@ void VulkanRenderer::InitSwapchain()
 
 	m_swapchainImageFormat = vkbSwapchain.image_format;
 
+	m_swapChainRenderTargets.resize(m_swapchainImages.size());
+	for (int i = 0; i < m_swapChainRenderTargets.size(); ++i)
+	{
+		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(Format::B8G8R8A8_SRGB);
+		m_swapChainRenderTargets[i]->m_image = m_swapchainImages[i];
+		m_swapChainRenderTargets[i]->m_imageView = m_swapchainImageViews[i];
+	}
+
+
+
 	m_swapChainDeletionQueue.push_function([=]() {
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 	});
 
 
 	//create depth image
-	m_depthTexture = std::make_unique<VulkanTexture>(TextureType::TEXTURE2D, TextureUsage::DEPTH, Format::D32_SFLOAT);
-	m_depthTexture->Build(windowWidth, windowHeight, false);
+	m_depthRenderTarget = std::make_unique<VulkanRenderTarget>(Format::D32_SFLOAT);
+	m_depthRenderTarget->Build(windowWidth, windowHeight);
 }
 
 void VulkanRenderer::InitCommands()
@@ -482,7 +492,7 @@ void VulkanRenderer::InitFramebuffers()
 	{
 		VkImageView attachments[2];
 		attachments[0] = m_swapchainImageViews[i];
-		attachments[1] = m_depthTexture->m_imageView;
+		attachments[1] = m_depthRenderTarget->m_imageView;
 
 
 		fb_info.pAttachments = attachments;
