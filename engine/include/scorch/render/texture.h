@@ -49,15 +49,15 @@ namespace SC
 	struct RenderTarget
 	{
 	public:
-		static std::unique_ptr<RenderTarget> Create(Format format);
+		static std::unique_ptr<RenderTarget> Create(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 		virtual ~RenderTarget();
 
-		virtual bool Build(uint32_t width, uint32_t height) = 0;
+		virtual bool BuildAttachment(uint32_t attachmentIndex) = 0;
 
 	protected:
-		RenderTarget(Format format);
+		RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 	protected:
-		Format m_format;
+		std::vector<Format> m_attachmentFormats;
 		uint32_t m_width, m_height;
 	};
 }

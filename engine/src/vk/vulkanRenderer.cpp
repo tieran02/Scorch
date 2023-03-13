@@ -384,7 +384,7 @@ void VulkanRenderer::InitSwapchain()
 	m_swapChainRenderTargets.resize(m_swapchainImages.size());
 	for (int i = 0; i < m_swapChainRenderTargets.size(); ++i)
 	{
-		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(Format::B8G8R8A8_SRGB);
+		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::B8G8R8A8_SRGB}, windowWidth, windowHeight);
 		m_swapChainRenderTargets[i]->m_image = m_swapchainImages[i];
 		m_swapChainRenderTargets[i]->m_imageView = m_swapchainImageViews[i];
 	}
@@ -397,8 +397,8 @@ void VulkanRenderer::InitSwapchain()
 
 
 	//create depth image
-	m_depthRenderTarget = std::make_unique<VulkanRenderTarget>(Format::D32_SFLOAT);
-	m_depthRenderTarget->Build(windowWidth, windowHeight);
+	m_depthRenderTarget = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::D32_SFLOAT}, windowWidth, windowHeight);
+	m_depthRenderTarget->BuildAttachment(0);
 }
 
 void VulkanRenderer::InitCommands()

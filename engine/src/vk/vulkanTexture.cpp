@@ -316,15 +316,16 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 	return true;
 }
 
-VulkanRenderTarget::VulkanRenderTarget(Format format) : RenderTarget(format)
+VulkanRenderTarget::VulkanRenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height) : 
+	RenderTarget(std::move(attachmentFormats), width, height)
 {
 
 }
 
-bool VulkanRenderTarget::Build(uint32_t width, uint32_t height)
+bool VulkanRenderTarget::BuildAttachment(uint32_t attachmentIndex)
 {
-	CORE_ASSERT(m_width == 0 && m_height == 0, "Render target already created");
-	if (m_width != 0 && m_height != 0) return false;
+	CORE_ASSERT(attachmentIndex >= 0 && attachmentIndex < m_attachmentFormats.size(), "attachmentIndex is out of bounds");
+	if(attachmentIndex < 0 && attachmentIndex >= m_attachmentFormats.size()) return false;
 
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
@@ -334,9 +335,6 @@ bool VulkanRenderTarget::Build(uint32_t width, uint32_t height)
 	if (!renderer)
 		return false;
 
-	m_width = width;
-	m_height = height;
-
 	VkExtent3D imageExtent = {
 		m_width,
 		m_height,
@@ -344,9 +342,9 @@ bool VulkanRenderTarget::Build(uint32_t width, uint32_t height)
 	};
 
 
-	VkFormat imageFormat = vkutils::ConvertFormat(m_format);
-	uint32_t usageFlags = m_format == Format::D32_SFLOAT ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	
+	VkFormat imageFormat = vkutils::ConvertFormat(m_attachmentFormats[attachmentIndex]);
+	uint32_t usageFlags = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
 
 	//the image will be an image with the format we selected and Depth Attachment usage flag
 	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent, 1);
@@ -360,7 +358,7 @@ bool VulkanRenderTarget::Build(uint32_t width, uint32_t height)
 	VK_CHECK(vmaCreateImage(renderer->m_allocator, &img_info, &img_allocinfo, &m_image, &m_allocation, nullptr));
 
 	//build an image-view for the image to use for rendering
-	VkImageAspectFlagBits imageAspectFlags = m_format == Format::D32_SFLOAT ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	VkImageAspectFlagBits imageAspectFlags = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
 	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags, 1);
 
@@ -380,3 +378,4 @@ VulkanRenderTarget::~VulkanRenderTarget()
 {
 	m_deletionQueue.flush();
 }
+

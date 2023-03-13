@@ -27,10 +27,11 @@ namespace SC
 	struct VulkanRenderTarget : RenderTarget
 	{
 	public:
-		VulkanRenderTarget(Format format);
+		VulkanRenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 		~VulkanRenderTarget();
 
-		bool Build(uint32_t width, uint32_t height) override;
+		//bool Build(uint32_t width, uint32_t height) override;
+		bool BuildAttachment(uint32_t attachmentIndex) override;
 
 		VkImage m_image;
 		VmaAllocation m_allocation;

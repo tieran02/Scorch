@@ -70,7 +70,7 @@ Format Texture::GetFormat() const
 }
 
 
-std::unique_ptr<SC::RenderTarget> RenderTarget::Create(Format format)
+std::unique_ptr<SC::RenderTarget> RenderTarget::Create(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height)
 {
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
@@ -84,17 +84,17 @@ std::unique_ptr<SC::RenderTarget> RenderTarget::Create(Format format)
 	switch (renderer->GetApi())
 	{
 	case GraphicsAPI::VULKAN:
-		renderTarget = std::unique_ptr<RenderTarget>(new VulkanRenderTarget(format));
+		renderTarget = std::unique_ptr<RenderTarget>(new VulkanRenderTarget(std::move(attachmentFormats), width, height));
 	}
 
 	CORE_ASSERT(renderTarget, "failed to create renderTarget");
 	return std::move(renderTarget);
 }
 
-RenderTarget::RenderTarget(Format format) :
-	m_width(0),
-	m_height(0),
-	m_format(format)
+RenderTarget::RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height) :
+	m_width(width),
+	m_height(height),
+	m_attachmentFormats(std::move(attachmentFormats))
 {
 
 }
