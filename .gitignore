@@ -565,3 +565,5 @@ FodyWeavers.xsd
 .idea/
 vendor/.bootstrap.json
 CMakeSettings.json
+
+vendor/src
