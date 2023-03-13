@@ -111,25 +111,8 @@ void VulkanRenderer::BeginFrame(float r, float g, float b)
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
-
-	//make a clear-color from frame number. This will flash with a 120*pi frame period.
-	VkClearValue clearValue;
-	clearValue.color = { { r, g, b, 1.0f } };
-
-	//clear depth at 1
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
-
 	//start the main renderpass.
-	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight), m_swapChainRenderTargets[m_swapchainImageIndex]->m_framebuffer);
-
-	//connect clear values
-	rpInfo.clearValueCount = 2;
-	VkClearValue clearValues[] = { clearValue, depthClear };
-	rpInfo.pClearValues = &clearValues[0];
-
-	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+	BeginRenderPass(m_vulkanRenderPass.get(), r, g, b, 1.0f);
 }
 
 
@@ -139,7 +122,9 @@ void VulkanRenderer::EndFrame()
 	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
 	//finalize the render pass
-	vkCmdEndRenderPass(cmd);
+	EndRenderPass();
+
+
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 
@@ -179,6 +164,41 @@ void VulkanRenderer::EndFrame()
 
 	m_currentFrame = m_currentFrame + 1 % std::numeric_limits<uint32_t>().max();
 }
+
+void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 0*/)
+{
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
+
+	VkClearValue clearValue;
+	clearValue.color = { { clearR, clearG, clearB, 1.0f } };
+
+	//clear depth at 1
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = clearDepth;
+
+	//start the main renderpass.
+	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), 
+		VkExtent2D(m_swapChainRenderTargets[m_swapchainImageIndex]->GetWidth(), m_swapChainRenderTargets[m_swapchainImageIndex]->GetHeight()),
+		m_swapChainRenderTargets[m_swapchainImageIndex]->m_framebuffer);
+
+	//connect clear values
+	rpInfo.clearValueCount = 2;
+	VkClearValue clearValues[] = { clearValue, depthClear };
+	rpInfo.pClearValues = &clearValues[0];
+
+	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VulkanRenderer::EndRenderPass()
+{
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
+
+	//finalize the render pass
+	vkCmdEndRenderPass(cmd);
+}
+
 
 void VulkanRenderer::SetViewport(const Viewport& viewport)
 {
@@ -584,4 +604,3 @@ VkRenderPass VulkanRenderer::GetDefaultRenderPass() const
 	CORE_ASSERT(m_vulkanRenderPass, "Render pass not created");
 	return m_vulkanRenderPass->GetRenderPass();
 }
-

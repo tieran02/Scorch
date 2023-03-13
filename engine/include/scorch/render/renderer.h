@@ -16,6 +16,7 @@ namespace SC
 	struct Viewport;
 	struct Scissor;
 	struct Texture;
+	class Renderpass;
 	class Renderer
 	{
 	public:
@@ -30,6 +31,10 @@ namespace SC
 
 		virtual void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) = 0;
 		virtual void EndFrame() = 0;
+
+		virtual void BeginRenderPass(const Renderpass* renderPass, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 0) = 0;
+		virtual void EndRenderPass() = 0;
+
 
 		virtual void SetViewport(const Viewport& viewport) = 0;
 		virtual void SetScissor(const Scissor& viewport) = 0;

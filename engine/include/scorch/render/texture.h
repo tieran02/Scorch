@@ -55,6 +55,9 @@ namespace SC
 		virtual bool BuildAttachment(uint32_t attachmentIndex) = 0;
 		virtual bool Build(Renderpass* renderPass) = 0;
 
+		inline uint32_t GetWidth() const { return m_width; }
+		inline uint32_t GetHeight() const { return m_height; }
+
 	protected:
 		RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 	protected:
