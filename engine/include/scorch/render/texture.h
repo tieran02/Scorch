@@ -45,7 +45,7 @@ namespace SC
 		uint32_t m_width, m_height;
 	};
 
-
+	class Renderpass;
 	struct RenderTarget
 	{
 	public:
@@ -53,6 +53,7 @@ namespace SC
 		virtual ~RenderTarget();
 
 		virtual bool BuildAttachment(uint32_t attachmentIndex) = 0;
+		virtual bool Build(Renderpass* renderPass) = 0;
 
 	protected:
 		RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);

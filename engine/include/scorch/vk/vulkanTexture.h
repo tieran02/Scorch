@@ -32,11 +32,13 @@ namespace SC
 
 		//bool Build(uint32_t width, uint32_t height) override;
 		bool BuildAttachment(uint32_t attachmentIndex) override;
+		bool Build(Renderpass* renderPass) override;
 
-		VkImage m_image;
-		VmaAllocation m_allocation;
-		VkImageView  m_imageView;
+		std::vector<VkImage> m_image;
+		std::vector<VmaAllocation> m_allocation;
+		std::vector<VkImageView>  m_imageView;
 		VkFramebuffer m_framebuffer;
+
 	private:
 		DeletionQueue m_deletionQueue;
 	};

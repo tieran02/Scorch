@@ -60,7 +60,6 @@ void VulkanRenderer::Cleanup()
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
-	m_depthRenderTarget.reset();
 	m_swapChainDeletionQueue.flush();
 	m_mainDeletionQueue.flush();
 
@@ -77,7 +76,6 @@ void VulkanRenderer::CreateSwapchain()
 	//Wait for rendering to finish before cleaning up
 	VK_CHECK(vkWaitForFences(m_device, 1, &GetCurrentFrame().m_renderFence, true, 10000000));
 
-	m_depthRenderTarget.reset();
 	m_swapChainDeletionQueue.flush();
 
 	InitSwapchain();
@@ -124,7 +122,7 @@ void VulkanRenderer::BeginFrame(float r, float g, float b)
 
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight), m_swapChainFramebuffers[m_swapchainImageIndex]);
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight), m_swapChainRenderTargets[m_swapchainImageIndex]->m_framebuffer);
 
 	//connect clear values
 	rpInfo.clearValueCount = 2;
@@ -376,17 +374,23 @@ void VulkanRenderer::InitSwapchain()
 
 	//store swapchain and its related images
 	m_swapchain = vkbSwapchain.swapchain;
-	m_swapchainImages = vkbSwapchain.get_images().value();
-	m_swapchainImageViews = vkbSwapchain.get_image_views().value();
+	auto swapchainImages = vkbSwapchain.get_images().value();
+	auto swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	m_swapchainImageFormat = vkbSwapchain.image_format;
 
-	m_swapChainRenderTargets.resize(m_swapchainImages.size());
+	m_swapChainRenderTargets.resize(swapchainImages.size());
 	for (int i = 0; i < m_swapChainRenderTargets.size(); ++i)
 	{
-		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::B8G8R8A8_SRGB}, windowWidth, windowHeight);
-		m_swapChainRenderTargets[i]->m_image = m_swapchainImages[i];
-		m_swapChainRenderTargets[i]->m_imageView = m_swapchainImageViews[i];
+		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::B8G8R8A8_SRGB, Format::D32_SFLOAT}, windowWidth, windowHeight);
+		m_swapChainRenderTargets[i]->m_image[0] = swapchainImages[i];
+		m_swapChainRenderTargets[i]->m_imageView[0] = swapchainImageViews[i];
+		m_swapChainRenderTargets[i]->BuildAttachment(1);
+
+		m_swapChainDeletionQueue.push_function([=]() {
+			vkDestroyImageView(m_device, swapchainImageViews[i], nullptr);
+			m_swapChainRenderTargets[i].reset();
+			});
 	}
 
 
@@ -394,11 +398,6 @@ void VulkanRenderer::InitSwapchain()
 	m_swapChainDeletionQueue.push_function([=]() {
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 	});
-
-
-	//create depth image
-	m_depthRenderTarget = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::D32_SFLOAT}, windowWidth, windowHeight);
-	m_depthRenderTarget->BuildAttachment(0);
 }
 
 void VulkanRenderer::InitCommands()
@@ -471,39 +470,9 @@ void VulkanRenderer::InitDefaultRenderpass()
 
 void VulkanRenderer::InitFramebuffers()
 {
-	int windowWidth{ 0 }, windowHeight{ 0 };
-	const App* app = App::Instance();
-	if (!app)
+	for (int i = 0; i < m_swapChainRenderTargets.size(); ++i)
 	{
-		Log::PrintCore("Failed to get app instance", LogSeverity::LogFatel);
-		return;
-	}
-	app->GetWindowExtent(windowWidth, windowHeight);
-
-	//create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
-	VkFramebufferCreateInfo fb_info = vkinit::FramebufferCreateInfo(GetDefaultRenderPass(), VkExtent2D(windowWidth, windowHeight));
-
-	//grab how many images we have in the swapchain
-	const uint32_t swapchain_imagecount = static_cast<uint32_t>(m_swapchainImages.size());
-	m_swapChainFramebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
-
-	//create framebuffers for each of the swapchain image views
-	for (uint32_t i = 0; i < swapchain_imagecount; i++) 
-	{
-		VkImageView attachments[2];
-		attachments[0] = m_swapchainImageViews[i];
-		attachments[1] = m_depthRenderTarget->m_imageView;
-
-
-		fb_info.pAttachments = attachments;
-		fb_info.attachmentCount = 2;
-
-		VK_CHECK(vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_swapChainFramebuffers[i]));
-
-		m_swapChainDeletionQueue.push_function([=]() {
-			vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
-			vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
-			});
+		m_swapChainRenderTargets[i]->Build(m_vulkanRenderPass.get());
 	}
 }
 

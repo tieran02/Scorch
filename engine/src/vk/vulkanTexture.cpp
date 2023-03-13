@@ -6,6 +6,7 @@
 #include "vk/vulkanInitialiser.h"
 #include "vk/vulkanBuffer.h"
 #include "jaam.h"
+#include "vk/vulkanRenderpass.h"
 
 using namespace SC;
 
@@ -319,7 +320,9 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 VulkanRenderTarget::VulkanRenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height) : 
 	RenderTarget(std::move(attachmentFormats), width, height)
 {
-
+	m_image.resize(m_attachmentFormats.size());
+	m_imageView.resize(m_attachmentFormats.size());
+	m_allocation.resize(m_attachmentFormats.size());
 }
 
 bool VulkanRenderTarget::BuildAttachment(uint32_t attachmentIndex)
@@ -355,20 +358,20 @@ bool VulkanRenderTarget::BuildAttachment(uint32_t attachmentIndex)
 	img_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	//allocate and create the image
-	VK_CHECK(vmaCreateImage(renderer->m_allocator, &img_info, &img_allocinfo, &m_image, &m_allocation, nullptr));
+	VK_CHECK(vmaCreateImage(renderer->m_allocator, &img_info, &img_allocinfo, &m_image[attachmentIndex], &m_allocation[attachmentIndex], nullptr));
 
 	//build an image-view for the image to use for rendering
 	VkImageAspectFlagBits imageAspectFlags = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
-	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image, imageAspectFlags, 1);
+	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image[attachmentIndex], imageAspectFlags, 1);
 
-	VK_CHECK(vkCreateImageView(renderer->m_device, &dview_info, nullptr, &m_imageView));
+	VK_CHECK(vkCreateImageView(renderer->m_device, &dview_info, nullptr, &m_imageView[attachmentIndex]));
 
 	//add to deletion queues
 	m_deletionQueue.push_function([=]() {
 		renderer->WaitOnFences();
-	vkDestroyImageView(renderer->m_device, m_imageView, nullptr);
-	vmaDestroyImage(renderer->m_allocator, m_image, m_allocation);
+	vkDestroyImageView(renderer->m_device, m_imageView[attachmentIndex], nullptr);
+	vmaDestroyImage(renderer->m_allocator, m_image[attachmentIndex], m_allocation[attachmentIndex]);
 		});
 
 	return true;
@@ -377,5 +380,32 @@ bool VulkanRenderTarget::BuildAttachment(uint32_t attachmentIndex)
 VulkanRenderTarget::~VulkanRenderTarget()
 {
 	m_deletionQueue.flush();
+}
+
+bool VulkanRenderTarget::Build(Renderpass* renderPass)
+{
+	CORE_ASSERT(renderPass, "Render pass can't be null");
+	if (!renderPass) return false;
+
+	const App* app = App::Instance();
+	CORE_ASSERT(app, "App instance is null");
+	if (!app) return false;
+
+	const VulkanRenderer* renderer = app->GetVulkanRenderer();
+	if (!renderer)
+		return false;
+
+	VkFramebufferCreateInfo fb_info = vkinit::FramebufferCreateInfo(static_cast<VulkanRenderpass*>(renderPass)->GetRenderPass(), VkExtent2D(m_width, m_height));
+
+	fb_info.pAttachments = m_imageView.data();
+	fb_info.attachmentCount = static_cast<uint32_t>(m_imageView.size());
+
+	VK_CHECK(vkCreateFramebuffer(renderer->m_device, &fb_info, nullptr, &m_framebuffer));
+
+	m_deletionQueue.push_function([=]() {
+		vkDestroyFramebuffer(renderer->m_device, m_framebuffer, nullptr);
+		});
+
+	return true;
 }
 
