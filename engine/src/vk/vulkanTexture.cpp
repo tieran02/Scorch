@@ -403,6 +403,7 @@ bool VulkanRenderTarget::Build(Renderpass* renderPass)
 	VK_CHECK(vkCreateFramebuffer(renderer->m_device, &fb_info, nullptr, &m_framebuffer));
 
 	m_deletionQueue.push_function([=]() {
+		renderer->WaitOnFences();
 		vkDestroyFramebuffer(renderer->m_device, m_framebuffer, nullptr);
 		});
 

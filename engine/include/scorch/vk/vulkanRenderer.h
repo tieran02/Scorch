@@ -51,7 +51,7 @@ namespace SC
 		void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) override;
 		void EndFrame() override;
 
-		void BeginRenderPass(const Renderpass* renderPass, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 0) override;
+		void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 0) override;
 		void EndRenderPass() override;
 
 		void SetViewport(const Viewport& viewport) override;

@@ -95,6 +95,7 @@ bool VulkanRenderpass::Build()
 	VK_CHECK(vkCreateRenderPass(renderer->m_device, &renderPassInfo, nullptr, &m_renderpass));
 	m_deletionQueue.push_function([=]()
 		{
+			renderer->WaitOnFences();
 			vkDestroyRenderPass(renderer->m_device, m_renderpass, nullptr);
 		});
 

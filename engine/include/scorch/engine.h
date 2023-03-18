@@ -19,3 +19,4 @@
 #include "render/scene.h"
 #include "render/camera.h"
 #include "render/texture.h"
+#include "render/renderpass.h"

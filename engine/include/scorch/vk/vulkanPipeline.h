@@ -25,7 +25,7 @@ namespace SC
 		VulkanPipeline(const ShaderModule& module);
 		~VulkanPipeline();
 
-		bool Build() override;
+		bool Build(const Renderpass* renderpass = nullptr) override;
 
 		VkPipeline GetPipeline() const;
 	private:

@@ -6,6 +6,7 @@
 #include "vk/vulkanInitialiser.h"
 #include "vk/vulkanUtils.h"
 #include "vk/vulkanDescriptorSet.h"
+#include "vk/vulkanRenderpass.h"
 
 using namespace SC;
 
@@ -86,7 +87,7 @@ namespace
 		VkViewport _viewport{};
 		VkRect2D _scissor{};
 		VkPipelineRasterizationStateCreateInfo _rasterizer{};
-		VkPipelineColorBlendAttachmentState _colorBlendAttachment{};
+		std::vector<VkPipelineColorBlendAttachmentState> _colorBlendAttachments{};
 		VkPipelineMultisampleStateCreateInfo _multisampling{};
 		VkPipelineLayout _pipelineLayout{};
 		VkPipelineDepthStencilStateCreateInfo _depthStencil;
@@ -112,8 +113,8 @@ namespace
 
 			colorBlending.logicOpEnable = VK_FALSE;
 			colorBlending.logicOp = VK_LOGIC_OP_COPY;
-			colorBlending.attachmentCount = 1;
-			colorBlending.pAttachments = &_colorBlendAttachment;
+			colorBlending.attachmentCount = static_cast<uint32_t>(_colorBlendAttachments.size());;
+			colorBlending.pAttachments = _colorBlendAttachments.data();
 
 			//build the actual pipeline
 			//we now use all of the info structs we have been writing into into this one to create the pipeline
@@ -238,7 +239,7 @@ VulkanPipeline::VulkanPipeline(const ShaderModule& module) : Pipeline(module),
 	
 }
 
-bool VulkanPipeline::Build()
+bool VulkanPipeline::Build(const Renderpass* renderpass /*= nullptr*/)
 {
 	const App* app = App::Instance();
 	CORE_ASSERT(app, "App instance is null");
@@ -248,6 +249,12 @@ bool VulkanPipeline::Build()
 	if (!renderer)
 		return false;
 
+
+	const VulkanRenderpass* vulkanRenderpass = renderpass != nullptr ?
+		static_cast<const VulkanRenderpass*>(renderpass) :
+		renderer->m_vulkanRenderPass.get();
+	CORE_ASSERT(vulkanRenderpass, "renderpass is null");
+	if (!vulkanRenderpass) return false;
 
 	ShaderModuleArray<VkShaderModule> modules;
 	LoadShaderModule(renderer->m_device, *shaderModule, modules);
@@ -347,8 +354,31 @@ bool VulkanPipeline::Build()
 	//we don't use multisampling, so just run the default one
 	pipelineBuilder._multisampling = vkinit::MultisamplingStateCreateInfo();
 
-	//a single blend attachment with no blending and writing to RGBA
-	pipelineBuilder._colorBlendAttachment = vkinit::ColorBlendAttachmentState();
+	//If the layout has colour blend attachments use them, other fallback to a single colour attachment
+	if (!pipelineLayout->ColourBlendAttachments().empty())
+	{
+		for (const auto colourAttachment : pipelineLayout->ColourBlendAttachments())
+		{
+			VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+			VkColorComponentFlags flags = 0;
+
+			if (colourAttachment.components.test(ColorComponentBits::COLOR_COMPONENT_R))
+				flags |= VkColorComponentFlagBits::VK_COLOR_COMPONENT_R_BIT;
+			if (colourAttachment.components.test(ColorComponentBits::COLOR_COMPONENT_G))
+				flags |= VkColorComponentFlagBits::VK_COLOR_COMPONENT_G_BIT;
+			if (colourAttachment.components.test(ColorComponentBits::COLOR_COMPONENT_B))
+				flags |= VkColorComponentFlagBits::VK_COLOR_COMPONENT_B_BIT;
+			if (colourAttachment.components.test(ColorComponentBits::COLOR_COMPONENT_A))
+				flags |= VkColorComponentFlagBits::VK_COLOR_COMPONENT_A_BIT;
+
+			colorBlendAttachment.colorWriteMask = flags;
+			colorBlendAttachment.blendEnable = colourAttachment.enableBlend;
+
+			pipelineBuilder._colorBlendAttachments.emplace_back(std::move(colorBlendAttachment));
+		}
+	}
+	else
+		pipelineBuilder._colorBlendAttachments.emplace_back(vkinit::ColorBlendAttachmentState()); //a single blend attachment with no blending and writing to RGBA
 
 	//load vertex input
 	std::vector<VkVertexInputBindingDescription> bindings;
@@ -369,7 +399,7 @@ bool VulkanPipeline::Build()
 	pipelineBuilder._depthStencil = vkinit::DepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	//finally build the pipeline
-	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, renderer->GetDefaultRenderPass());
+	m_pipeline = pipelineBuilder.BuildPipeline(renderer->m_device, vulkanRenderpass->GetRenderPass());
 
 
 

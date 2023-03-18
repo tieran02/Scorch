@@ -41,10 +41,11 @@ void VulkanRenderer::Init()
 	InitVulkan();
 	InitSwapchain();
 	InitCommands();
-	InitDefaultRenderpass();
-	InitFramebuffers();
 
 	InitSyncStructures();
+
+	InitDefaultRenderpass();
+	InitFramebuffers();
 
 	InitDescriptors();
 
@@ -112,7 +113,7 @@ void VulkanRenderer::BeginFrame(float r, float g, float b)
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
 	//start the main renderpass.
-	BeginRenderPass(m_vulkanRenderPass.get(), r, g, b, 1.0f);
+	BeginRenderPass(m_vulkanRenderPass.get(), m_swapChainRenderTargets[m_swapchainImageIndex].get(), r, g, b, 1.0f);
 }
 
 
@@ -165,7 +166,7 @@ void VulkanRenderer::EndFrame()
 	m_currentFrame = m_currentFrame + 1 % std::numeric_limits<uint32_t>().max();
 }
 
-void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 0*/)
+void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 0*/)
 {
 	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
 
@@ -176,11 +177,14 @@ void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, float clearR 
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = clearDepth;
 
+	const VulkanRenderpass* vulkanRenderpass = static_cast<const VulkanRenderpass*>(renderPass);
+	const VulkanRenderTarget* vulkanRenderTarget = static_cast<const VulkanRenderTarget*>(renderTarget);
+
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(GetDefaultRenderPass(), 
-		VkExtent2D(m_swapChainRenderTargets[m_swapchainImageIndex]->GetWidth(), m_swapChainRenderTargets[m_swapchainImageIndex]->GetHeight()),
-		m_swapChainRenderTargets[m_swapchainImageIndex]->m_framebuffer);
+	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(vulkanRenderpass->GetRenderPass(),
+		VkExtent2D(vulkanRenderTarget->GetWidth(), vulkanRenderTarget->GetHeight()),
+		vulkanRenderTarget->m_framebuffer);
 
 	//connect clear values
 	rpInfo.clearValueCount = 2;

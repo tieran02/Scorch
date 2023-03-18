@@ -73,6 +73,22 @@ namespace SC
 		POINT
 	};
 
+	enum class ColorComponentBits : uint8_t
+	{
+		COLOR_COMPONENT_R,
+		COLOR_COMPONENT_G,
+		COLOR_COMPONENT_B,
+		COLOR_COMPONENT_A,
+		COUNT
+	};
+	using ColorComponentFlags = Flags<ColorComponentBits>;
+
+	struct ColourBlendAttachment
+	{
+		ColorComponentFlags components;
+		bool enableBlend;
+	};
+
 	struct PushConstant
 	{
 		ShaderModuleFlags shaderStages;
@@ -81,6 +97,7 @@ namespace SC
 
 	class DescriptorSetLayout;
 	class DescriptorSet;
+	class Renderpass;
 	class PipelineLayout
 	{
 		//This will be used to hold information on push constants/uniforms and other set locations
@@ -92,6 +109,9 @@ namespace SC
 		static std::unique_ptr<PipelineLayout> Create();
 		virtual ~PipelineLayout();
 
+		void AddColourBlendAttachment(ColorComponentFlags components, bool enableBlend);
+		const std::vector<ColourBlendAttachment>& ColourBlendAttachments() const;
+
 		void AddPushConstant(ShaderModuleFlags stages, uint32_t size);
 		const std::vector<PushConstant>& PushConstants() const;
 
@@ -102,6 +122,7 @@ namespace SC
 	protected:
 		PipelineLayout();
 
+		std::vector<ColourBlendAttachment> m_colourBlendAttachments;
 		std::vector<PushConstant> m_pushConstants;
 		std::vector<const DescriptorSetLayout*> m_descriptorSetLayouts;
 	};
@@ -122,7 +143,7 @@ namespace SC
 
 		//TODO multi sampling and blending
 	public:
-		virtual bool Build() = 0;
+		virtual bool Build(const Renderpass* renderpass = nullptr) = 0;
 
 		virtual ~Pipeline();
 	protected:

@@ -161,6 +161,16 @@ PipelineLayout::~PipelineLayout()
 
 }
 
+void PipelineLayout::AddColourBlendAttachment(ColorComponentFlags components, bool enableBlend)
+{
+	m_colourBlendAttachments.emplace_back(components, enableBlend);
+}
+
+const std::vector<SC::ColourBlendAttachment>& PipelineLayout::ColourBlendAttachments() const
+{
+	return m_colourBlendAttachments;
+}
+
 void PipelineLayout::AddPushConstant(ShaderModuleFlags stages, uint32_t size)
 {
 	m_pushConstants.emplace_back(stages, size);
