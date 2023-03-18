@@ -110,7 +110,6 @@ namespace
 VulkanTexture::VulkanTexture(TextureType type, TextureUsage usage, Format format) : Texture(type, usage, format),
 m_mipLevels(0)
 {
-
 }
 
 VulkanTexture::~VulkanTexture()
@@ -314,6 +313,7 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 	VkFormat imageFormat = vkutils::ConvertFormat(m_format);
 	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_width, m_height)))) + 1;
 	generateMipmaps(m_image, imageFormat, m_width, m_height, mipLevels);
+
 	return true;
 }
 

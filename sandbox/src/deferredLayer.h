@@ -13,6 +13,12 @@ private:
 	std::unique_ptr<SC::PipelineLayout> m_pipelineLayout;
 	std::unique_ptr<SC::Pipeline> m_pipeline;
 
+	std::unique_ptr<SC::DescriptorSetLayout> m_fullscreenDescriptorSetLayout;
+	std::unique_ptr<SC::DescriptorSet> m_fullscreenDescriptorSet;
+
+	std::unique_ptr<SC::PipelineLayout> m_fullscreenPipelineLayout;
+	std::unique_ptr<SC::Pipeline> m_fullscreenPipeline;
+
 	std::unique_ptr<SC::Renderpass> m_deferredRenderpass;
 	std::unique_ptr<SC::RenderTarget> m_colourTarget;
 };

@@ -177,8 +177,8 @@ void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, const RenderT
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = clearDepth;
 
-	const VulkanRenderpass* vulkanRenderpass = static_cast<const VulkanRenderpass*>(renderPass);
-	const VulkanRenderTarget* vulkanRenderTarget = static_cast<const VulkanRenderTarget*>(renderTarget);
+	const VulkanRenderpass* vulkanRenderpass = renderPass ? static_cast<const VulkanRenderpass*>(renderPass) : m_vulkanRenderPass.get();
+	const VulkanRenderTarget* vulkanRenderTarget = renderTarget ? static_cast<const VulkanRenderTarget*>(renderTarget) : m_swapChainRenderTargets[m_swapchainImageIndex].get();
 
 	//start the main renderpass.
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us

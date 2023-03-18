@@ -12,7 +12,7 @@ void DeferredLayer::OnAttach()
 	colourAttachment.stencilLoadOp = SC::AttachmentLoadOp::DONT_CARE; 	//we don't care about stencil
 	colourAttachment.stencilStoreOp = SC::AttachmentStoreOp::DONT_CARE;
 	colourAttachment.initialLayout = SC::ImageLayout::UNDEFINED;
-	colourAttachment.finalLayout = SC::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+	colourAttachment.finalLayout = SC::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 
 	m_deferredRenderpass->AddAttachment(std::move(colourAttachment));
 	m_deferredRenderpass->AddColourReference(0, SC::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
@@ -25,7 +25,7 @@ void DeferredLayer::OnAttach()
 	normalAttachment.stencilLoadOp = SC::AttachmentLoadOp::DONT_CARE; 	//we don't care about stencil
 	normalAttachment.stencilStoreOp = SC::AttachmentStoreOp::DONT_CARE;
 	normalAttachment.initialLayout = SC::ImageLayout::UNDEFINED;
-	normalAttachment.finalLayout = SC::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+	normalAttachment.finalLayout = SC::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
 
 	m_deferredRenderpass->AddAttachment(std::move(normalAttachment));
 	m_deferredRenderpass->AddColourReference(1, SC::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
@@ -70,6 +70,33 @@ void DeferredLayer::OnAttach()
 	m_pipeline->pipelineLayout = m_pipelineLayout.get();
 	m_pipeline->Build(m_deferredRenderpass.get());
 
+	//Now create the fullscreen pipeline
+	m_fullscreenDescriptorSetLayout = SC::DescriptorSetLayout::Create(std::vector<SC::DescriptorBinding>
+	{
+		{ SC::DescriptorBindingType::SAMPLER, { SC::ShaderStage::FRAGMENT }},//colour
+		{ SC::DescriptorBindingType::SAMPLER, { SC::ShaderStage::FRAGMENT }},//Normal
+	});
+
+
+	m_fullscreenDescriptorSet = SC::DescriptorSet::Create(m_fullscreenDescriptorSetLayout.get());
+	//Now bind the textures 
+	m_fullscreenDescriptorSet->SetTexture(m_colourTarget->GetAttachmentTexture(0), 0);
+	m_fullscreenDescriptorSet->SetTexture(m_colourTarget->GetAttachmentTexture(1), 1);
+
+
+	m_fullscreenPipelineLayout = SC::PipelineLayout::Create();
+	m_fullscreenPipelineLayout->AddDescriptorSetLayout(m_fullscreenDescriptorSetLayout.get());
+	m_fullscreenPipelineLayout->Build();
+
+
+	shader = shaderBuilder.SetVertexModulePath("data/shaders/fullscreen.vert.spv")
+		.SetFragmentModulePath("data/shaders/fullscreen.frag.spv")
+		.Build();
+
+	m_fullscreenPipeline = SC::Pipeline::Create(*shader);
+	m_fullscreenPipeline->pipelineLayout = m_fullscreenPipelineLayout.get();
+	m_fullscreenPipeline->Build();
+
 }
 
 void DeferredLayer::OnDetach()
@@ -94,13 +121,21 @@ void DeferredLayer::OnUpdate(float deltaTime)
 	renderer->EndRenderPass();
 
 	//begin deferred render pass
-	renderer->BeginRenderPass(m_deferredRenderpass.get(), m_colourTarget.get());
+	renderer->BeginRenderPass(m_deferredRenderpass.get(), m_colourTarget.get(), 0.3f, 0.3f, 0.3f);
 
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
 	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
 	renderer->BindPipeline(m_pipeline.get());
 	renderer->Draw(3, 1, 0, 0);
+
+	renderer->EndRenderPass();
+
+
+	renderer->BeginRenderPass(nullptr, nullptr);
+	renderer->BindPipeline(m_fullscreenPipeline.get());
+	renderer->BindDescriptorSet(m_fullscreenPipelineLayout.get(), m_fullscreenDescriptorSet.get());
+	renderer->Draw(4, 1, 0, 0);
 
 	renderer->EndFrame();
 }

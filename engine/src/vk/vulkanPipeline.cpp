@@ -355,7 +355,7 @@ bool VulkanPipeline::Build(const Renderpass* renderpass /*= nullptr*/)
 	pipelineBuilder._multisampling = vkinit::MultisamplingStateCreateInfo();
 
 	//If the layout has colour blend attachments use them, other fallback to a single colour attachment
-	if (!pipelineLayout->ColourBlendAttachments().empty())
+	if (pipelineLayout && !pipelineLayout->ColourBlendAttachments().empty())
 	{
 		for (const auto colourAttachment : pipelineLayout->ColourBlendAttachments())
 		{
