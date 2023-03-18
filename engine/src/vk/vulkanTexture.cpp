@@ -146,7 +146,7 @@ bool VulkanTexture::Build(uint32_t width, uint32_t height, bool generateMipmaps)
 		usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		break;
 	case SC::TextureUsage::COLOUR:
-		usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		break;
 	default:
 		CORE_ASSERT(false, "Usage flag not supported");
@@ -320,61 +320,7 @@ bool VulkanTexture::CopyData(const void* data, size_t size)
 VulkanRenderTarget::VulkanRenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height) : 
 	RenderTarget(std::move(attachmentFormats), width, height)
 {
-	m_image.resize(m_attachmentFormats.size());
-	m_imageView.resize(m_attachmentFormats.size());
-	m_allocation.resize(m_attachmentFormats.size());
-}
 
-bool VulkanRenderTarget::BuildAttachment(uint32_t attachmentIndex)
-{
-	CORE_ASSERT(attachmentIndex >= 0 && attachmentIndex < m_attachmentFormats.size(), "attachmentIndex is out of bounds");
-	if(attachmentIndex < 0 && attachmentIndex >= m_attachmentFormats.size()) return false;
-
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return false;
-
-	const VulkanRenderer* renderer = app->GetVulkanRenderer();
-	if (!renderer)
-		return false;
-
-	VkExtent3D imageExtent = {
-		m_width,
-		m_height,
-		1
-	};
-
-
-	VkFormat imageFormat = vkutils::ConvertFormat(m_attachmentFormats[attachmentIndex]);
-	uint32_t usageFlags = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-
-	//the image will be an image with the format we selected and Depth Attachment usage flag
-	VkImageCreateInfo img_info = vkinit::ImageCreateInfo(imageFormat, usageFlags, imageExtent, 1);
-
-	//we want to allocate it from GPU local memory
-	VmaAllocationCreateInfo img_allocinfo = {};
-	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	img_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	//allocate and create the image
-	VK_CHECK(vmaCreateImage(renderer->m_allocator, &img_info, &img_allocinfo, &m_image[attachmentIndex], &m_allocation[attachmentIndex], nullptr));
-
-	//build an image-view for the image to use for rendering
-	VkImageAspectFlagBits imageAspectFlags = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-
-	VkImageViewCreateInfo dview_info = vkinit::ImageviewCreateInfo(imageFormat, m_image[attachmentIndex], imageAspectFlags, 1);
-
-	VK_CHECK(vkCreateImageView(renderer->m_device, &dview_info, nullptr, &m_imageView[attachmentIndex]));
-
-	//add to deletion queues
-	m_deletionQueue.push_function([=]() {
-		renderer->WaitOnFences();
-	vkDestroyImageView(renderer->m_device, m_imageView[attachmentIndex], nullptr);
-	vmaDestroyImage(renderer->m_allocator, m_image[attachmentIndex], m_allocation[attachmentIndex]);
-		});
-
-	return true;
 }
 
 VulkanRenderTarget::~VulkanRenderTarget()
@@ -397,8 +343,14 @@ bool VulkanRenderTarget::Build(Renderpass* renderPass)
 
 	VkFramebufferCreateInfo fb_info = vkinit::FramebufferCreateInfo(static_cast<VulkanRenderpass*>(renderPass)->GetRenderPass(), VkExtent2D(m_width, m_height));
 
-	fb_info.pAttachments = m_imageView.data();
-	fb_info.attachmentCount = static_cast<uint32_t>(m_imageView.size());
+	std::vector<VkImageView> imageViews(m_textures.size());
+	for (int i = 0; i < imageViews.size() ; i++)
+	{
+		imageViews[i] = static_cast<VulkanTexture*>(m_textures.at(i).first)->m_imageView;
+	}
+
+	fb_info.pAttachments = imageViews.data();
+	fb_info.attachmentCount = static_cast<uint32_t>(imageViews.size());
 
 	VK_CHECK(vkCreateFramebuffer(renderer->m_device, &fb_info, nullptr, &m_framebuffer));
 

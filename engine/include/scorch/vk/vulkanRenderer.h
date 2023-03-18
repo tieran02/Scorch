@@ -95,6 +95,7 @@ namespace SC
 
 		VkSwapchainKHR m_swapchain; // from other articles
 		VkFormat m_swapchainImageFormat; // image format expected by the windowing system
+		std::vector<VulkanTexture> m_swapchainTextures;
 		std::vector<std::unique_ptr<VulkanRenderTarget>> m_swapChainRenderTargets;
 
 

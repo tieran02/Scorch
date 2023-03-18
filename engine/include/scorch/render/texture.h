@@ -52,7 +52,11 @@ namespace SC
 		static std::unique_ptr<RenderTarget> Create(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 		virtual ~RenderTarget();
 
-		virtual bool BuildAttachment(uint32_t attachmentIndex) = 0;
+		bool BuildAttachmentTexture(uint32_t attachmentIndex);
+		bool SetAttachmentTexture(uint32_t attachmentIndex, Texture* texture);
+
+		const Texture* GetAttachmentTexture(uint32_t attachmentIndex);
+
 		virtual bool Build(Renderpass* renderPass) = 0;
 
 		inline uint32_t GetWidth() const { return m_width; }
@@ -61,6 +65,8 @@ namespace SC
 	protected:
 		RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 	protected:
+		std::vector<std::pair<Texture*, bool>> m_textures; //bool determines if the render target has ownership of the texture
+														   //if the ownership is true the texture will be deleted in the RenderTarget destructor
 		std::vector<Format> m_attachmentFormats;
 		uint32_t m_width, m_height;
 	};

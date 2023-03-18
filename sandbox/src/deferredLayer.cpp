@@ -41,8 +41,8 @@ void DeferredLayer::OnAttach()
 
 	SC::Log::Print("Creating render target");
 	m_colourTarget = SC::RenderTarget::Create(std::vector{SC::Format::B8G8R8A8_SRGB, SC::Format::B8G8R8A8_SRGB}, windowWidth, windowHeight);
-	m_colourTarget->BuildAttachment(0);
-	m_colourTarget->BuildAttachment(1);
+	m_colourTarget->BuildAttachmentTexture(0);
+	m_colourTarget->BuildAttachmentTexture(1);
 	success = m_colourTarget->Build(m_deferredRenderpass.get());
 	SC::Log::Print(string_format("Render target build result: {}", success), success ? SC::LogSeverity::LogInfo : SC::LogSeverity::LogFatel);
 

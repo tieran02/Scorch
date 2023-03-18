@@ -30,13 +30,8 @@ namespace SC
 		VulkanRenderTarget(std::vector<Format>&& attachmentFormats, uint32_t width, uint32_t height);
 		~VulkanRenderTarget();
 
-		//bool Build(uint32_t width, uint32_t height) override;
-		bool BuildAttachment(uint32_t attachmentIndex) override;
 		bool Build(Renderpass* renderPass) override;
 
-		std::vector<VkImage> m_image;
-		std::vector<VmaAllocation> m_allocation;
-		std::vector<VkImageView>  m_imageView;
 		VkFramebuffer m_framebuffer;
 
 	private:

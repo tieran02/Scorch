@@ -96,10 +96,49 @@ RenderTarget::RenderTarget(std::vector<Format>&& attachmentFormats, uint32_t wid
 	m_height(height),
 	m_attachmentFormats(std::move(attachmentFormats))
 {
-
+	m_textures.resize(m_attachmentFormats.size());
 }
 
 RenderTarget::~RenderTarget()
 {
+	for (auto& texture : m_textures)
+	{
+		if (texture.second)
+			delete texture.first;
+	}
+}
 
+bool RenderTarget::BuildAttachmentTexture(uint32_t attachmentIndex)
+{
+	CORE_ASSERT(attachmentIndex >= 0 && attachmentIndex < m_attachmentFormats.size(), "attachmentIndex is out of bounds");
+	if (attachmentIndex < 0 && attachmentIndex >= m_attachmentFormats.size()) return false;
+
+	TextureUsage usage = m_attachmentFormats[attachmentIndex] == Format::D32_SFLOAT ? TextureUsage::DEPTH : TextureUsage::COLOUR;
+	auto texture = Texture::Create(TextureType::TEXTURE2D, usage, m_attachmentFormats[attachmentIndex]);
+	texture->Build(m_width, m_height, false);
+
+	//Texture::Create returns a unique_ptr but m_textures can also hold texture that isn't owned by RenderTarget
+	//So transfer ownership to a raw ptr and mark as having ownership (will be delete in ~RenderTarget())
+	//Not very clean and probably should be refactored at a later date
+	m_textures[attachmentIndex] = std::make_pair(texture.release(), true);
+
+	return true;
+}
+
+bool RenderTarget::SetAttachmentTexture(uint32_t attachmentIndex, Texture* texture)
+{
+	CORE_ASSERT(attachmentIndex >= 0 && attachmentIndex < m_attachmentFormats.size(), "attachmentIndex is out of bounds");
+	if (attachmentIndex < 0 && attachmentIndex >= m_attachmentFormats.size()) return false;
+
+	m_textures[attachmentIndex] = std::make_pair(texture, false);
+
+	return true;
+}
+
+const SC::Texture* RenderTarget::GetAttachmentTexture(uint32_t attachmentIndex)
+{
+	CORE_ASSERT(attachmentIndex >= 0 && attachmentIndex < m_attachmentFormats.size(), "attachmentIndex is out of bounds");
+	if (attachmentIndex < 0 && attachmentIndex >= m_attachmentFormats.size()) return nullptr;
+
+	return m_textures.at(attachmentIndex).first;
 }

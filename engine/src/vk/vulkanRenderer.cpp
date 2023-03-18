@@ -404,12 +404,19 @@ void VulkanRenderer::InitSwapchain()
 	m_swapchainImageFormat = vkbSwapchain.image_format;
 
 	m_swapChainRenderTargets.resize(swapchainImages.size());
+	m_swapchainTextures.reserve(swapchainImages.size());
+
 	for (int i = 0; i < m_swapChainRenderTargets.size(); ++i)
 	{
+		//Hold swapchain texture data inside VulkanTexture
+		//As the swapchain has ownership there is no need for VulkanTexture to cleanup these resources (Just wrap them inside VulkanTexture)
+		m_swapchainTextures.emplace_back(TextureType::TEXTURE2D, TextureUsage::COLOUR, Format::B8G8R8A8_SRGB);
+		m_swapchainTextures[i].m_image = swapchainImages[i];
+		m_swapchainTextures[i].m_imageView = swapchainImageViews[i];
+
 		m_swapChainRenderTargets[i] = std::make_unique<VulkanRenderTarget>(std::vector<Format>{Format::B8G8R8A8_SRGB, Format::D32_SFLOAT}, windowWidth, windowHeight);
-		m_swapChainRenderTargets[i]->m_image[0] = swapchainImages[i];
-		m_swapChainRenderTargets[i]->m_imageView[0] = swapchainImageViews[i];
-		m_swapChainRenderTargets[i]->BuildAttachment(1);
+		m_swapChainRenderTargets[i]->SetAttachmentTexture(0, &m_swapchainTextures[i]);
+		m_swapChainRenderTargets[i]->BuildAttachmentTexture(1);
 
 		m_swapChainDeletionQueue.push_function([=]() {
 			vkDestroyImageView(m_device, swapchainImageViews[i], nullptr);
