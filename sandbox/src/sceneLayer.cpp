@@ -75,7 +75,21 @@ void SceneLayer::OnAttach()
 
 	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
 
+	m_scene.GetSceneData().Lights[0].position = glm::normalize(m_lightDir);
 	m_scene.GetSceneData().Lights[0].intensities = glm::vec4(0.9f, 0.6f, 0.4f, 1.0f);
+
+
+	//point light
+	m_scene.GetSceneData().Lights[1].position = glm::vec4(5,5,0,1);
+	m_scene.GetSceneData().Lights[1].intensities = glm::vec4(0.0f, 0.0f, 1.0f, 5.0f);
+
+	m_scene.GetSceneData().Lights[2].position = glm::vec4(-5, 5, 0, 1);
+	m_scene.GetSceneData().Lights[2].intensities = glm::vec4(0.0f, 1.0f, 0.0f, 5.0f);
+
+	m_scene.GetSceneData().Lights[3].position = glm::vec4(0, 5, 0, 1);
+	m_scene.GetSceneData().Lights[3].intensities = glm::vec4(1.0f, 0.0f, 0.0f, 5.0f);
+
+	m_scene.GetSceneData().LightCount = 4;
 }
 
 void SceneLayer::OnDetach()
@@ -166,12 +180,21 @@ void SceneLayer::OnUpdate(float deltaTime)
 		}
 	}
 	ImGui::End();
-	ImGui::Begin("Global Material");
-	ImGui::SliderFloat4("Light Dir", (float*)&m_lightDir.x, -1, 1);
-	ImGui::End();
+	ImGui::Begin("Scene Data");
 
-	ImGui::Begin("Camera");
 	ImGui::SliderFloat("Zoom", &m_zoom, 1.0f, 100.0f);
+
+	ImGui::SliderFloat3("Light Dir", (float*)&m_lightDir.x, -1, 1);
+	ImGui::SliderFloat4("Light Colour", (float*)&m_scene.GetSceneData().Lights[0].intensities, 0, 5);
+
+	ImGui::InputFloat3("Point Light1 Positions", (float*)&m_scene.GetSceneData().Lights[1].position.x);
+	ImGui::SliderFloat4("Point Light1 Colour", (float*)&m_scene.GetSceneData().Lights[1].intensities.x, 0, 5);
+
+	ImGui::InputFloat3("Point Light2 Positions", (float*)&m_scene.GetSceneData().Lights[2].position.x);
+	ImGui::SliderFloat4("Point Light2 Colour", (float*)&m_scene.GetSceneData().Lights[2].intensities.x, 0, 5);
+
+	ImGui::InputFloat3("Point Light3 Positions", (float*)&m_scene.GetSceneData().Lights[3].position.x);
+	ImGui::SliderFloat4("Point Light3 Colour", (float*)&m_scene.GetSceneData().Lights[3].intensities.x, 0, 5);
 	ImGui::End();
 
 	m_gui->EndFrame();

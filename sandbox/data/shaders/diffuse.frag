@@ -34,7 +34,7 @@ void main()
 	if(texture(alphaTex,texCoord).r > 0.2)
 		discard;
 
-	float ambientStrength = 0.1;
+	float ambientStrength = 0.04;
 	vec3 color = texture(diffuseTex,texCoord).rgb;
 	vec3 norm = normalize(inNormal);
 	float specularStrength = shaderData.specularStrength;
@@ -44,20 +44,33 @@ void main()
 	vec3 finalLightColour = vec3(0.0);
 	for(int i = 0; i < sceneBuffer.lightCount; i++)
 	{
-		vec4 lightPos = sceneBuffer.lightData[i].position;
+		float attenuation = 1.0;
+		vec3 lightDir;
+
+		if(sceneBuffer.lightData[i].position.w == 0.0)
+			lightDir = sceneBuffer.lightData[i].position.xyz;
+		else
+		{
+			lightDir = sceneBuffer.lightData[i].position.xyz - inFragPos;
+			float distanceToLight = length(lightDir);
+			lightDir = normalize(lightDir);
+
+			attenuation = 1.0 / (1.0 + 0.1 * pow(distanceToLight, 2));
+		}
+
 		vec4 lightColour = sceneBuffer.lightData[i].intensities;
 
 		
 		vec3 ambient = ambientStrength * lightColour.rgb; //TODO only supports directional lights right now
 
-		float diff = max(dot(norm, lightPos.xyz), 0.0);
+		float diff = max(dot(norm, lightDir), 0.0);
 		vec3 diffuse = diff * lightColour.rgb * lightColour.w;
 
-		vec3 reflectDir = reflect(-lightPos.xyz, norm); 
+		vec3 reflectDir = reflect(-lightDir, norm); 
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(shaderData.shininess,1.0));
 		vec3 specular = specularStrength * spec * lightColour.rgb * specMask;  
 
-		finalLightColour += ambient + diffuse + specular;
+		finalLightColour += (ambient + diffuse + specular) * attenuation;
 	}
 
 
