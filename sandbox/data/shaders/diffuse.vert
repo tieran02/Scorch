@@ -16,11 +16,17 @@ layout( push_constant ) uniform constants
 	mat4 render_matrix;
 } PushConstants;
 
+struct Light
+{
+	vec4 position;	//w == 0 pointlight
+	vec4 intensities;  //w is intensity
+};
+
 layout(set = 1, binding = 0) uniform  SceneBuffer{
-	vec4 directionalLightDir;
-	vec4 directionalLightColor;
 	mat4 view;
 	vec4 eyePos;
+	int lightCount;
+	Light lightData[8];
 } sceneBuffer;
 
 void main()

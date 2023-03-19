@@ -16,12 +16,17 @@ layout(set = 0, binding = 3) uniform  ShaderData{
 	float specularStrength;
 } shaderData;
 
+struct Light
+{
+	vec4 position;	//w == 0 pointlight
+	vec4 intensities;  //w is intensity
+};
 
 layout(set = 1, binding = 0) uniform  SceneBuffer{
-	vec4 directionalLightDir;
-	vec4 directionalLightColor;
 	mat4 view;
 	vec4 eyePos;
+	int lightCount;
+	Light lightData[8];
 } sceneBuffer;
 
 void main()
@@ -30,23 +35,33 @@ void main()
 		discard;
 
 	float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * sceneBuffer.directionalLightColor.rgb;
-
 	vec3 color = texture(diffuseTex,texCoord).rgb;
-
 	vec3 norm = normalize(inNormal);
-	float diff = max(dot(norm, sceneBuffer.directionalLightDir.xyz), 0.0);
-	vec3 diffuse = diff * sceneBuffer.directionalLightColor.rgb * sceneBuffer.directionalLightColor.w;
-
 	float specularStrength = shaderData.specularStrength;
 	vec3 viewDir = normalize(sceneBuffer.eyePos.xyz - inFragPos);
-	vec3 reflectDir = reflect(-sceneBuffer.directionalLightDir.xyz, norm); 
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(shaderData.shininess,1.0));
 	vec3 specMask = texture(specTex,texCoord).bbb;
-	vec3 specular = specularStrength * spec * sceneBuffer.directionalLightColor.rgb * specMask;  
+
+	vec3 finalLightColour = vec3(0.0);
+	for(int i = 0; i < sceneBuffer.lightCount; i++)
+	{
+		vec4 lightPos = sceneBuffer.lightData[i].position;
+		vec4 lightColour = sceneBuffer.lightData[i].intensities;
+
+		
+		vec3 ambient = ambientStrength * lightColour.rgb; //TODO only supports directional lights right now
+
+		float diff = max(dot(norm, lightPos.xyz), 0.0);
+		vec3 diffuse = diff * lightColour.rgb * lightColour.w;
+
+		vec3 reflectDir = reflect(-lightPos.xyz, norm); 
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(shaderData.shininess,1.0));
+		vec3 specular = specularStrength * spec * lightColour.rgb * specMask;  
+
+		finalLightColour += ambient + diffuse + specular;
+	}
 
 
-    vec3 result = (ambient + diffuse + specular) * color;
+    vec3 result = finalLightColour * color;
 
 	outFragColor = vec4(result,1.0f);
 }

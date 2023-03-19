@@ -14,12 +14,19 @@ namespace SC
 	class Buffer;
 	struct Texture;
 
+	static constexpr uint32_t MAX_LIGHTS = 8;
+	struct Light
+	{
+		glm::vec4 position;	//w == 0 pointlight
+		glm::vec4 intensities; //w is intensity
+	};
+
 	struct SceneUbo
 	{
-		glm::vec4 DirectionalLightDir;
-		glm::vec4 DirectionalLightColor; //w is intensity
-		glm::mat4 ViewMatrix;
-		glm::vec4 EyePos;
+		alignas(16) glm::mat4 ViewMatrix;
+		alignas(16) glm::vec4 EyePos;
+		alignas(4) uint32_t LightCount;
+		alignas(16) Light Lights[MAX_LIGHTS];
 	};
 
 	class Scene

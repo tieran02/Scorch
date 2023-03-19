@@ -34,8 +34,9 @@ namespace
 
 Scene::Scene()
 {
-	m_sceneUbo.DirectionalLightDir = glm::vec4(0.44f, 0.89f,0.22f, 0);
-	m_sceneUbo.DirectionalLightColor = glm::vec4(1, 1, 1, 1.2f);
+	m_sceneUbo.Lights[0].position = glm::vec4(0.44f, 0.89f, 0.22f, 0);
+	m_sceneUbo.Lights[0].intensities = glm::vec4(1, 1, 1, 1.2f);
+	m_sceneUbo.LightCount = 1;
 	m_sceneUbo.ViewMatrix = glm::mat4(1.0f);
 	m_sceneUbo.EyePos = glm::vec4(0.0f);
 

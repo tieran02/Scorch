@@ -75,7 +75,7 @@ void SceneLayer::OnAttach()
 
 	sponzaRoot = m_scene.LoadModel("data/models/sponza/sponza.modl", &m_materialSystem);
 
-	m_scene.GetSceneData().DirectionalLightColor = glm::vec4(0.9f, 0.6f, 0.4f, 1.0f);
+	m_scene.GetSceneData().Lights[0].intensities = glm::vec4(0.9f, 0.6f, 0.4f, 1.0f);
 }
 
 void SceneLayer::OnDetach()
@@ -101,7 +101,7 @@ void SceneLayer::OnUpdate(float deltaTime)
 	projection[1][1] *= -1;
 	m_scene.GetSceneData().ViewMatrix = projection * view;
 
-	m_scene.GetSceneData().DirectionalLightDir = glm::normalize(m_lightDir);
+	m_scene.GetSceneData().Lights[0].position = glm::normalize(m_lightDir);
 	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
