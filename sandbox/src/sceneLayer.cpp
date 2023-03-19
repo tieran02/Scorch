@@ -105,7 +105,9 @@ void SceneLayer::OnUpdate(float deltaTime)
 	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	renderer->BeginFrame(.4f, .4f, .4f);
+	renderer->BeginFrame();
+
+	renderer->BeginRenderPass(nullptr, nullptr, .4f, .4f, .4f);
 
 	//Not optimal as we create a viewport object each frame but will do for demo
 	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
@@ -174,6 +176,6 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->EndFrame();
 
-
+	renderer->EndRenderPass();
 	renderer->EndFrame();
 }

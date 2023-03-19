@@ -115,10 +115,7 @@ void OffscreenLayer::OnUpdate(float deltaTime)
 		return;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	renderer->BeginFrame(.4f, .4f, .4f);
-
-	//Hack for not, need to end default render pass
-	renderer->EndRenderPass();
+	renderer->BeginFrame();
 
 	//begin deferred render pass
 	renderer->BeginRenderPass(m_deferredRenderpass.get(), m_colourTarget.get(), 0.3f, 0.3f, 0.3f);
@@ -136,6 +133,7 @@ void OffscreenLayer::OnUpdate(float deltaTime)
 	renderer->BindPipeline(m_fullscreenPipeline.get());
 	renderer->BindDescriptorSet(m_fullscreenPipelineLayout.get(), m_fullscreenDescriptorSet.get());
 	renderer->Draw(4, 1, 0, 0);
+	renderer->EndRenderPass();
 
 	renderer->EndFrame();
 }

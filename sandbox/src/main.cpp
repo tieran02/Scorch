@@ -18,7 +18,7 @@ int main()
 		std::shared_ptr<SC::Layer> deferredLayer = std::make_shared<OffscreenLayer>();
 
 
-		app->PushLayer(deferredLayer);
+		app->PushLayer(modelLayer);
 		app->Run();
 	}
 

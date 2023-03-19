@@ -162,7 +162,9 @@ void ModelLayer::OnUpdate(float deltaTime)
 	constants.render_matrix = mesh_matrix;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	renderer->BeginFrame(.4f,.4f,.4f);
+	renderer->BeginFrame();
+
+	renderer->BeginRenderPass(nullptr, nullptr, .4f, .4f, .4f);
 
 	//upload camera data for this frame
 	{
@@ -194,6 +196,8 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->BindVertexBuffer(m_vertexBuffer.get());
 	renderer->BindIndexBuffer(m_indexBuffer.get());
 	renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
+
+	renderer->EndRenderPass();
 
 	renderer->EndFrame();
 }

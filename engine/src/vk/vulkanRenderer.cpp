@@ -83,7 +83,7 @@ void VulkanRenderer::CreateSwapchain()
 	InitFramebuffers();
 }
 
-void VulkanRenderer::BeginFrame(float r, float g, float b)
+void VulkanRenderer::BeginFrame()
 {
 	int windowWidth{ 0 }, windowHeight{ 0 };
 	const App* app = App::Instance();
@@ -111,9 +111,6 @@ void VulkanRenderer::BeginFrame(float r, float g, float b)
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
-
-	//start the main renderpass.
-	BeginRenderPass(m_vulkanRenderPass.get(), m_swapChainRenderTargets[m_swapchainImageIndex].get(), r, g, b, 1.0f);
 }
 
 
@@ -121,10 +118,6 @@ void VulkanRenderer::EndFrame()
 {
 	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	//finalize the render pass
-	EndRenderPass();
-
 
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));

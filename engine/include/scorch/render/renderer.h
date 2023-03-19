@@ -30,10 +30,10 @@ namespace SC
 		virtual void Cleanup();
 		virtual void CreateSwapchain() = 0;
 
-		virtual void BeginFrame(float clearR = 0, float clearG = 0, float clearB = 0) = 0;
+		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
 
-		virtual void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 0) = 0;
+		virtual void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 1.0f) = 0;
 		virtual void EndRenderPass() = 0;
 
 
