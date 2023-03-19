@@ -1,6 +1,6 @@
-#include "deferredLayer.h"
+#include "offscreenLayer.h"
 
-void DeferredLayer::OnAttach()
+void OffscreenLayer::OnAttach()
 {
 	SC::Log::Print("Creating Deferred Render pass");
 	m_deferredRenderpass = SC::Renderpass::Create();
@@ -99,13 +99,13 @@ void DeferredLayer::OnAttach()
 
 }
 
-void DeferredLayer::OnDetach()
+void OffscreenLayer::OnDetach()
 {
 	m_colourTarget.reset();
 	m_deferredRenderpass.reset();
 }
 
-void DeferredLayer::OnUpdate(float deltaTime)
+void OffscreenLayer::OnUpdate(float deltaTime)
 {
 	const SC::App* app = SC::App::Instance();
 	int windowWidth{ 0 }, windowHeight{ 0 };

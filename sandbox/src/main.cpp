@@ -3,7 +3,7 @@
 #include "vertexBufferLayer.h"
 #include "modelLayer.h"
 #include "sceneLayer.h"
-#include "deferredLayer.h"
+#include "offscreenLayer.h"
 
 int main()
 {
@@ -15,7 +15,7 @@ int main()
 		//std::shared_ptr<SC::Layer> vertexBufferLayer = std::make_shared<VertexBufferLayer>();
 		//std::shared_ptr<SC::Layer> modelLayer = std::make_shared<ModelLayer>();
 		std::shared_ptr<SC::Layer> modelLayer = std::make_shared<SceneLayer>();
-		std::shared_ptr<SC::Layer> deferredLayer = std::make_shared<DeferredLayer>();
+		std::shared_ptr<SC::Layer> deferredLayer = std::make_shared<OffscreenLayer>();
 
 
 		app->PushLayer(deferredLayer);

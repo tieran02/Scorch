@@ -1,10 +1,10 @@
 #pragma once
 #include "scorch/engine.h"
 
-class DeferredLayer : public SC::Layer
+class OffscreenLayer : public SC::Layer
 {
 public:
-	DeferredLayer() : Layer("DeferredLayer") {}
+	OffscreenLayer() : Layer("OffscreenLayer") {}
 
 	void OnAttach() override;
 	void OnDetach() override;
