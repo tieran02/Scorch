@@ -335,21 +335,45 @@ bool VulkanPipeline::Build(const Renderpass* renderpass /*= nullptr*/)
 	pipelineBuilder._scissor.extent = VkExtent2D(scissor.extentX, scissor.extentY);
 
 	//configure the rasterizer to draw filled triangles
+	VkPolygonMode vkPolygonMode;
 	switch (polygonMode)
 	{
 	case PolygonMode::FILL:
-		pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(VK_POLYGON_MODE_FILL);
+		vkPolygonMode = VK_POLYGON_MODE_FILL;
 		break;
 	case PolygonMode::LINE:
-		pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(VK_POLYGON_MODE_LINE);
+		vkPolygonMode = VK_POLYGON_MODE_LINE;
 		break;
 	case PolygonMode::POINT:
-		pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(VK_POLYGON_MODE_POINT);
+		vkPolygonMode = VK_POLYGON_MODE_POINT;
 		break;
 	default:
 		CORE_ASSERT(false, "Polygon mode not supported");
 		break;
 	}
+
+	VkCullModeFlags vkCullMode;
+	switch (faceCulling)
+	{
+	case FaceCulling::FRONT:
+		vkCullMode = VK_CULL_MODE_FRONT_BIT;
+		break;
+	case FaceCulling::BACK:
+		vkCullMode = VK_CULL_MODE_BACK_BIT;
+		break;
+	case FaceCulling::FRONT_BACK:
+		vkCullMode = VK_CULL_MODE_FRONT_AND_BACK;
+		break;
+	case FaceCulling::NONE:
+		vkCullMode = VK_CULL_MODE_NONE;
+		break;
+	default:
+		CORE_ASSERT(false, "faceCulling mode not supported");
+		break;
+	
+	}
+
+	pipelineBuilder._rasterizer = vkinit::RasterizationStateCreateInfo(vkPolygonMode, vkCullMode);
 
 	//we don't use multisampling, so just run the default one
 	pipelineBuilder._multisampling = vkinit::MultisamplingStateCreateInfo();

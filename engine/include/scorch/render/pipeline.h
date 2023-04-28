@@ -73,6 +73,14 @@ namespace SC
 		POINT
 	};
 
+	enum class FaceCulling
+	{
+		FRONT,
+		BACK,
+		FRONT_BACK,
+		NONE
+	};
+
 	enum class ColorComponentBits : uint8_t
 	{
 		COLOR_COMPONENT_R,
@@ -140,6 +148,7 @@ namespace SC
 		PolygonMode				polygonMode;
 		Viewport				viewport;
 		Scissor					scissor;
+		FaceCulling				faceCulling;
 
 		//TODO multi sampling and blending
 	public:

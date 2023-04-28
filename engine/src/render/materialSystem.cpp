@@ -97,7 +97,7 @@ uint8_t ShaderEffect::GetTextureSetIndex() const
 	return m_textureSetIndex;
 }
 
-void ShaderPass::Build(const ShaderEffect& effect)
+void ShaderPass::Build(const ShaderEffect& effect, FaceCulling cullingMode)
 {
 	if(m_pipeline)
 		Log::PrintCore("ShaderPass::Build: Shader pass already built, overwriting", LogSeverity::LogWarning);
@@ -112,6 +112,9 @@ void ShaderPass::Build(const ShaderEffect& effect)
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32B32_SFLOAT); //normal
 	m_pipeline->vertexInputDescription.PushBackAttribute(SC::Format::R32G32_SFLOAT); //uvS
 	m_pipeline->pipelineLayout = m_effect->GetPipelineLayout();
+
+	m_pipeline->faceCulling = cullingMode;
+
 	m_pipeline->Build();
 }
 

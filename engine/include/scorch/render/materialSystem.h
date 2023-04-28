@@ -103,7 +103,7 @@ namespace SC
 
 	struct ShaderPass
 	{
-		void Build(const ShaderEffect& effect);
+		void Build(const ShaderEffect& effect, FaceCulling cullingMode = FaceCulling::NONE);
 		const ShaderEffect* GetShaderEffect() const;
 		Pipeline* GetPipeline() const;
 

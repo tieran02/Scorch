@@ -22,7 +22,7 @@ namespace vkinit
 	VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 	VkPipelineVertexInputStateCreateInfo VertexInputStateCreateInfo();
 	VkPipelineInputAssemblyStateCreateInfo InputAssemblyCreateInfo(VkPrimitiveTopology topology);
-	VkPipelineRasterizationStateCreateInfo RasterizationStateCreateInfo(VkPolygonMode polygonMode);
+	VkPipelineRasterizationStateCreateInfo RasterizationStateCreateInfo(VkPolygonMode polygonMode, VkCullModeFlags cullMode);
 	VkPipelineMultisampleStateCreateInfo MultisamplingStateCreateInfo();
 	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState();
 	VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();

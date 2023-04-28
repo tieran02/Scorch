@@ -54,7 +54,7 @@ void SceneLayer::OnAttach()
 		.AddSet("sceneData", { { SC::DescriptorBindingType::UNIFORM, {SC::ShaderStage::VERTEX, SC::ShaderStage::FRAGMENT} } })
 		.Build();
 
-	m_shaderPass.Build(m_shaderEffect);
+	m_shaderPass.Build(m_shaderEffect, SC::FaceCulling::FRONT);
 
 	m_sceneDescriptorSet = SC::FrameData<SC::DescriptorSet>::Create(m_shaderEffect.GetDescriptorSetLayout(1));
 	for (uint8_t i = 0; i < m_sceneDescriptorSet.FrameCount(); ++i)
