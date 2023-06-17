@@ -55,6 +55,7 @@ add_subdirectory(Engine)
 add_subdirectory(Sandbox)
 
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/vulkan/include)
+target_include_directories(Engine SYSTEM PRIVATE vendor/src/directXheaders/include)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/volk)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/glfw/include)
 target_include_directories(Engine SYSTEM PRIVATE vendor/src/spdlog/include)

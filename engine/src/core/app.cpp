@@ -44,7 +44,11 @@ std::unique_ptr<App> App::Create(const std::string& title, int width, int height
 	app->InitWindow(title);
 	g_instance = app.get();
 
+#ifdef RENDERER_D12
+	app->InitRenderer(GraphicsAPI::D12);
+#else
 	app->InitRenderer(GraphicsAPI::VULKAN);
+#endif // RENDERER_D12
 
 	return std::move(app);
 }

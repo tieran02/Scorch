@@ -6,6 +6,9 @@ namespace SC
 	enum class GraphicsAPI
 	{
 		VULKAN,
+#ifdef RENDERER_D12
+		D12,
+#endif // RENDERER_D12
 		COUNT
 	};
 
@@ -45,6 +48,21 @@ namespace SC
 
 		Texture* WhiteTexture() const;
 		Texture* BlackTexture() const;
+
+		inline bool IsVulkan() const
+		{
+			return m_api == GraphicsAPI::VULKAN;
+		}
+
+		inline bool IsD12() const 
+		{
+		#ifdef RENDERER_D12
+			return m_api == GraphicsAPI::D12;
+		#else
+			return false;
+		#endif // !RENDERER_D12
+		}
+
 	protected:
 		Renderer(GraphicsAPI api);
 

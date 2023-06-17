@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "render/renderer.h"
 #include "vk/vulkanRenderer.h"
+#include "d12/d12Renderer.h"
 
 using namespace SC;
 
@@ -18,7 +19,12 @@ std::unique_ptr<Renderer> Renderer::Create(GraphicsAPI api)
 	{
 	case GraphicsAPI::VULKAN:
 		return std::make_unique<VulkanRenderer>();
+#ifdef RENDERER_D12
+	case GraphicsAPI::D12:
+		return std::make_unique<D12Renderer>();
+#endif // RENDERER_D12
 	default:
+		Log::PrintCore("API not supported", LogSeverity::LogFatel);
 		return nullptr;
 	}
 }

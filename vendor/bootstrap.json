@@ -69,5 +69,13 @@
 			"url": "https://github.com/tieran02/imgui.git",
 			"revision": "00c01ce9842bb69d8001212311e920294eeb6b34"
 		}
+	},
+	{
+		"name": "directXheaders",
+		"source": {
+			"type": "git",
+			"url": "https://github.com/microsoft/DirectX-Headers.git",
+			"revision": "v1.610.0"
+		}
 	}
 ]

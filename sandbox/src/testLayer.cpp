@@ -2,15 +2,13 @@
 
 void TestLayer::OnAttach()
 {
-	SC::ShaderModuleBuilder shaderBuilder;
-	auto shader = shaderBuilder.SetVertexModulePath("data/shaders/coloured_triangle.vert.spv")
-		.SetFragmentModulePath("data/shaders/coloured_triangle.frag.spv")
-		.Build();
+	//SC::ShaderModuleBuilder shaderBuilder;
+	//auto shader = shaderBuilder.SetVertexModulePath("data/shaders/coloured_triangle.vert.spv")
+	//	.SetFragmentModulePath("data/shaders/coloured_triangle.frag.spv")
+	//	.Build();
 
-
-	m_pipeline = SC::Pipeline::Create(*shader);
-	m_pipeline->Build();
-
+	//m_pipeline = SC::Pipeline::Create(*shader);
+	//m_pipeline->Build();
 }
 
 void TestLayer::OnDetach()
@@ -27,30 +25,21 @@ void TestLayer::OnUpdate(float deltaTime)
 	if (windowWidth <= 0 && windowHeight <= 0)
 		return;
 
-	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
-	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+	//SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	//renderer->BeginFrame();
 
-	renderer->BeginFrame();
+	//renderer->BeginRenderPass(nullptr, nullptr, 153.0f / 255.0f, 217.0f / 255.0f, 234.0f / 255.0f);
 
-	commandBuffer.ResetCommands();
-	commandBuffer.BeginRecording();
+	////Not optimal as we create a viewport object each frame but will do for demo
+	//renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+	//renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	commandBuffer.BeginRenderPass(renderer->DefaultRenderPass(), renderer->DefaultRenderTarget(), 153.0f / 255.0f, 217.0f / 255.0f, 234.0f / 255.0f);
+	//renderer->BindPipeline(m_pipeline.get());
+	//renderer->Draw(3, 1, 0, 0);
 
-	//Not optimal as we create a viewport object each frame but will do for demo
-	commandBuffer.SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
-	commandBuffer.SetScissor(SC::Scissor(windowWidth, windowHeight));
+	//renderer->EndRenderPass();
 
-	commandBuffer.BindPipeline(m_pipeline.get());
-	commandBuffer.Draw(3, 1, 0, 0);
-
-	commandBuffer.EndRenderPass();
-
-	commandBuffer.EndRecording();
-
-	renderer->SubmitCommandBuffer(commandBuffer);
-
-	renderer->EndFrame();
+	//renderer->EndFrame();
 }
 
 void TestLayer::OnEvent(SC::Event& event)
