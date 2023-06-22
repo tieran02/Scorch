@@ -11,23 +11,7 @@ std::unique_ptr<Buffer> Buffer::Create(size_t size, const BufferUsageSet& buffer
 	CORE_ASSERT(size > 0, "Size must be greater than 0");
 	CORE_ASSERT(bufferUsage.any(), "Buffer usaage must be set");
 
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return nullptr;
-
-	const Renderer* renderer = app->GetRenderer();
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return nullptr;
-
-	std::unique_ptr<Buffer> buffer{ nullptr };
-	switch (renderer->GetApi())
-	{
-	case GraphicsAPI::VULKAN:
-		buffer = std::unique_ptr<VulkanBuffer>(new VulkanBuffer(size, bufferUsage, allocationUsage, dataPtr));
-	}
-
-	CORE_ASSERT(buffer, "failed to create buffer");
-	return std::move(buffer);
+	SCORCH_API_CREATE(Buffer, size, bufferUsage, allocationUsage, dataPtr);
 }
 
 Buffer::Buffer(size_t size, const BufferUsageSet& bufferUsage, AllocationUsage allocationUsage) :

@@ -132,23 +132,7 @@ Scissor::Scissor(uint32_t extentX, uint32_t extentY) :
 
 std::unique_ptr<SC::PipelineLayout> PipelineLayout::Create()
 {
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return nullptr;
-
-	const Renderer* renderer = app->GetRenderer();
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return nullptr;
-
-	std::unique_ptr<VulkanPipelineLayout> pipelineLayout{ nullptr };
-	switch (renderer->GetApi())
-	{
-	case GraphicsAPI::VULKAN:
-		pipelineLayout = std::unique_ptr<VulkanPipelineLayout>(new VulkanPipelineLayout());
-	}
-
-	CORE_ASSERT(pipelineLayout, "failed to create pipeline layout");
-	return std::move(pipelineLayout);
+	SCORCH_API_CREATE(PipelineLayout);
 }
 
 PipelineLayout::PipelineLayout()
@@ -193,23 +177,7 @@ const std::vector<const DescriptorSetLayout*>& PipelineLayout::DescriptorSetLayo
 
 std::unique_ptr<Pipeline> Pipeline::Create(const ShaderModule& module)
 {
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return nullptr;
-	
-	const Renderer* renderer = app->GetRenderer();
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return nullptr;
-
-	std::unique_ptr<Pipeline> pipeline{nullptr};
-	switch (renderer->GetApi())
-	{
-	case GraphicsAPI::VULKAN:
-		pipeline = std::unique_ptr<VulkanPipeline>(new VulkanPipeline(module));
-	}
-
-	CORE_ASSERT(pipeline, "failed to create pipeline");
-	return std::move(pipeline);
+	SCORCH_API_CREATE(Pipeline, module);
 }
 
 Pipeline::Pipeline(const ShaderModule& module) :

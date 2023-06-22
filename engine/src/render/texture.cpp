@@ -14,23 +14,7 @@ size_t ImageData::Size() const
 
 std::unique_ptr<Texture> Texture::Create(TextureType type, TextureUsage usage, Format format)
 {
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return nullptr;
-
-	const Renderer* renderer = app->GetRenderer();
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return nullptr;
-
-	std::unique_ptr<Texture> texture{ nullptr };
-	switch (renderer->GetApi())
-	{
-	case GraphicsAPI::VULKAN:
-		texture = std::unique_ptr<Texture>(new VulkanTexture(type, usage, format));
-	}
-
-	CORE_ASSERT(texture, "failed to create texture");
-	return std::move(texture);
+	SCORCH_API_CREATE(Texture, type, usage, format);
 }
 
 Texture::Texture(TextureType type, TextureUsage usage, Format format) :

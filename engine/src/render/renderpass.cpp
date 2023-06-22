@@ -18,23 +18,7 @@ Renderpass::~Renderpass()
 
 std::unique_ptr<Renderpass> Renderpass::Create()
 {
-	const App* app = App::Instance();
-	CORE_ASSERT(app, "App instance is null");
-	if (!app) return nullptr;
-
-	const Renderer* renderer = app->GetRenderer();
-	CORE_ASSERT(renderer, "renderer is null");
-	if (!renderer) return nullptr;
-
-	std::unique_ptr<Renderpass> renderPass{ nullptr };
-	switch (renderer->GetApi())
-	{
-	case GraphicsAPI::VULKAN:
-		renderPass = std::unique_ptr<Renderpass>(new VulkanRenderpass());
-	}
-
-	CORE_ASSERT(renderPass, "failed to create renderPass");
-	return std::move(renderPass);
+	SCORCH_API_CREATE(Renderpass);
 }
 
 void Renderpass::AddAttachment(RenderpassAttachment&& attachment)
