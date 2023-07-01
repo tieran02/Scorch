@@ -7,6 +7,7 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
 #include "imgui.h"
+#include "vk/vulkanCommandbuffer.h"
 
 using namespace SC;
 
@@ -158,7 +159,10 @@ void GUI::EndFrame()
 	ImGui::Render();
 
 	VulkanRenderer* vulanRenderer = static_cast<VulkanRenderer*>(m_renderer);
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulanRenderer->GetCurrentFrame().m_mainCommandBuffer);
+
+	VulkanCommandBuffer& cmd = static_cast<VulkanCommandBuffer&>(vulanRenderer->GetFrameCommandBuffer());
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd.GetCommandBuffer());
 
 #ifdef ENABLE_VIEWPORTS
 	ImGui::UpdatePlatformWindows();

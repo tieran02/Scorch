@@ -5,7 +5,6 @@
 #include "vk_mem_alloc.h"
 #include "vulkanTexture.h"
 
-
 #define VK_CHECK(x)                                                 \
 	do                                                              \
 	{                                                               \
@@ -21,14 +20,16 @@
 namespace SC
 {
 	class VulkanRenderpass;
+	class CommandPool;
+	class CommandBuffer;
 
 	struct VulkanFrameData
 	{
 		VkSemaphore m_presentSemaphore, m_renderSemaphore;
 		VkFence m_renderFence;
 
-		VkCommandPool m_commandPool;
-		VkCommandBuffer m_mainCommandBuffer;
+		std::unique_ptr<CommandPool> m_commandPool;
+		std::unique_ptr<CommandBuffer> m_mainCommandBuffer;
 	};
 
 	struct UploadContext
@@ -66,6 +67,8 @@ namespace SC
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
+
+		CommandBuffer& GetFrameCommandBuffer();
 
 		void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) const;
 

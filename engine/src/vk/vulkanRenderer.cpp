@@ -20,6 +20,8 @@
 #include "render/mesh.h"
 #include "vk/vulkanDescriptorSet.h"
 #include "vk/vulkanRenderpass.h"
+#include "render/commandbuffer.h"
+#include "vk/vulkanCommandbuffer.h"
 
 using namespace SC;
 
@@ -103,29 +105,23 @@ void VulkanRenderer::BeginFrame()
 	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, GetCurrentFrame().m_presentSemaphore, nullptr, &m_swapchainImageIndex));
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	VK_CHECK(vkResetCommandBuffer(GetCurrentFrame().m_mainCommandBuffer, 0));
-
-	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
-	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+	GetFrameCommandBuffer().ResetCommands();
+	GetFrameCommandBuffer().BeginRecording();
 }
 
 
 void VulkanRenderer::EndFrame()
 {
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
+	VulkanCommandBuffer& cmd = static_cast<VulkanCommandBuffer&>(GetFrameCommandBuffer());
 
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
-	VK_CHECK(vkEndCommandBuffer(cmd));
+	cmd.EndRecording();
 
 	//prepare the submission to the queue.
 	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
 	//we will signal the _renderSemaphore, to signal that rendering has finished
-	VkSubmitInfo submit = vkinit::SubmitInfo(&cmd);
+	VkSubmitInfo submit = vkinit::SubmitInfo(&cmd.GetCommandBuffer());
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	submit.pWaitDstStageMask = &waitStage;
@@ -161,145 +157,62 @@ void VulkanRenderer::EndFrame()
 
 void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 0*/)
 {
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	VkClearValue clearValue;
-	clearValue.color = { { clearR, clearG, clearB, 1.0f } };
-
-	//clear depth at 1
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = clearDepth;
-
 	const VulkanRenderpass* vulkanRenderpass = renderPass ? static_cast<const VulkanRenderpass*>(renderPass) : m_vulkanRenderPass.get();
 	const VulkanRenderTarget* vulkanRenderTarget = renderTarget ? static_cast<const VulkanRenderTarget*>(renderTarget) : m_swapChainRenderTargets[m_swapchainImageIndex].get();
 
-	//start the main renderpass.
-	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::RenderpassBeginInfo(vulkanRenderpass->GetRenderPass(),
-		VkExtent2D(vulkanRenderTarget->GetWidth(), vulkanRenderTarget->GetHeight()),
-		vulkanRenderTarget->m_framebuffer);
-
-	//connect clear values
-	rpInfo.clearValueCount = 2;
-	VkClearValue clearValues[] = { clearValue, depthClear };
-	rpInfo.pClearValues = &clearValues[0];
-
-	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+	GetFrameCommandBuffer().BeginRenderPass(vulkanRenderpass, vulkanRenderTarget, clearR, clearG, clearB, clearDepth);
 }
 
 void VulkanRenderer::EndRenderPass()
 {
-	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	//finalize the render pass
-	vkCmdEndRenderPass(cmd);
+	GetFrameCommandBuffer().EndRenderPass();
 }
 
 
 void VulkanRenderer::SetViewport(const Viewport& viewport)
 {
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	//VkViewport and viewport use the same memory layout so just reinterpret_cast
-	const VkViewport& vkViewport = reinterpret_cast<const VkViewport&>(viewport);
-	vkCmdSetViewport(cmd, 0, 1, &vkViewport);
+	GetFrameCommandBuffer().SetViewport(viewport);
 }
 
 void VulkanRenderer::SetScissor(const Scissor& scissor)
 {
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	//VkRect2D and Scissor use the same memory layout so just reinterpret_cast
-	const VkRect2D& vkScissor = reinterpret_cast<const VkRect2D&>(scissor);
-	vkCmdSetScissor(cmd, 0, 1, &vkScissor);
+	GetFrameCommandBuffer().SetScissor(scissor);
 }
 
 void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
 {
-	CORE_ASSERT(pipeline, "Pipline can't be null");
-	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const VulkanPipeline*>(pipeline)->GetPipeline());
+	GetFrameCommandBuffer().BindPipeline(pipeline);
 }
 
 
 void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
 {
-	CORE_ASSERT(buffer, "Buffer can't be null");
-	if (!buffer->HasUsage(BufferUsage::VERTEX_BUFFER))
-	{
-		CORE_ASSERT(false, "Buffer must be a vertex buffer");
-		return;
-	}
-	
-	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(cmd, 0, 1, static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), &offset);
+	GetFrameCommandBuffer().BindVertexBuffer(buffer);
 }
 
 void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
 {
-	CORE_ASSERT(buffer, "Buffer can't be null");
-	if (!buffer->HasUsage(BufferUsage::INDEX_BUFFER))
-	{
-		CORE_ASSERT(false, "Buffer must be a index buffer");
-		return;
-	}
-
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	VkDeviceSize offset = 0;
-	vkCmdBindIndexBuffer(cmd, *static_cast<const VulkanBuffer*>(buffer)->GetBuffer(), offset, sizeof(VertexIndexType) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+	GetFrameCommandBuffer().BindIndexBuffer(buffer);
 }
 
 void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet, int set)
 {
-	CORE_ASSERT(descriptorSet, "descriptorSet can't be null");
-
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	const VulkanDescriptorSet* vulkanDescriptorSet = static_cast<const VulkanDescriptorSet*>(descriptorSet);
-	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
-
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, set, 1, &vulkanDescriptorSet->m_descriptorSet, 0, nullptr);
+	GetFrameCommandBuffer().BindDescriptorSet(pipelineLayout, descriptorSet, set);
 }
 
 void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
 {
-	CORE_ASSERT(pipelineLayout, "Pipline layout can't be null");
-	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-
-	VkPipelineLayout layout = static_cast<const VulkanPipelineLayout*>(pipelineLayout)->GetPipelineLayout();
-	if (rangeIndex < 0 && rangeIndex >= pipelineLayout->PushConstants().size())
-	{
-		CORE_ASSERT(false, "Range index out of range");
-		return;
-	}
-
-	uint32_t shaderStages = 0;
-	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(ShaderStage::VERTEX))
-		shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
-	if (pipelineLayout->PushConstants()[rangeIndex].shaderStages.test(ShaderStage::FRAGMENT))
-		shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	vkCmdPushConstants(cmd, layout, shaderStages, offset, pipelineLayout->PushConstants()[rangeIndex].size, data);
+	GetFrameCommandBuffer().PushConstants(pipelineLayout, rangeIndex, offset, size, data);
 }
 
 void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-	vkCmdDraw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
+	GetFrameCommandBuffer().Draw(vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
-	VkCommandBuffer cmd = GetCurrentFrame().m_mainCommandBuffer;
-	vkCmdDrawIndexed(cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	GetFrameCommandBuffer().DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VulkanRenderer::InitVulkan()
@@ -429,15 +342,8 @@ void VulkanRenderer::InitCommands()
 	VkCommandPoolCreateInfo commandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 	for (int i = 0; i < m_frames.size(); i++) {
-		VK_CHECK(vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_frames[i].m_commandPool));
-
-		//allocate the default command buffer that we will use for rendering
-		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_frames[i].m_commandPool, 1);
-		VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_frames[i].m_mainCommandBuffer));
-
-		m_mainDeletionQueue.push_function([=]() {
-			vkDestroyCommandPool(m_device, m_frames[i].m_commandPool, nullptr);
-			});
+		m_frames[i].m_commandPool = CommandPool::Create();
+		m_frames[i].m_mainCommandBuffer = m_frames[i].m_commandPool->CreateCommandBuffer();
 	}
 
 	VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily);
@@ -607,4 +513,9 @@ VkRenderPass VulkanRenderer::GetDefaultRenderPass() const
 {
 	CORE_ASSERT(m_vulkanRenderPass, "Render pass not created");
 	return m_vulkanRenderPass->GetRenderPass();
+}
+
+SC::CommandBuffer& VulkanRenderer::GetFrameCommandBuffer()
+{
+	return *m_frames[m_currentFrame % m_frames.size()].m_mainCommandBuffer;
 }
