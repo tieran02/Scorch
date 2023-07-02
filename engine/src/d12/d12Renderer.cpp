@@ -76,61 +76,6 @@ void D12Renderer::EndFrame()
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-void D12Renderer::BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 1.0f*/)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::EndRenderPass()
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::SetViewport(const Viewport& viewport)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::SetScissor(const Scissor& viewport)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::BindPipeline(const Pipeline* pipeline)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::BindVertexBuffer(const Buffer* buffer)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::BindIndexBuffer(const Buffer* buffer)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet, int set /*= 0*/)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void D12Renderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
-{
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
 void D12Renderer::CreateFactory()
 {
 	// Create Factory
@@ -183,6 +128,26 @@ void D12Renderer::CreateDevice()
 #if defined(SCORCH_DEBUG)
 	ThrowIfFailed(m_device->QueryInterface(IID_PPV_ARGS(&m_debugDevice)));
 #endif
+}
+
+void D12Renderer::SubmitCommandBuffer(const CommandBuffer& commandBuffer)
+{
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+SC::CommandBuffer& D12Renderer::GetFrameCommandBuffer() const
+{
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+SC::Renderpass* D12Renderer::DefaultRenderPass() const
+{
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+SC::RenderTarget* D12Renderer::DefaultRenderTarget() const
+{
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
 #endif // RENDERER_D12
