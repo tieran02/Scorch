@@ -105,36 +105,36 @@ void VulkanRenderer::BeginFrame()
 	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, timeout, GetCurrentFrame().m_presentSemaphore, nullptr, &m_swapchainImageIndex));
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	GetFrameCommandBuffer().ResetCommands();
-	GetFrameCommandBuffer().BeginRecording();
+	//GetFrameCommandBuffer().ResetCommands();
+	//GetFrameCommandBuffer().BeginRecording();
 }
 
 
 void VulkanRenderer::EndFrame()
 {
-	//naming it cmd for shorter writing
-	VulkanCommandBuffer& cmd = static_cast<VulkanCommandBuffer&>(GetFrameCommandBuffer());
+	////naming it cmd for shorter writing
+	//VulkanCommandBuffer& cmd = static_cast<VulkanCommandBuffer&>(GetFrameCommandBuffer());
 
-	//finalize the command buffer (we can no longer add commands, but it can now be executed)
-	cmd.EndRecording();
+	////finalize the command buffer (we can no longer add commands, but it can now be executed)
+	//cmd.EndRecording();
 
-	//prepare the submission to the queue.
-	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
-	//we will signal the _renderSemaphore, to signal that rendering has finished
-	VkSubmitInfo submit = vkinit::SubmitInfo(&cmd.GetCommandBuffer());
-	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	////prepare the submission to the queue.
+	////we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+	////we will signal the _renderSemaphore, to signal that rendering has finished
+	//VkSubmitInfo submit = vkinit::SubmitInfo(&cmd.GetCommandBuffer());
+	//VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-	submit.pWaitDstStageMask = &waitStage;
+	//submit.pWaitDstStageMask = &waitStage;
 
-	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores = &GetCurrentFrame().m_presentSemaphore;
+	//submit.waitSemaphoreCount = 1;
+	//submit.pWaitSemaphores = &GetCurrentFrame().m_presentSemaphore;
 
-	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores = &GetCurrentFrame().m_renderSemaphore;
+	//submit.signalSemaphoreCount = 1;
+	//submit.pSignalSemaphores = &GetCurrentFrame().m_renderSemaphore;
 
-	//submit command buffer to the queue and execute it.
-	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, GetCurrentFrame().m_renderFence));
+	////submit command buffer to the queue and execute it.
+	//// _renderFence will now block until the graphic commands finish execution
+	//VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, GetCurrentFrame().m_renderFence));
 
 
 	// this will put the image we just rendered into the visible window.
@@ -153,66 +153,6 @@ void VulkanRenderer::EndFrame()
 	VK_CHECK(vkQueuePresentKHR(m_graphicsQueue, &presentInfo));
 
 	m_currentFrame = m_currentFrame + 1 % std::numeric_limits<uint32_t>().max();
-}
-
-void VulkanRenderer::BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR /*= 0*/, float clearG /*= 0*/, float clearB /*= 0*/, float clearDepth /*= 0*/)
-{
-	const VulkanRenderpass* vulkanRenderpass = renderPass ? static_cast<const VulkanRenderpass*>(renderPass) : m_vulkanRenderPass.get();
-	const VulkanRenderTarget* vulkanRenderTarget = renderTarget ? static_cast<const VulkanRenderTarget*>(renderTarget) : m_swapChainRenderTargets[m_swapchainImageIndex].get();
-
-	GetFrameCommandBuffer().BeginRenderPass(vulkanRenderpass, vulkanRenderTarget, clearR, clearG, clearB, clearDepth);
-}
-
-void VulkanRenderer::EndRenderPass()
-{
-	GetFrameCommandBuffer().EndRenderPass();
-}
-
-
-void VulkanRenderer::SetViewport(const Viewport& viewport)
-{
-	GetFrameCommandBuffer().SetViewport(viewport);
-}
-
-void VulkanRenderer::SetScissor(const Scissor& scissor)
-{
-	GetFrameCommandBuffer().SetScissor(scissor);
-}
-
-void VulkanRenderer::BindPipeline(const Pipeline* pipeline)
-{
-	GetFrameCommandBuffer().BindPipeline(pipeline);
-}
-
-
-void VulkanRenderer::BindVertexBuffer(const Buffer* buffer)
-{
-	GetFrameCommandBuffer().BindVertexBuffer(buffer);
-}
-
-void VulkanRenderer::BindIndexBuffer(const Buffer* buffer)
-{
-	GetFrameCommandBuffer().BindIndexBuffer(buffer);
-}
-
-void VulkanRenderer::BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet, int set)
-{
-	GetFrameCommandBuffer().BindDescriptorSet(pipelineLayout, descriptorSet, set);
-}
-
-void VulkanRenderer::PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data)
-{
-	GetFrameCommandBuffer().PushConstants(pipelineLayout, rangeIndex, offset, size, data);
-}
-
-void VulkanRenderer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
-{
-	GetFrameCommandBuffer().Draw(vertexCount, instanceCount, firstVertex, firstInstance);
-}
-
-void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
-{
-	GetFrameCommandBuffer().DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VulkanRenderer::InitVulkan()
@@ -344,6 +284,11 @@ void VulkanRenderer::InitCommands()
 	for (int i = 0; i < m_frames.size(); i++) {
 		m_frames[i].m_commandPool = CommandPool::Create();
 		m_frames[i].m_mainCommandBuffer = m_frames[i].m_commandPool->CreateCommandBuffer();
+
+		m_mainDeletionQueue.push_function([=]() {
+			m_frames[i].m_mainCommandBuffer.reset();
+			m_frames[i].m_commandPool.reset();
+			});
 	}
 
 	VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::CommandPoolCreateInfo(m_graphicsQueueFamily);
@@ -515,7 +460,41 @@ VkRenderPass VulkanRenderer::GetDefaultRenderPass() const
 	return m_vulkanRenderPass->GetRenderPass();
 }
 
-SC::CommandBuffer& VulkanRenderer::GetFrameCommandBuffer()
+CommandBuffer& VulkanRenderer::GetFrameCommandBuffer() const
 {
 	return *m_frames[m_currentFrame % m_frames.size()].m_mainCommandBuffer;
+}
+
+void VulkanRenderer::SubmitCommandBuffer(const CommandBuffer& commandBuffer)
+{
+	//naming it cmd for shorter writing
+	const VulkanCommandBuffer& cmd = static_cast<const VulkanCommandBuffer&>(commandBuffer);
+
+	//prepare the submission to the queue.
+	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+	//we will signal the _renderSemaphore, to signal that rendering has finished
+	VkSubmitInfo submit = vkinit::SubmitInfo(&cmd.GetCommandBuffer());
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	submit.pWaitDstStageMask = &waitStage;
+
+	submit.waitSemaphoreCount = 1;
+	submit.pWaitSemaphores = &GetCurrentFrame().m_presentSemaphore;
+
+	submit.signalSemaphoreCount = 1;
+	submit.pSignalSemaphores = &GetCurrentFrame().m_renderSemaphore;
+
+	//submit command buffer to the queue and execute it.
+	// _renderFence will now block until the graphic commands finish execution
+	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, GetCurrentFrame().m_renderFence));
+}
+
+SC::Renderpass* VulkanRenderer::DefaultRenderPass() const
+{
+	return m_vulkanRenderPass.get();
+}
+
+SC::RenderTarget* VulkanRenderer::DefaultRenderTarget() const
+{
+	return m_swapChainRenderTargets[m_swapchainImageIndex].get();
 }

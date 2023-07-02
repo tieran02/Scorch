@@ -14,8 +14,10 @@ namespace SC
 	class CommandBuffer
 	{
 	public:
-		virtual void BeginRecording() = 0;
-		virtual void EndRecording() = 0;
+		virtual ~CommandBuffer() = default;
+
+		virtual void BeginRecording() const = 0;
+		virtual void EndRecording() const = 0;
 
 		virtual void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 1.0f) = 0;
 		virtual void EndRenderPass() = 0;
@@ -39,6 +41,7 @@ namespace SC
 	{
 	public:
 		static std::unique_ptr<CommandPool> Create();
+		virtual ~CommandPool() = default;
 
 		virtual std::unique_ptr<CommandBuffer> CreateCommandBuffer() = 0;
 	protected:

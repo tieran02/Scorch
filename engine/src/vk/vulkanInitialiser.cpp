@@ -70,7 +70,7 @@ VkSemaphoreCreateInfo vkinit::SemaphoreCreateInfo(VkSemaphoreCreateFlags flags /
 	return info;
 }
 
-VkSubmitInfo vkinit::SubmitInfo(VkCommandBuffer* cmd)
+VkSubmitInfo vkinit::SubmitInfo(const VkCommandBuffer* cmd)
 {
 	VkSubmitInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

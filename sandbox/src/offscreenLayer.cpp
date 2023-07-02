@@ -115,25 +115,33 @@ void OffscreenLayer::OnUpdate(float deltaTime)
 		return;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+
 	renderer->BeginFrame();
 
+	commandBuffer.ResetCommands();
+	commandBuffer.BeginRecording();
+
 	//begin deferred render pass
-	renderer->BeginRenderPass(m_deferredRenderpass.get(), m_colourTarget.get(), 0.3f, 0.3f, 0.3f);
+	commandBuffer.BeginRenderPass(m_deferredRenderpass.get(), m_colourTarget.get(), 0.3f, 0.3f, 0.3f);
 
-	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
-	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
+	commandBuffer.SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+	commandBuffer.SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindPipeline(m_pipeline.get());
-	renderer->Draw(3, 1, 0, 0);
+	commandBuffer.BindPipeline(m_pipeline.get());
+	commandBuffer.Draw(3, 1, 0, 0);
 
-	renderer->EndRenderPass();
+	commandBuffer.EndRenderPass();
 
 
-	renderer->BeginRenderPass(nullptr, nullptr);
-	renderer->BindPipeline(m_fullscreenPipeline.get());
-	renderer->BindDescriptorSet(m_fullscreenPipelineLayout.get(), m_fullscreenDescriptorSet.get());
-	renderer->Draw(4, 1, 0, 0);
-	renderer->EndRenderPass();
+	commandBuffer.BeginRenderPass(renderer->DefaultRenderPass(), renderer->DefaultRenderTarget());
+	commandBuffer.BindPipeline(m_fullscreenPipeline.get());
+	commandBuffer.BindDescriptorSet(m_fullscreenPipelineLayout.get(), m_fullscreenDescriptorSet.get());
+	commandBuffer.Draw(4, 1, 0, 0);
+	commandBuffer.EndRenderPass();
+
+	commandBuffer.EndRecording();
+	renderer->SubmitCommandBuffer(commandBuffer);
 
 	renderer->EndFrame();
 }

@@ -119,19 +119,24 @@ void SceneLayer::OnUpdate(float deltaTime)
 	gTime += deltaTime * 0.5f;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+
 	renderer->BeginFrame();
 
-	renderer->BeginRenderPass(nullptr, nullptr, .4f, .4f, .4f);
+	commandBuffer.ResetCommands();
+	commandBuffer.BeginRecording();
+
+	commandBuffer.BeginRenderPass(renderer->DefaultRenderPass(), renderer->DefaultRenderTarget(), .4f, .4f, .4f);
 
 	//Not optimal as we create a viewport object each frame but will do for demo
-	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
-	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
+	commandBuffer.SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+	commandBuffer.SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindPipeline(m_shaderPass.GetPipeline());
+	commandBuffer.BindPipeline(m_shaderPass.GetPipeline());
 
 	m_scene.Root().UpdateSelfAndChildren();
 
-	m_scene.DrawObjects(renderer, [=](const SC::RenderObject& renderObject, bool pipelineChanged)
+	m_scene.DrawObjects(renderer, [=, &commandBuffer](const SC::RenderObject& renderObject, bool pipelineChanged)
 		{	//Per object func gets called on each render object
 
 			auto shaderEffect = renderObject.material->original->passShaders[SC::MeshpassType::Forward]->GetShaderEffect();
@@ -140,14 +145,14 @@ void SceneLayer::OnUpdate(float deltaTime)
 			//Update matieral paramter buffers
 			renderObject.material->parameters.Update(renderer->FrameDataIndex());
 
-			renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
+			commandBuffer.BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 
 			MeshPushConstants constants;
 			constants.render_matrix = (*renderObject.transform);
-			renderer->PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
+			commandBuffer.PushConstants(m_shaderEffect.GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
 
 			if (pipelineChanged) { //only bind camera descriptors if pipeline changed
-				renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), m_sceneDescriptorSet.GetFrameData(renderer->FrameDataIndex()), 1);
+				commandBuffer.BindDescriptorSet(shaderEffect->GetPipelineLayout(), m_sceneDescriptorSet.GetFrameData(renderer->FrameDataIndex()), 1);
 			}
 		});
 
@@ -199,6 +204,10 @@ void SceneLayer::OnUpdate(float deltaTime)
 
 	m_gui->EndFrame();
 
-	renderer->EndRenderPass();
+	commandBuffer.EndRenderPass();
+
+	commandBuffer.EndRecording();
+	renderer->SubmitCommandBuffer(commandBuffer);
+
 	renderer->EndFrame();
 }

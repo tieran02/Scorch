@@ -162,9 +162,14 @@ void ModelLayer::OnUpdate(float deltaTime)
 	constants.render_matrix = mesh_matrix;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+
 	renderer->BeginFrame();
 
-	renderer->BeginRenderPass(nullptr, nullptr, .4f, .4f, .4f);
+	commandBuffer.ResetCommands();
+	commandBuffer.BeginRecording();
+
+	commandBuffer.BeginRenderPass(renderer->DefaultRenderPass(), renderer->DefaultRenderTarget(), .4f, .4f, .4f);
 
 	//upload camera data for this frame
 	{
@@ -175,8 +180,8 @@ void ModelLayer::OnUpdate(float deltaTime)
 	}
 
 	//Not optimal as we create a viewport object each frame but will do for demo
-	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
-	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
+	commandBuffer.SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+	commandBuffer.SetScissor(SC::Scissor(windowWidth, windowHeight));
 
 #ifdef ModelLayer_UseMaterialSystem
 	SC::Material* mat = m_materialSystem.GetMaterial("monkey");
@@ -189,15 +194,19 @@ void ModelLayer::OnUpdate(float deltaTime)
 	renderer->PushConstants(shaderEffect->GetPipelineLayout(), 0, 0, sizeof(MeshPushConstants), &constants);
 	renderer->BindDescriptorSet(shaderEffect->GetPipelineLayout(), textureDescriptorSet, 0);
 #else
-	renderer->BindPipeline(m_pipeline.get());
-	renderer->PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
+	commandBuffer.BindPipeline(m_pipeline.get());
+	commandBuffer.PushConstants(m_pipelineLayout.get(), 0, 0, sizeof(MeshPushConstants), &constants);
 #endif
 
-	renderer->BindVertexBuffer(m_vertexBuffer.get());
-	renderer->BindIndexBuffer(m_indexBuffer.get());
-	renderer->DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
+	commandBuffer.BindVertexBuffer(m_vertexBuffer.get());
+	commandBuffer.BindIndexBuffer(m_indexBuffer.get());
+	commandBuffer.DrawIndexed(m_monkeyMesh.IndexCount(), 1, 0, 0, 0);
 
-	renderer->EndRenderPass();
+	commandBuffer.EndRenderPass();
+
+	commandBuffer.EndRecording();
+
+	renderer->SubmitCommandBuffer(commandBuffer);
 
 	renderer->EndFrame();
 }

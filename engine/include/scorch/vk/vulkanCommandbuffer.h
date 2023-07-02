@@ -28,11 +28,11 @@ namespace SC
 	{
 	public:
 		friend class VulkanCommandPool;
-		VulkanCommandBuffer(DeletionQueue&& freeCommandQueue);
+		VulkanCommandBuffer();
 		~VulkanCommandBuffer();
 
-		void BeginRecording();
-		void EndRecording();
+		void BeginRecording() const;
+		void EndRecording() const;
 
 		void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 1.0f);
 		void EndRenderPass();
@@ -51,7 +51,7 @@ namespace SC
 
 		void ResetCommands();
 
-		VkCommandBuffer& GetCommandBuffer();
+		const VkCommandBuffer& GetCommandBuffer() const;
 	private:
 		VkCommandBuffer m_commandBuffer;
 		DeletionQueue m_freeCommandQueue; //Frees the command buffer using the command pool that was used to create this buffer

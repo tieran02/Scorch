@@ -18,6 +18,8 @@ namespace SC
 	struct Texture;
 	class Renderpass;
 	struct RenderTarget;
+	class CommandBuffer;
+
 	class Renderer
 	{
 	public:
@@ -32,21 +34,11 @@ namespace SC
 
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
+		virtual void SubmitCommandBuffer(const CommandBuffer& commandBuffer) = 0;
 
-		virtual void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 1.0f) = 0;
-		virtual void EndRenderPass() = 0;
-
-
-		virtual void SetViewport(const Viewport& viewport) = 0;
-		virtual void SetScissor(const Scissor& viewport) = 0;
-
-		virtual void BindPipeline(const Pipeline* pipeline) = 0;
-		virtual void BindVertexBuffer(const Buffer* buffer) = 0;
-		virtual void BindIndexBuffer(const Buffer* buffer) = 0;
-		virtual void BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet, int set = 0) = 0;
-		virtual void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) = 0;
-		virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
-		virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) = 0;
+		virtual CommandBuffer& GetFrameCommandBuffer() const = 0;
+		virtual Renderpass* DefaultRenderPass() const = 0;
+		virtual RenderTarget* DefaultRenderTarget() const = 0;
 
 		uint8_t FrameDataIndex() const;
 		uint8_t FrameDataIndexCount() const;

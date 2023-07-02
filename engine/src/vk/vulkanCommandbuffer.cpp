@@ -55,26 +55,20 @@ std::unique_ptr<SC::CommandBuffer> VulkanCommandPool::CreateCommandBuffer()
 	const VulkanRenderer* renderer = app->GetVulkanRenderer();
 	if (!renderer) return nullptr;
 
-	VkCommandBuffer commandBuffer;
+	//Create a raw pointer object and create the command buffer and populate the free command queue so the buffer get deleted after use
+	VulkanCommandBuffer* vkCommandBuffer = new VulkanCommandBuffer();
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::CommandBufferAllocateInfo(m_commandPool, 1);
-	VK_CHECK(vkAllocateCommandBuffers(renderer->m_device, &cmdAllocInfo, &commandBuffer));
+	VK_CHECK(vkAllocateCommandBuffers(renderer->m_device, &cmdAllocInfo, &vkCommandBuffer->m_commandBuffer));
 
-	DeletionQueue freeCommandBufferQueue;
-	freeCommandBufferQueue.push_function([=]() {
-		vkFreeCommandBuffers(renderer->m_device, m_commandPool, 1, &commandBuffer);
+	vkCommandBuffer->m_freeCommandQueue.push_function([=]() {
+		vkFreeCommandBuffers(renderer->m_device, m_commandPool, 1, &vkCommandBuffer->m_commandBuffer);
 		});
 
-	std::unique_ptr<VulkanCommandBuffer> vkCommandBuffer = std::make_unique<VulkanCommandBuffer>(std::move(freeCommandBufferQueue));
-	vkCommandBuffer->m_commandBuffer = commandBuffer;
-
-	return std::move(vkCommandBuffer);
-
-
+	return std::unique_ptr<VulkanCommandBuffer>(vkCommandBuffer);
 }
 
-VulkanCommandBuffer::VulkanCommandBuffer(DeletionQueue&& freeCommandQueue) : m_freeCommandQueue(std::move(freeCommandQueue))
+VulkanCommandBuffer::VulkanCommandBuffer() : m_commandBuffer(VK_NULL_HANDLE)
 {
-
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
@@ -82,14 +76,14 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 	m_freeCommandQueue.flush();
 }
 
-void VulkanCommandBuffer::BeginRecording()
+void VulkanCommandBuffer::BeginRecording() const
 {
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &cmdBeginInfo));
 }
 
-void VulkanCommandBuffer::EndRecording()
+void VulkanCommandBuffer::EndRecording() const
 {
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
@@ -218,7 +212,7 @@ void VulkanCommandBuffer::ResetCommands()
 	VK_CHECK(vkResetCommandBuffer(m_commandBuffer, 0));
 }
 
-VkCommandBuffer& VulkanCommandBuffer::GetCommandBuffer()
+const VkCommandBuffer& VulkanCommandBuffer::GetCommandBuffer() const
 {
 	return m_commandBuffer;
 }

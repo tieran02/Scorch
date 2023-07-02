@@ -51,24 +51,9 @@ namespace SC
 
 		void BeginFrame() override;
 		void EndFrame() override;
+		void SubmitCommandBuffer(const CommandBuffer& commandBuffer) override;
 
-		void BeginRenderPass(const Renderpass* renderPass, const RenderTarget* renderTarget, float clearR = 0, float clearG = 0, float clearB = 0, float clearDepth = 1.0f) override;
-		void EndRenderPass() override;
-
-		void SetViewport(const Viewport& viewport) override;
-		void SetScissor(const Scissor& viewport) override;
-
-		void BindPipeline(const Pipeline* pipeline) override;
-		void BindVertexBuffer(const Buffer* buffer) override;
-		void BindIndexBuffer(const Buffer* buffer) override;
-
-		void BindDescriptorSet(const PipelineLayout* pipelineLayout, const DescriptorSet* descriptorSet,int set = 0) override;
-		void PushConstants(const PipelineLayout* pipelineLayout, uint32_t rangeIndex, uint32_t offset, uint32_t size, void* data) override;
-
-		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
-		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
-
-		CommandBuffer& GetFrameCommandBuffer();
+		CommandBuffer& GetFrameCommandBuffer() const override;
 
 		void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) const;
 
@@ -78,6 +63,10 @@ namespace SC
 		const VulkanFrameData& GetCurrentFrame() const;
 
 		VkRenderPass GetDefaultRenderPass() const;
+
+		Renderpass* DefaultRenderPass() const override;
+		RenderTarget* DefaultRenderTarget() const override;
+
 	private:
 		void InitVulkan();
 		void InitSwapchain();

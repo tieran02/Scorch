@@ -7,8 +7,10 @@ void TestLayer::OnAttach()
 		.SetFragmentModulePath("data/shaders/coloured_triangle.frag.spv")
 		.Build();
 
+
 	m_pipeline = SC::Pipeline::Create(*shader);
 	m_pipeline->Build();
+
 }
 
 void TestLayer::OnDetach()
@@ -26,18 +28,27 @@ void TestLayer::OnUpdate(float deltaTime)
 		return;
 
 	SC::Renderer* renderer = SC::App::Instance()->GetRenderer();
+	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+
 	renderer->BeginFrame();
 
-	renderer->BeginRenderPass(nullptr, nullptr, 153.0f / 255.0f, 217.0f / 255.0f, 234.0f / 255.0f);
+	commandBuffer.ResetCommands();
+	commandBuffer.BeginRecording();
+
+	commandBuffer.BeginRenderPass(renderer->DefaultRenderPass(), renderer->DefaultRenderTarget(), 153.0f / 255.0f, 217.0f / 255.0f, 234.0f / 255.0f);
 
 	//Not optimal as we create a viewport object each frame but will do for demo
-	renderer->SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
-	renderer->SetScissor(SC::Scissor(windowWidth, windowHeight));
+	commandBuffer.SetViewport(SC::Viewport(0, 0, static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+	commandBuffer.SetScissor(SC::Scissor(windowWidth, windowHeight));
 
-	renderer->BindPipeline(m_pipeline.get());
-	renderer->Draw(3, 1, 0, 0);
+	commandBuffer.BindPipeline(m_pipeline.get());
+	commandBuffer.Draw(3, 1, 0, 0);
 
-	renderer->EndRenderPass();
+	commandBuffer.EndRenderPass();
+
+	commandBuffer.EndRecording();
+
+	renderer->SubmitCommandBuffer(commandBuffer);
 
 	renderer->EndFrame();
 }

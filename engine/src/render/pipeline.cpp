@@ -184,6 +184,7 @@ Pipeline::Pipeline(const ShaderModule& module) :
 	shaderModule(&module),
 	pipelineLayout(nullptr),
 	primitiveTopolgy(PrimitiveTopolgy::TRIANGLE_LIST),
+	faceCulling(FaceCulling::NONE),
 	polygonMode(PolygonMode::FILL)
 {
 

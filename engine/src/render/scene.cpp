@@ -7,6 +7,7 @@
 #include "render/texture.h"
 #include "assetModel.h"
 #include "jaam.h"
+#include "render/commandbuffer.h"
 
 using namespace SC;
 
@@ -53,11 +54,14 @@ void Scene::DrawObjects(Renderer* renderer,
 {
 	CORE_ASSERT(renderer, "Renderer can't be null");
 
+	SC::CommandBuffer& commandBuffer = renderer->GetFrameCommandBuffer();
+
+
 	//update current frames scene ubo
 	UpdateSceneUniformBuffers(renderer->FrameDataIndex());
 
 	PipelineLayout* lastLayout{ nullptr };
-	m_root.TraverseTree([=, &lastLayout](SceneNode& node)
+	m_root.TraverseTree([=, &lastLayout, &commandBuffer](SceneNode& node)
 	{
 		RenderObject& renderable = node.GetRenderObject();
 
@@ -71,7 +75,7 @@ void Scene::DrawObjects(Renderer* renderer,
 			pipelineChanged |= lastLayout != forwardEffect->GetShaderEffect()->GetPipelineLayout();
 
 			if (pipelineChanged)
-				renderer->BindPipeline(forwardEffect->GetPipeline());
+				commandBuffer.BindPipeline(forwardEffect->GetPipeline());
 
 			lastLayout = forwardEffect->GetShaderEffect()->GetPipelineLayout();
 		}
@@ -80,12 +84,12 @@ void Scene::DrawObjects(Renderer* renderer,
 		CORE_ASSERT(renderable.mesh->vertexBuffer, "Mesh vertex buffer can't be null, is it built?");
 		CORE_ASSERT(renderable.mesh->vertexBuffer, "Mesh index buffer can't be null, is it built?");
 
-		renderer->BindVertexBuffer(renderable.mesh->vertexBuffer.get());
-		renderer->BindIndexBuffer(renderable.mesh->indexBuffer.get());
+		commandBuffer.BindVertexBuffer(renderable.mesh->vertexBuffer.get());
+		commandBuffer.BindIndexBuffer(renderable.mesh->indexBuffer.get());
 
 		PerRenderObjectFunc(renderable, pipelineChanged);
 
-		renderer->DrawIndexed(renderable.mesh->IndexCount(), 1, 0, 0, 0);
+		commandBuffer.DrawIndexed(renderable.mesh->IndexCount(), 1, 0, 0, 0);
 	});
 }
 

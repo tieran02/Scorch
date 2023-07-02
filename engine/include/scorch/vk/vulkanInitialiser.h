@@ -13,7 +13,7 @@ namespace vkinit
 
 	VkSemaphoreCreateInfo SemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
 
-	VkSubmitInfo SubmitInfo(VkCommandBuffer* cmd);
+	VkSubmitInfo SubmitInfo(const VkCommandBuffer* cmd);
 
 	VkPresentInfoKHR PresentInfo();
 
