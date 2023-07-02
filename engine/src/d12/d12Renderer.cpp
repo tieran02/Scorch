@@ -3,6 +3,7 @@
 #include "pch.h"
 
 #include "d12/d12Renderer.h"
+#include "core/log.h"
 
 namespace
 {
@@ -30,7 +31,7 @@ namespace
 		if (FAILED(hr))
 		{
 			auto excep = com_exception(hr);
-			std::cout << excep.what() << std::endl;
+			SC::Log::PrintCore(excep.what(), SC::LogSeverity::LogError);
 			throw excep;
 		}
 	}
